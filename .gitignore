@@ -1,0 +1,121 @@
+# =============================================================================
+# chepa-motos monorepo .gitignore
+# Stack: Java 21 + Spring Boot (Maven) | .NET MAUI | PostgreSQL | Docker
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Environment & secrets — NEVER commit these
+# -----------------------------------------------------------------------------
+.env
+*.env.local
+*.env.production
+
+
+# -----------------------------------------------------------------------------
+# Java / Maven (chepa-api)
+# -----------------------------------------------------------------------------
+chepa-api/target/
+chepa-api/.mvn/wrapper/maven-wrapper.jar
+chepa-api/*.class
+
+# Maven wrapper (keep mvnw script, ignore jar)
+!chepa-api/.mvn/wrapper/maven-wrapper.properties
+
+# IntelliJ IDEA
+chepa-api/.idea/
+chepa-api/*.iml
+chepa-api/*.iws
+chepa-api/*.ipr
+chepa-api/out/
+
+# Eclipse
+chepa-api/.eclipse/
+chepa-api/.classpath
+chepa-api/.project
+chepa-api/.settings/
+
+# Spring Boot
+chepa-api/HELP.md
+
+# Logs
+chepa-api/logs/
+chepa-api/*.log
+
+
+# -----------------------------------------------------------------------------
+# .NET MAUI (chepa-desktop)
+# -----------------------------------------------------------------------------
+chepa-desktop/bin/
+chepa-desktop/obj/
+chepa-desktop/.vs/
+chepa-desktop/**/.vs/
+chepa-desktop/**/bin/
+chepa-desktop/**/obj/
+
+# NuGet
+chepa-desktop/*.nupkg
+chepa-desktop/*.snupkg
+chepa-desktop/packages/
+chepa-desktop/!packages/repositories.config
+chepa-desktop/*.nuget.props
+chepa-desktop/*.nuget.targets
+
+# Visual Studio
+chepa-desktop/*.user
+chepa-desktop/*.suo
+chepa-desktop/*.userosscache
+chepa-desktop/*.sln.docstates
+chepa-desktop/_ReSharper*/
+chepa-desktop/.vs/
+
+# Publish output
+chepa-desktop/publish/
+chepa-desktop/**/publish/
+
+# Android
+chepa-desktop/**/*.apk
+chepa-desktop/**/*.aab
+chepa-desktop/**/*.keystore
+
+# Rider
+chepa-desktop/.idea/
+
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+# Keep docker-compose.yml and init scripts, ignore runtime artifacts
+docker-compose.override.yml
+
+
+# -----------------------------------------------------------------------------
+# OS artifacts
+# -----------------------------------------------------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+
+# -----------------------------------------------------------------------------
+# Editors & IDEs (project-wide)
+# -----------------------------------------------------------------------------
+.vscode/
+*.swp
+*.swo
+.history/
