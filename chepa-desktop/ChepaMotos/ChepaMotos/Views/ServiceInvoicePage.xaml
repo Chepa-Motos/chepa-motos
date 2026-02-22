@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:behaviors="clr-namespace:ChepaMotos.Behaviors"
+             xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
              x:Class="ChepaMotos.Views.ServiceInvoicePage"
              BackgroundColor="{StaticResource Background}"
              NavigationPage.HasNavigationBar="False">
@@ -162,128 +164,69 @@
                         <Label Grid.Column="4" Text="" />
                     </Grid>
 
-                    <!-- Item row 1 (placeholder data) -->
-                    <Border Stroke="{StaticResource Border}"
-                            StrokeThickness="0"
-                            BackgroundColor="{StaticResource Surface}"
-                            Padding="0">
-                        <Grid ColumnDefinitions="54,*,100,100,36"
-                              Padding="4,4">
-                            <Border Grid.Column="0" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
-                                <Entry Text="1" FontFamily="IBMPlexMono" FontSize="13"
-                                       HorizontalTextAlignment="Center"
-                                       Keyboard="Numeric"
-                                       BackgroundColor="Transparent" />
-                            </Border>
-                            <Border Grid.Column="1" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0" Margin="4,0">
-                                <Entry Text="Tornillo Leva" FontFamily="IBMPlexSans" FontSize="13"
-                                       BackgroundColor="Transparent" />
-                            </Border>
-                            <Border Grid.Column="2" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
-                                <Entry Text="3.900" FontFamily="IBMPlexMono" FontSize="13"
-                                       HorizontalTextAlignment="End"
-                                       Keyboard="Numeric"
-                                       BackgroundColor="Transparent" />
-                            </Border>
-                            <Label Grid.Column="3" Text="$3.900"
-                                   FontFamily="IBMPlexMono" FontSize="13"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   HorizontalTextAlignment="End"
-                                   VerticalTextAlignment="Center"
-                                   Padding="4,0" />
-                            <Button Grid.Column="4" Text="×"
-                                    FontSize="16"
-                                    TextColor="{StaticResource TextMuted}"
-                                    BackgroundColor="Transparent"
-                                    Padding="0"
-                                    WidthRequest="30" HeightRequest="30"
-                                    MinimumHeightRequest="30"
-                                    MinimumWidthRequest="30"
-                                    CornerRadius="4" />
-                        </Grid>
-                    </Border>
-
-                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-
-                    <!-- Item row 2 (placeholder data) -->
-                    <Border Stroke="{StaticResource Border}"
-                            StrokeThickness="0"
-                            BackgroundColor="{StaticResource Surface}"
-                            Padding="0">
-                        <Grid ColumnDefinitions="54,*,100,100,36"
-                              Padding="4,4">
-                            <Border Grid.Column="0" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
-                                <Entry Text="2" FontFamily="IBMPlexMono" FontSize="13"
-                                       HorizontalTextAlignment="Center"
-                                       Keyboard="Numeric"
-                                       BackgroundColor="Transparent" />
-                            </Border>
-                            <Border Grid.Column="1" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0" Margin="4,0">
-                                <Entry Text="Pastillas de freno" FontFamily="IBMPlexSans" FontSize="13"
-                                       BackgroundColor="Transparent" />
-                            </Border>
-                            <Border Grid.Column="2" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
-                                <Entry Text="18.500" FontFamily="IBMPlexMono" FontSize="13"
-                                       HorizontalTextAlignment="End"
-                                       Keyboard="Numeric"
-                                       BackgroundColor="Transparent" />
-                            </Border>
-                            <Label Grid.Column="3" Text="$37.000"
-                                   FontFamily="IBMPlexMono" FontSize="13"
-                                   TextColor="{StaticResource TextPrimary}"
-                                   HorizontalTextAlignment="End"
-                                   VerticalTextAlignment="Center"
-                                   Padding="4,0" />
-                            <Button Grid.Column="4" Text="×"
-                                    FontSize="16"
-                                    TextColor="{StaticResource TextMuted}"
-                                    BackgroundColor="Transparent"
-                                    Padding="0"
-                                    WidthRequest="30" HeightRequest="30"
-                                    MinimumHeightRequest="30"
-                                    MinimumWidthRequest="30"
-                                    CornerRadius="4" />
-                        </Grid>
-                    </Border>
-
-                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-
-                    <!-- Empty row (ready for input) -->
-                    <Border Stroke="{StaticResource Border}"
-                            StrokeThickness="0"
-                            BackgroundColor="{StaticResource Surface}"
-                            Padding="0">
-                        <Grid ColumnDefinitions="54,*,100,100,36"
-                              Padding="4,4">
-                            <Border Grid.Column="0" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
-                                <Entry Placeholder="1" FontFamily="IBMPlexMono" FontSize="13"
-                                       HorizontalTextAlignment="Center"
-                                       Keyboard="Numeric"
-                                       BackgroundColor="Transparent"
-                                       PlaceholderColor="{StaticResource TextMuted}" />
-                            </Border>
-                            <Border Grid.Column="1" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0" Margin="4,0">
-                                <Entry Placeholder="Descripción del ítem" FontFamily="IBMPlexSans" FontSize="13"
-                                       BackgroundColor="Transparent"
-                                       PlaceholderColor="{StaticResource TextMuted}" />
-                            </Border>
-                            <Border Grid.Column="2" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
-                                <Entry Placeholder="0" FontFamily="IBMPlexMono" FontSize="13"
-                                       HorizontalTextAlignment="End"
-                                       Keyboard="Numeric"
-                                       BackgroundColor="Transparent"
-                                       PlaceholderColor="{StaticResource TextMuted}" />
-                            </Border>
-                            <Label Grid.Column="3" Text="$0"
-                                   FontFamily="IBMPlexMono" FontSize="13"
-                                   TextColor="{StaticResource TextMuted}"
-                                   HorizontalTextAlignment="End"
-                                   VerticalTextAlignment="Center"
-                                   Padding="4,0" />
-                            <BoxView Grid.Column="4" Color="Transparent"
-                                     WidthRequest="30" HeightRequest="30" />
-                        </Grid>
-                    </Border>
+                    <!-- Dynamic item rows -->
+                    <VerticalStackLayout x:Name="ItemsContainer"
+                                         Spacing="0">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:InvoiceItemRow">
+                                <VerticalStackLayout Spacing="0">
+                                    <Border Stroke="{StaticResource Border}"
+                                            StrokeThickness="0"
+                                            BackgroundColor="{StaticResource Surface}"
+                                            Padding="0">
+                                        <Grid ColumnDefinitions="54,*,100,100,36"
+                                              Padding="4,4">
+                                            <Border Grid.Column="0" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
+                                                <Entry Text="{Binding Quantity, Mode=TwoWay}"
+                                                       FontFamily="IBMPlexMono" FontSize="13"
+                                                       HorizontalTextAlignment="Center"
+                                                       Keyboard="Numeric"
+                                                       BackgroundColor="Transparent" />
+                                            </Border>
+                                            <Border Grid.Column="1" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0" Margin="4,0">
+                                                <Entry Text="{Binding Description, Mode=TwoWay}"
+                                                       Placeholder="Descripción del ítem"
+                                                       PlaceholderColor="{StaticResource TextMuted}"
+                                                       FontFamily="IBMPlexSans" FontSize="13"
+                                                       BackgroundColor="Transparent" />
+                                            </Border>
+                                            <Border Grid.Column="2" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
+                                                <Entry Text="{Binding UnitPrice, Mode=TwoWay}"
+                                                       Placeholder="0"
+                                                       PlaceholderColor="{StaticResource TextMuted}"
+                                                       FontFamily="IBMPlexMono" FontSize="13"
+                                                       HorizontalTextAlignment="End"
+                                                       Keyboard="Numeric"
+                                                       BackgroundColor="Transparent">
+                                                    <Entry.Behaviors>
+                                                        <behaviors:CurrencyInputBehavior />
+                                                    </Entry.Behaviors>
+                                                </Entry>
+                                            </Border>
+                                            <Label Grid.Column="3" Text="{Binding SubtotalFormatted}"
+                                                   FontFamily="IBMPlexMono" FontSize="13"
+                                                   TextColor="{StaticResource TextPrimary}"
+                                                   HorizontalTextAlignment="End"
+                                                   VerticalTextAlignment="Center"
+                                                   Padding="4,0" />
+                                            <Button Grid.Column="4" Text="×"
+                                                    FontSize="16"
+                                                    TextColor="{StaticResource TextMuted}"
+                                                    BackgroundColor="Transparent"
+                                                    Padding="0"
+                                                    WidthRequest="30" HeightRequest="30"
+                                                    MinimumHeightRequest="30"
+                                                    MinimumWidthRequest="30"
+                                                    CornerRadius="4"
+                                                    CommandParameter="{Binding .}"
+                                                    Clicked="OnDeleteItemClicked" />
+                                        </Grid>
+                                    </Border>
+                                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
 
                     <!-- Add item button -->
                     <HorizontalStackLayout Padding="0,10,0,14">
@@ -293,7 +236,8 @@
                                 TextColor="{StaticResource Accent}"
                                 BackgroundColor="Transparent"
                                 Padding="0"
-                                MinimumHeightRequest="30" />
+                                MinimumHeightRequest="30"
+                                Clicked="OnAddItemClicked" />
                     </HorizontalStackLayout>
 
                 </VerticalStackLayout>
@@ -320,11 +264,16 @@
                         StrokeThickness="1"
                         BackgroundColor="{StaticResource Surface}"
                         Padding="0">
-                    <Entry Text="65.000"
+                    <Entry x:Name="LaborEntry"
+                           Text="65.000"
                            FontFamily="IBMPlexMono" FontSize="13"
                            HorizontalTextAlignment="End"
                            Keyboard="Numeric"
-                           BackgroundColor="Transparent" />
+                           BackgroundColor="Transparent">
+                        <Entry.Behaviors>
+                            <behaviors:CurrencyInputBehavior />
+                        </Entry.Behaviors>
+                    </Entry>
                 </Border>
             </Grid>
 
@@ -340,7 +289,8 @@
                            FontFamily="IBMPlexSansSemiBold" FontSize="15"
                            TextColor="{StaticResource White}"
                            VerticalTextAlignment="Center" />
-                    <Label Grid.Column="1"
+                    <Label x:Name="TotalLabel"
+                           Grid.Column="1"
                            Text="$105.900"
                            FontFamily="IBMPlexMonoSemiBold" FontSize="20"
                            TextColor="{StaticResource White}"

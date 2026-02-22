@@ -1,10 +1,27 @@
+using System.Collections.ObjectModel;
+using ChepaMotos.Behaviors;
+using ChepaMotos.ViewModels;
+
 namespace ChepaMotos.Views;
 
 public partial class ServiceInvoicePage : ContentPage
 {
+    private readonly ObservableCollection<InvoiceItemRow> _items = [];
+
     public ServiceInvoicePage()
     {
         InitializeComponent();
+
+        // Seed with placeholder data
+        AddItem(new InvoiceItemRow { Quantity = "1", Description = "Tornillo Leva", UnitPrice = "3.900" });
+        AddItem(new InvoiceItemRow { Quantity = "2", Description = "Pastillas de freno", UnitPrice = "18.500" });
+        AddItem(new InvoiceItemRow()); // empty row ready for input
+
+        BindableLayout.SetItemsSource(ItemsContainer, _items);
+
+        // Recalculate total when labor changes
+        LaborEntry.TextChanged += (_, _) => RecalculateTotal();
+        RecalculateTotal();
     }
 
     protected override void OnAppearing()
@@ -47,6 +64,39 @@ public partial class ServiceInvoicePage : ContentPage
         if (Window is Window window)
             Application.Current?.CloseWindow(window);
     }
+
+    // ── Item row management ──────────────────────────────
+
+    private void AddItem(InvoiceItemRow item)
+    {
+        item.SubtotalChanged += (_, _) => RecalculateTotal();
+        _items.Add(item);
+    }
+
+    private void OnAddItemClicked(object? sender, EventArgs e)
+    {
+        AddItem(new InvoiceItemRow());
+    }
+
+    private void OnDeleteItemClicked(object? sender, EventArgs e)
+    {
+        if (sender is Button btn && btn.CommandParameter is InvoiceItemRow item)
+        {
+            item.SubtotalChanged -= (_, _) => RecalculateTotal();
+            _items.Remove(item);
+            RecalculateTotal();
+        }
+    }
+
+    private void RecalculateTotal()
+    {
+        var itemsTotal = _items.Sum(i => i.Subtotal);
+        var labor = CurrencyInputBehavior.GetValue(LaborEntry.Text);
+        var total = itemsTotal + labor;
+        TotalLabel.Text = $"${total:N0}".Replace(",", ".");
+    }
+
+    // ── Model auto-fill ──────────────────────────────────
 
     /// <summary>
     /// Called by plate lookup when a matching vehicle is found.
