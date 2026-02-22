@@ -7,7 +7,7 @@ Sistema de facturación y gestión para taller de motocicletas.
 | Capa | Tecnología |
 |---|---|
 | Backend | Java 25 + Spring Boot 4.0.3 |
-| Base de datos | PostgreSQL 16 (Docker) |
+| Base de datos | PostgreSQL 18 (Docker) |
 | Analítica | Metabase OSS (Docker) |
 | Desktop | .NET MAUI (Windows) |
 | Móvil | .NET MAUI (Android) |
