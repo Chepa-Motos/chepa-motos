@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ChepaMotos.Views.InvoicesView">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="20">
+
+            <Label Text="Facturas"
+                   Style="{StaticResource PageHeading}" />
+
+            <!-- Filter buttons row -->
+            <HorizontalStackLayout Spacing="8">
+                <Border StrokeShape="RoundRectangle 8"
+                        StrokeThickness="1"
+                        Stroke="{StaticResource BorderStrong}"
+                        BackgroundColor="{StaticResource Surface}"
+                        Padding="12,8">
+                    <Label Text="Todas" FontFamily="IBMPlexSansMedium" FontSize="13" TextColor="{StaticResource TextPrimary}" />
+                </Border>
+                <Border StrokeShape="RoundRectangle 8"
+                        StrokeThickness="1"
+                        Stroke="{StaticResource Border}"
+                        BackgroundColor="{StaticResource Surface}"
+                        Padding="12,8">
+                    <Label Text="Servicio" FontFamily="IBMPlexSansMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                </Border>
+                <Border StrokeShape="RoundRectangle 8"
+                        StrokeThickness="1"
+                        Stroke="{StaticResource Border}"
+                        BackgroundColor="{StaticResource Surface}"
+                        Padding="12,8">
+                    <Label Text="Venta" FontFamily="IBMPlexSansMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                </Border>
+                <Border StrokeShape="RoundRectangle 8"
+                        StrokeThickness="1"
+                        Stroke="{StaticResource Border}"
+                        BackgroundColor="{StaticResource Surface}"
+                        Padding="12,8">
+                    <Label Text="Anuladas" FontFamily="IBMPlexSansMedium" FontSize="13" TextColor="{StaticResource TextSecondary}" />
+                </Border>
+            </HorizontalStackLayout>
+
+            <!-- Invoices table -->
+            <Border Stroke="{StaticResource Border}"
+                    StrokeShape="RoundRectangle 8"
+                    StrokeThickness="1"
+                    BackgroundColor="{StaticResource Surface}"
+                    Padding="0">
+                <VerticalStackLayout Spacing="0">
+
+                    <!-- Header -->
+                    <Grid ColumnDefinitions="60,80,120,120,100,100,80,80"
+                          Padding="16,8"
+                          BackgroundColor="{StaticResource Surface2}">
+                        <Label Grid.Column="0" Text="#" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="1" Text="TIPO" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="2" Text="PLACA" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="3" Text="COMPRADOR" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="4" Text="MECÁNICO" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="5" Text="TOTAL" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="6" Text="ESTADO" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="7" Text="HORA" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <!-- Row 1 -->
+                    <Grid ColumnDefinitions="60,80,120,120,100,100,80,80" Padding="16,10">
+                        <Label Grid.Column="0" Text="014" Style="{StaticResource TableCellMono}" />
+                        <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource AccentLight}">
+                            <Label Text="Servicio" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Accent}" />
+                        </Border>
+                        <Border Grid.Column="2" Style="{StaticResource Badge}" BackgroundColor="{StaticResource Surface2}" Stroke="{StaticResource Border}" StrokeThickness="1">
+                            <Label Text="BXR42H" FontFamily="IBMPlexMono" FontSize="11" TextColor="{StaticResource TextPrimary}" />
+                        </Border>
+                        <Label Grid.Column="3" Text="—" Style="{StaticResource TableCell}" TextColor="{StaticResource TextMuted}" />
+                        <Label Grid.Column="4" Text="Jose" Style="{StaticResource TableCell}" />
+                        <Label Grid.Column="5" Text="$209.100" Style="{StaticResource TableCellMono}" HorizontalTextAlignment="End" />
+                        <Border Grid.Column="6" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}">
+                            <Label Text="Activa" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
+                        </Border>
+                        <Label Grid.Column="7" Text="09:45" Style="{StaticResource TableCellMono}" HorizontalTextAlignment="End" TextColor="{StaticResource TextMuted}" />
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+
+                    <!-- Row 2 -->
+                    <Grid ColumnDefinitions="60,80,120,120,100,100,80,80" Padding="16,10">
+                        <Label Grid.Column="0" Text="013" Style="{StaticResource TableCellMono}" />
+                        <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource BlueLight}">
+                            <Label Text="Venta" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Blue}" />
+                        </Border>
+                        <Label Grid.Column="2" Text="—" Style="{StaticResource TableCell}" TextColor="{StaticResource TextMuted}" />
+                        <Label Grid.Column="3" Text="Talleres La 80" Style="{StaticResource TableCell}" />
+                        <Label Grid.Column="4" Text="—" Style="{StaticResource TableCell}" TextColor="{StaticResource TextMuted}" />
+                        <Label Grid.Column="5" Text="$37.000" Style="{StaticResource TableCellMono}" HorizontalTextAlignment="End" />
+                        <Border Grid.Column="6" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}">
+                            <Label Text="Activa" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
+                        </Border>
+                        <Label Grid.Column="7" Text="09:22" Style="{StaticResource TableCellMono}" HorizontalTextAlignment="End" TextColor="{StaticResource TextMuted}" />
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+
+                    <!-- Row 3 (anulada) -->
+                    <Grid ColumnDefinitions="60,80,120,120,100,100,80,80" Padding="16,10">
+                        <Label Grid.Column="0" Text="009" Style="{StaticResource TableCellMono}" />
+                        <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource AccentLight}">
+                            <Label Text="Servicio" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Accent}" />
+                        </Border>
+                        <Border Grid.Column="2" Style="{StaticResource Badge}" BackgroundColor="{StaticResource Surface2}" Stroke="{StaticResource Border}" StrokeThickness="1">
+                            <Label Text="XYZ99A" FontFamily="IBMPlexMono" FontSize="11" TextColor="{StaticResource TextPrimary}" />
+                        </Border>
+                        <Label Grid.Column="3" Text="—" Style="{StaticResource TableCell}" TextColor="{StaticResource TextMuted}" />
+                        <Label Grid.Column="4" Text="Carlos" Style="{StaticResource TableCell}" />
+                        <Label Grid.Column="5" Text="$45.000" Style="{StaticResource TableCellMono}" HorizontalTextAlignment="End" />
+                        <Border Grid.Column="6" Style="{StaticResource Badge}" BackgroundColor="{StaticResource AnuladaBg}">
+                            <Label Text="Anulada" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource AnuladaText}" />
+                        </Border>
+                        <Label Grid.Column="7" Text="07:50" Style="{StaticResource TableCellMono}" HorizontalTextAlignment="End" TextColor="{StaticResource TextMuted}" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentView>
