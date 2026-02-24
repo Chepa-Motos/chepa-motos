@@ -65,13 +65,15 @@
                         <Label Text="Mecánico"
                                FontFamily="IBMPlexSansMedium" FontSize="12"
                                TextColor="{StaticResource TextSecondary}" />
-                        <Border StrokeShape="RoundRectangle 6"
+                        <Border x:Name="MechanicBorder"
+                                StrokeShape="RoundRectangle 6"
                                 Stroke="{StaticResource Border}"
                                 StrokeThickness="1"
                                 BackgroundColor="{StaticResource Surface}"
                                 HeightRequest="38"
                                 Padding="0">
-                            <Picker FontFamily="IBMPlexSans"
+                            <Picker x:Name="MechanicPicker"
+                                    FontFamily="IBMPlexSans"
                                     FontSize="13"
                                     TextColor="{StaticResource TextPrimary}"
                                     TitleColor="{StaticResource TextMuted}">
@@ -85,6 +87,10 @@
                                 </Picker.ItemsSource>
                             </Picker>
                         </Border>
+                        <Label x:Name="MechanicError"
+                               FontFamily="IBMPlexSans" FontSize="11"
+                               TextColor="{StaticResource Accent}"
+                               IsVisible="False" />
                     </VerticalStackLayout>
 
                     <!-- Placa -->
@@ -92,24 +98,36 @@
                         <Label Text="Placa"
                                FontFamily="IBMPlexSansMedium" FontSize="12"
                                TextColor="{StaticResource TextSecondary}" />
-                        <Border StrokeShape="RoundRectangle 6"
+                        <Border x:Name="PlateBorder"
+                                StrokeShape="RoundRectangle 6"
                                 Stroke="{StaticResource Border}"
                                 StrokeThickness="1"
                                 BackgroundColor="{StaticResource Surface}"
                                 HeightRequest="38"
                                 Padding="0">
-                            <Entry Placeholder="Ej. ABC12H"
+                            <Entry x:Name="PlateEntry"
+                                   Placeholder="Ej. ABC12H"
                                    FontFamily="IBMPlexMono"
                                    FontSize="13"
                                    CharacterSpacing="1"
                                    Keyboard="Text"
-                                   BackgroundColor="Transparent" />
+                                   BackgroundColor="Transparent"
+                                   TextChanged="OnPlateTextChanged" />
                         </Border>
+                        <Label x:Name="PlateWarning"
+                               Text="⚠ Formato de placa no común detectado"
+                               FontFamily="IBMPlexSans" FontSize="11"
+                               TextColor="{StaticResource Amber}"
+                               IsVisible="False" />
+                        <Label x:Name="PlateError"
+                               FontFamily="IBMPlexSans" FontSize="11"
+                               TextColor="{StaticResource Accent}"
+                               IsVisible="False" />
                     </VerticalStackLayout>
                 </Grid>
 
                 <!-- ─── Field: Modelo de la moto (full width) ── -->
-                <VerticalStackLayout Spacing="6" Padding="24,14,24,18">
+                <VerticalStackLayout Spacing="6" Padding="24,14,24,14">
                     <Label Text="Modelo de la moto"
                            FontFamily="IBMPlexSansMedium" FontSize="12"
                            TextColor="{StaticResource TextSecondary}" />
@@ -144,6 +162,10 @@
                                     ToolTipProperties.Text="Editar modelo" />
                         </Grid>
                     </Border>
+                    <Label x:Name="ModelError"
+                           FontFamily="IBMPlexSans" FontSize="11"
+                           TextColor="{StaticResource Accent}"
+                           IsVisible="False" />
                 </VerticalStackLayout>
 
                 <BoxView HeightRequest="1" Color="{StaticResource Border}" />
@@ -229,7 +251,7 @@
                     </VerticalStackLayout>
 
                     <!-- Add item button -->
-                    <HorizontalStackLayout Padding="0,10,0,14">
+                    <HorizontalStackLayout Padding="0,10,0,4">
                         <Button Text="+ Agregar ítem"
                                 FontFamily="IBMPlexSansMedium"
                                 FontSize="12"
@@ -239,6 +261,12 @@
                                 MinimumHeightRequest="30"
                                 Clicked="OnAddItemClicked" />
                     </HorizontalStackLayout>
+
+                    <Label x:Name="ItemsError"
+                           FontFamily="IBMPlexSans" FontSize="11"
+                           TextColor="{StaticResource Accent}"
+                           IsVisible="False"
+                           Padding="0,0,0,10" />
 
                 </VerticalStackLayout>
 

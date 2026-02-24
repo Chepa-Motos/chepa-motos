@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 using ChepaMotos.Behaviors;
 using ChepaMotos.ViewModels;
 
@@ -7,6 +8,7 @@ namespace ChepaMotos.Views;
 public partial class ServiceInvoicePage : ContentPage
 {
     private readonly ObservableCollection<InvoiceItemRow> _items = [];
+    private static readonly Regex PlateRegex = new(@"^[A-Z]{3}[0-9]{2}[A-Z]$", RegexOptions.Compiled);
 
     public ServiceInvoicePage()
     {
@@ -21,6 +23,11 @@ public partial class ServiceInvoicePage : ContentPage
 
         // Recalculate total when labor changes
         LaborEntry.TextChanged += (_, _) => RecalculateTotal();
+
+        // Clear validation errors on interaction
+        MechanicPicker.SelectedIndexChanged += (_, _) => ClearFieldError(MechanicBorder, MechanicError);
+        ModelEntry.TextChanged += (_, _) => ClearFieldError(ModelFieldBorder, ModelError);
+
         RecalculateTotal();
     }
 
@@ -59,10 +66,101 @@ public partial class ServiceInvoicePage : ContentPage
 
     private void OnConfirmClicked(object? sender, EventArgs e)
     {
+        if (!ValidateForm())
+            return;
+
         // Will call service layer in the future
         // For now, just close
         if (Window is Window window)
             Application.Current?.CloseWindow(window);
+    }
+
+    // ── Plate handling ───────────────────────────────────
+
+    private bool _isUpdatingPlate;
+
+    private void OnPlateTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isUpdatingPlate) return;
+
+        // Auto-uppercase
+        var upper = e.NewTextValue?.ToUpperInvariant()?.Replace(" ", "")?.Replace("-", "") ?? "";
+        if (upper != e.NewTextValue)
+        {
+            _isUpdatingPlate = true;
+            PlateEntry.Text = upper;
+            _isUpdatingPlate = false;
+        }
+
+        // Clear validation error on typing
+        ClearFieldError(PlateBorder, PlateError);
+
+        // Warning for uncommon format (only when 6 chars — full plate length)
+        if (upper.Length >= 6)
+            PlateWarning.IsVisible = !PlateRegex.IsMatch(upper);
+        else
+            PlateWarning.IsVisible = false;
+    }
+
+    // ── Form validation ──────────────────────────────────
+
+    private bool ValidateForm()
+    {
+        var isValid = true;
+
+        // Mechanic
+        if (MechanicPicker.SelectedIndex < 0)
+        {
+            SetFieldError(MechanicBorder, MechanicError, "Selecciona un mecánico");
+            isValid = false;
+        }
+
+        // Plate
+        var plate = PlateEntry.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(plate))
+        {
+            SetFieldError(PlateBorder, PlateError, "Ingresa la placa del vehículo");
+            isValid = false;
+        }
+
+        // Model
+        var model = ModelEntry.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(model))
+        {
+            SetFieldError(ModelFieldBorder, ModelError, "Ingresa el modelo de la moto");
+            isValid = false;
+        }
+
+        // Items — need at least one with description and price
+        var validItems = _items.Where(i =>
+            !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0).ToList();
+
+        if (validItems.Count == 0)
+        {
+            ItemsError.Text = "Agrega al menos un ítem con descripción y precio";
+            ItemsError.IsVisible = true;
+            isValid = false;
+        }
+        else
+        {
+            ItemsError.IsVisible = false;
+        }
+
+        return isValid;
+    }
+
+    private static void SetFieldError(Border border, Label errorLabel, string message)
+    {
+        border.Stroke = new SolidColorBrush(Color.FromArgb("#C13B0A"));
+        errorLabel.Text = message;
+        errorLabel.IsVisible = true;
+    }
+
+    private static void ClearFieldError(Border border, Label errorLabel)
+    {
+        if (!errorLabel.IsVisible) return;
+        border.Stroke = new SolidColorBrush(Color.FromArgb("#D8D5CC"));
+        errorLabel.IsVisible = false;
     }
 
     // ── Item row management ──────────────────────────────

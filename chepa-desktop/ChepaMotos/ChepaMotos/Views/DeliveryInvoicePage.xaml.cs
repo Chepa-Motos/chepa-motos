@@ -18,6 +18,10 @@ public partial class DeliveryInvoicePage : ContentPage
         AddItem(new InvoiceItemRow()); // empty row ready for input
 
         BindableLayout.SetItemsSource(ItemsContainer, _items);
+
+        // Clear validation errors on interaction
+        BuyerEntry.TextChanged += (_, _) => ClearFieldError(BuyerBorder, BuyerError);
+
         RecalculateTotal();
     }
 
@@ -35,9 +39,58 @@ public partial class DeliveryInvoicePage : ContentPage
 
     private void OnConfirmClicked(object? sender, EventArgs e)
     {
+        if (!ValidateForm())
+            return;
+
         // Will call service layer in the future
         if (Window is Window window)
             Application.Current?.CloseWindow(window);
+    }
+
+    // ── Form validation ──────────────────────────────────
+
+    private bool ValidateForm()
+    {
+        var isValid = true;
+
+        // Buyer
+        var buyer = BuyerEntry.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(buyer))
+        {
+            SetFieldError(BuyerBorder, BuyerError, "Ingresa el nombre del comprador");
+            isValid = false;
+        }
+
+        // Items — need at least one with description and price
+        var validItems = _items.Where(i =>
+            !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0).ToList();
+
+        if (validItems.Count == 0)
+        {
+            ItemsError.Text = "Agrega al menos un ítem con descripción y precio";
+            ItemsError.IsVisible = true;
+            isValid = false;
+        }
+        else
+        {
+            ItemsError.IsVisible = false;
+        }
+
+        return isValid;
+    }
+
+    private static void SetFieldError(Border border, Label errorLabel, string message)
+    {
+        border.Stroke = new SolidColorBrush(Color.FromArgb("#C13B0A"));
+        errorLabel.Text = message;
+        errorLabel.IsVisible = true;
+    }
+
+    private static void ClearFieldError(Border border, Label errorLabel)
+    {
+        if (!errorLabel.IsVisible) return;
+        border.Stroke = new SolidColorBrush(Color.FromArgb("#D8D5CC"));
+        errorLabel.IsVisible = false;
     }
 
     // ── Item row management ──────────────────────────────

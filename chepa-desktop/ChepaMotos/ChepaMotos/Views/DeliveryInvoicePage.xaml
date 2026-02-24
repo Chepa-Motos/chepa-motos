@@ -65,18 +65,24 @@
                         <Label Text="Comprador / Almacén"
                                FontFamily="IBMPlexSansMedium" FontSize="12"
                                TextColor="{StaticResource TextSecondary}" />
-                        <Border StrokeShape="RoundRectangle 6"
+                        <Border x:Name="BuyerBorder"
+                                StrokeShape="RoundRectangle 6"
                                 Stroke="{StaticResource Border}"
                                 StrokeThickness="1"
                                 BackgroundColor="{StaticResource Surface}"
                                 HeightRequest="38"
                                 Padding="0">
-                            <Entry Placeholder="Ej. Talleres La 80"
+                            <Entry x:Name="BuyerEntry"
+                                   Placeholder="Ej. Talleres La 80"
                                    FontFamily="IBMPlexSans"
                                    FontSize="13"
                                    BackgroundColor="Transparent"
                                    PlaceholderColor="{StaticResource TextMuted}" />
                         </Border>
+                        <Label x:Name="BuyerError"
+                               FontFamily="IBMPlexSans" FontSize="11"
+                               TextColor="{StaticResource Accent}"
+                               IsVisible="False" />
                     </VerticalStackLayout>
                 </Grid>
 
@@ -163,7 +169,7 @@
                     </VerticalStackLayout>
 
                     <!-- Add item button -->
-                    <HorizontalStackLayout Padding="0,10,0,14">
+                    <HorizontalStackLayout Padding="0,10,0,4">
                         <Button Text="+ Agregar ítem"
                                 FontFamily="IBMPlexSansMedium"
                                 FontSize="12"
@@ -173,6 +179,12 @@
                                 MinimumHeightRequest="30"
                                 Clicked="OnAddItemClicked" />
                     </HorizontalStackLayout>
+
+                    <Label x:Name="ItemsError"
+                           FontFamily="IBMPlexSans" FontSize="11"
+                           TextColor="{StaticResource Accent}"
+                           IsVisible="False"
+                           Padding="0,0,0,10" />
 
                 </VerticalStackLayout>
 
