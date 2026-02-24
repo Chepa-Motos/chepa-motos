@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ChepaMotos.Views.InvoiceViewerPage"
+             BackgroundColor="{StaticResource Background}"
+             NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="*,Auto">
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- SCROLLABLE BODY                                 -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Spacing="0" Padding="0">
+
+                <!-- ─── Shop header ─────────────────────── -->
+                <VerticalStackLayout BackgroundColor="{StaticResource Surface}"
+                                     Padding="24,18"
+                                     Spacing="4"
+                                     HorizontalOptions="Fill">
+                    <Label Text="ALMACEN Y TALLER CHEPA MOTOS"
+                           FontFamily="IBMPlexMonoSemiBold"
+                           FontSize="15"
+                           TextColor="{StaticResource TextPrimary}"
+                           HorizontalTextAlignment="Center" />
+                    <Label Text="Nit. 1.036.621.093-1 · Calle 2A No. 78A-29 Belén Rincón · Tel. (604)6030702"
+                           FontFamily="IBMPlexMono"
+                           FontSize="11"
+                           TextColor="{StaticResource TextMuted}"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+
+                <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+
+                <!-- ─── Invoice type badge + number ─── -->
+                <HorizontalStackLayout Padding="24,16,24,0" Spacing="12">
+                    <Border x:Name="TypeBadge"
+                            StrokeShape="RoundRectangle 6"
+                            StrokeThickness="0"
+                            Padding="10,5">
+                        <Label x:Name="TypeBadgeLabel"
+                               FontFamily="IBMPlexSansSemiBold"
+                               FontSize="12" />
+                    </Border>
+                    <Label x:Name="InvoiceNumberLabel"
+                           FontFamily="IBMPlexMonoSemiBold"
+                           FontSize="15"
+                           TextColor="{StaticResource TextPrimary}"
+                           VerticalTextAlignment="Center" />
+                    <Border x:Name="StatusBadge"
+                            StrokeShape="RoundRectangle 6"
+                            StrokeThickness="0"
+                            Padding="10,5"
+                            IsVisible="False">
+                        <Label x:Name="StatusBadgeLabel"
+                               FontFamily="IBMPlexSansSemiBold"
+                               FontSize="12" />
+                    </Border>
+                </HorizontalStackLayout>
+
+                <!-- ─── Fields grid (SERVICE: 4 cols, DELIVERY: 2 cols) ─── -->
+                <!-- SERVICE fields -->
+                <Grid x:Name="ServiceFieldsGrid"
+                      ColumnDefinitions="*,*,*,*"
+                      ColumnSpacing="14"
+                      Padding="24,14,24,0"
+                      IsVisible="False">
+
+                    <!-- Fecha -->
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Fecha"
+                               FontFamily="IBMPlexSansMedium" FontSize="12"
+                               TextColor="{StaticResource TextSecondary}" />
+                        <Label x:Name="ServiceDateLabel"
+                               FontFamily="IBMPlexMono" FontSize="13"
+                               TextColor="{StaticResource TextPrimary}" />
+                    </VerticalStackLayout>
+
+                    <!-- Mecánico -->
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="Mecánico"
+                               FontFamily="IBMPlexSansMedium" FontSize="12"
+                               TextColor="{StaticResource TextSecondary}" />
+                        <Label x:Name="MechanicLabel"
+                               FontFamily="IBMPlexSans" FontSize="13"
+                               TextColor="{StaticResource TextPrimary}" />
+                    </VerticalStackLayout>
+
+                    <!-- Placa -->
+                    <VerticalStackLayout Grid.Column="2" Spacing="4">
+                        <Label Text="Placa"
+                               FontFamily="IBMPlexSansMedium" FontSize="12"
+                               TextColor="{StaticResource TextSecondary}" />
+                        <Border StrokeShape="RoundRectangle 4"
+                                Stroke="{StaticResource Border}"
+                                StrokeThickness="1"
+                                BackgroundColor="{StaticResource Surface2}"
+                                Padding="6,3"
+                                HorizontalOptions="Start">
+                            <Label x:Name="PlateLabel"
+                                   FontFamily="IBMPlexMono" FontSize="13"
+                                   TextColor="{StaticResource TextPrimary}"
+                                   CharacterSpacing="1" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Modelo -->
+                    <VerticalStackLayout Grid.Column="3" Spacing="4">
+                        <Label Text="Modelo"
+                               FontFamily="IBMPlexSansMedium" FontSize="12"
+                               TextColor="{StaticResource TextSecondary}" />
+                        <Label x:Name="ModelLabel"
+                               FontFamily="IBMPlexSans" FontSize="13"
+                               TextColor="{StaticResource TextPrimary}" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- DELIVERY fields -->
+                <Grid x:Name="DeliveryFieldsGrid"
+                      ColumnDefinitions="*,*"
+                      ColumnSpacing="14"
+                      Padding="24,14,24,0"
+                      IsVisible="False">
+
+                    <!-- Fecha -->
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Fecha"
+                               FontFamily="IBMPlexSansMedium" FontSize="12"
+                               TextColor="{StaticResource TextSecondary}" />
+                        <Label x:Name="DeliveryDateLabel"
+                               FontFamily="IBMPlexMono" FontSize="13"
+                               TextColor="{StaticResource TextPrimary}" />
+                    </VerticalStackLayout>
+
+                    <!-- Comprador -->
+                    <VerticalStackLayout Grid.Column="1" Spacing="4">
+                        <Label Text="Comprador / Almacén"
+                               FontFamily="IBMPlexSansMedium" FontSize="12"
+                               TextColor="{StaticResource TextSecondary}" />
+                        <Label x:Name="BuyerLabel"
+                               FontFamily="IBMPlexSans" FontSize="13"
+                               TextColor="{StaticResource TextPrimary}" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <BoxView HeightRequest="1" Color="{StaticResource Border}" Margin="0,14,0,0" />
+
+                <!-- ═══════════════════════════════════════ -->
+                <!-- ITEMS TABLE (read-only)                 -->
+                <!-- ═══════════════════════════════════════ -->
+                <VerticalStackLayout Padding="24,14,24,0" Spacing="0">
+
+                    <!-- Table header -->
+                    <Grid ColumnDefinitions="60,*,110,110"
+                          Padding="8,8"
+                          BackgroundColor="{StaticResource Surface2}">
+                        <Label Grid.Column="0" Text="Cant." Style="{StaticResource TableHeader}" HorizontalTextAlignment="Center" />
+                        <Label Grid.Column="1" Text="Descripción" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="2" Text="Vr. Unit." Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="3" Text="Subtotal" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <!-- Dynamic read-only item rows -->
+                    <VerticalStackLayout x:Name="ItemsContainer" Spacing="0" />
+
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- FOOTER                                          -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <VerticalStackLayout Grid.Row="1" BackgroundColor="{StaticResource Surface}" Spacing="0">
+            <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+
+            <!-- Labor row (SERVICE only) -->
+            <Grid x:Name="LaborRow"
+                  ColumnDefinitions="*,Auto"
+                  Padding="24,12,24,0"
+                  IsVisible="False">
+                <Label Grid.Column="0"
+                       Text="Mano de obra"
+                       FontFamily="IBMPlexSansMedium" FontSize="13"
+                       TextColor="{StaticResource TextSecondary}"
+                       VerticalTextAlignment="Center" />
+                <Label x:Name="LaborLabel"
+                       Grid.Column="1"
+                       FontFamily="IBMPlexMonoSemiBold" FontSize="14"
+                       TextColor="{StaticResource TextPrimary}"
+                       VerticalTextAlignment="Center" />
+            </Grid>
+
+            <!-- Total bar (dark) -->
+            <Border StrokeShape="RoundRectangle 7"
+                    StrokeThickness="0"
+                    BackgroundColor="{StaticResource ToastBg}"
+                    Margin="24,10,24,0"
+                    Padding="18,12">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Grid.Column="0"
+                           Text="Total"
+                           FontFamily="IBMPlexSansSemiBold" FontSize="15"
+                           TextColor="{StaticResource White}"
+                           VerticalTextAlignment="Center" />
+                    <Label x:Name="TotalLabel"
+                           Grid.Column="1"
+                           FontFamily="IBMPlexMonoSemiBold" FontSize="20"
+                           TextColor="{StaticResource White}"
+                           VerticalTextAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Close button -->
+            <HorizontalStackLayout HorizontalOptions="End" Spacing="10" Padding="24,10">
+                <Button Text="Cerrar"
+                        FontFamily="IBMPlexSansMedium" FontSize="13"
+                        TextColor="{StaticResource White}"
+                        BackgroundColor="{StaticResource TextPrimary}"
+                        CornerRadius="8"
+                        Padding="18,10"
+                        Clicked="OnCloseClicked" />
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>
