@@ -1,3 +1,3 @@
 # chepa-api
 
-Spring Boot 3 REST API — Java 21
+Spring Boot 4 REST API — Java 25
