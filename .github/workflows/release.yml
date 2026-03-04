@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 permissions:
   contents: write
@@ -15,8 +12,6 @@ permissions:
 
 jobs:
   release:
-    # Solo corre el release cuando el PR ya fue mergeado a main
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,10 +27,11 @@ jobs:
 
       - name: Install semantic-release
         run: |
-          npm install -g semantic-release \
-            @semantic-release/commit-analyzer \
-            @semantic-release/release-notes-generator \
-            @semantic-release/github
+          npm install -g \
+            semantic-release@24.2.3 \
+            @semantic-release/commit-analyzer@13.0.1 \
+            @semantic-release/release-notes-generator@14.0.3 \
+            @semantic-release/github@11.0.1
 
       - name: Release
         env:
