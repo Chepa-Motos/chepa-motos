@@ -6,7 +6,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "chepa-desktop", "chepa-desk
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ChepaMotos", "ChepaMotos", "{D28F7190-CF12-8D57-6A19-A9F2015AD9C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChepaMotos", "chepa-desktop\ChepaMotos\ChepaMotos\ChepaMotos.csproj", "{E3D492B9-6062-44A0-F91A-80B8F3BAAEBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChepaMotos", "chepa-desktop/ChepaMotos/ChepaMotos/ChepaMotos.csproj", "{E3D492B9-6062-44A0-F91A-80B8F3BAAEBE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
