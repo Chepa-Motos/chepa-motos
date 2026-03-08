@@ -28,6 +28,7 @@ public partial class MechanicsView : ContentView
         var counts = MockDataService.GetTodayInvoiceCountByMechanic();
 
         MechanicsContainer.Children.Clear();
+        EmptyLabel.IsVisible = sorted.Count == 0;
 
         foreach (var mech in sorted)
         {

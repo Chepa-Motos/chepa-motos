@@ -214,14 +214,14 @@
             <Grid ColumnDefinitions="Auto,*,Auto" Padding="24,10">
                 <!-- Left: Print + Export -->
                 <HorizontalStackLayout Grid.Column="0" Spacing="10">
-                    <Button Text="🖨 Imprimir"
+                    <Button Text="Imprimir"
                             FontFamily="IBMPlexSansMedium" FontSize="13"
                             TextColor="{StaticResource TextPrimary}"
                             BackgroundColor="{StaticResource Surface2}"
                             CornerRadius="8"
                             Padding="18,10"
                             Clicked="OnPrintClicked" />
-                    <Button Text="📄 Exportar PDF"
+                    <Button Text="Exportar PDF"
                             FontFamily="IBMPlexSansMedium" FontSize="13"
                             TextColor="{StaticResource TextPrimary}"
                             BackgroundColor="{StaticResource Surface2}"

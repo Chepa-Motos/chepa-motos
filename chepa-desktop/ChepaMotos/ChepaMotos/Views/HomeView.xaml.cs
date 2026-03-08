@@ -70,6 +70,7 @@ public partial class HomeView : ContentView
     private void BuildInvoiceRows(List<Invoice> invoices)
     {
         InvoiceRowsContainer.Children.Clear();
+        InvoicesEmptyLabel.IsVisible = invoices.Count == 0;
 
         foreach (var invoice in invoices)
         {
@@ -215,6 +216,8 @@ public partial class HomeView : ContentView
         var activeMechanics = MockDataService.GetMechanics(activeOnly: true);
         // TODO: [API] This is computed client-side from GET /invoices?date=today&type=SERVICE
         var invoiceCounts = MockDataService.GetTodayInvoiceCountByMechanic();
+
+        MechanicsEmptyLabel.IsVisible = activeMechanics.Count == 0;
 
         foreach (var mechanic in activeMechanics)
         {

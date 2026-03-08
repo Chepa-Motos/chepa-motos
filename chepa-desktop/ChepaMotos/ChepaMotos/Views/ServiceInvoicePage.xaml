@@ -115,7 +115,7 @@
                                    TextChanged="OnPlateTextChanged" />
                         </Border>
                         <Label x:Name="PlateWarning"
-                               Text="⚠ Formato de placa no común detectado"
+                               Text="Formato de placa no comun detectado"
                                FontFamily="IBMPlexSans" FontSize="11"
                                TextColor="{StaticResource Amber}"
                                IsVisible="False" />

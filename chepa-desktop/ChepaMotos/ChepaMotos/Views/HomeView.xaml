@@ -128,6 +128,15 @@
                         <!-- Dynamic invoice rows -->
                         <VerticalStackLayout x:Name="InvoiceRowsContainer" Spacing="0" />
 
+                        <!-- Empty state -->
+                        <Label x:Name="InvoicesEmptyLabel"
+                               Text="No hay facturas registradas hoy"
+                               FontFamily="IBMPlexSans" FontSize="14"
+                               TextColor="{StaticResource TextMuted}"
+                               HorizontalTextAlignment="Center"
+                               Padding="24,40"
+                               IsVisible="False" />
+
                     </VerticalStackLayout>
                 </Border>
 
@@ -146,6 +155,15 @@
 
                         <!-- Dynamic mechanics list -->
                         <VerticalStackLayout x:Name="MechanicsContainer" Spacing="0" />
+
+                        <!-- Empty state -->
+                        <Label x:Name="MechanicsEmptyLabel"
+                               Text="No hay mecanicos activos"
+                               FontFamily="IBMPlexSans" FontSize="14"
+                               TextColor="{StaticResource TextMuted}"
+                               HorizontalTextAlignment="Center"
+                               Padding="24,40"
+                               IsVisible="False" />
 
                     </VerticalStackLayout>
                 </Border>
