@@ -37,12 +37,19 @@ public partial class DeliveryInvoicePage : ContentPage
             Application.Current?.CloseWindow(window);
     }
 
+    /// <summary>Fired after a delivery invoice is successfully confirmed.</summary>
+    public event Action? InvoiceConfirmed;
+
     private void OnConfirmClicked(object? sender, EventArgs e)
     {
         if (!ValidateForm())
             return;
 
-        // Will call service layer in the future
+        // TODO: [API] Replace with: await InvoiceService.CreateDeliveryInvoice(request)
+        // Maps to: POST /invoices/delivery
+
+        InvoiceConfirmed?.Invoke();
+
         if (Window is Window window)
             Application.Current?.CloseWindow(window);
     }

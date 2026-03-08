@@ -1,5 +1,7 @@
 namespace ChepaMotos.Views;
 
+using ChepaMotos.Services;
+
 public partial class MainLayout : ContentPage
 {
     private readonly Dictionary<string, Border> _navItems;
@@ -60,6 +62,11 @@ public partial class MainLayout : ContentPage
     private void OnServiceInvoiceClicked(object? sender, EventArgs e)
     {
         var page = new ServiceInvoicePage();
+        page.InvoiceConfirmed += () => MainThread.BeginInvokeOnMainThread(() =>
+        {
+            ToastService.ShowSuccess(this, "Factura de servicio registrada");
+            RefreshCurrentView();
+        });
         var window = new Window(page)
         {
             Title = "Factura de Servicio",
@@ -75,6 +82,11 @@ public partial class MainLayout : ContentPage
     private void OnDeliveryInvoiceClicked(object? sender, EventArgs e)
     {
         var page = new DeliveryInvoicePage();
+        page.InvoiceConfirmed += () => MainThread.BeginInvokeOnMainThread(() =>
+        {
+            ToastService.ShowSuccess(this, "Factura de venta registrada");
+            RefreshCurrentView();
+        });
         var window = new Window(page)
         {
             Title = "Factura de Venta",
@@ -85,6 +97,24 @@ public partial class MainLayout : ContentPage
         };
         AttachCloseConfirmation(window, page);
         Application.Current?.OpenWindow(window);
+    }
+
+    /// <summary>Refresh the currently visible view after data changes.</summary>
+    private void RefreshCurrentView()
+    {
+        if (ContentArea.Content is HomeView homeView)
+            homeView.RefreshData();
+        else
+        {
+            // Rebuild the current view to pick up changes
+            ContentArea.Content = _currentNav switch
+            {
+                "Facturas" => new InvoicesView(),
+                "Liquidaciones" => new LiquidationsView(),
+                "Mecanicos" => new MechanicsView(),
+                _ => ContentArea.Content,
+            };
+        }
     }
 
     /// <summary>

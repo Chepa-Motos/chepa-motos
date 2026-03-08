@@ -179,6 +179,7 @@ public partial class InvoiceViewerPage : ContentPage
         ShowCancelledState();
         CancelInvoiceButton.IsVisible = false;
 
+        ToastService.ShowSuccess(this, $"Factura #{_invoice.Id:D3} anulada");
         InvoiceCancelled?.Invoke();
     }
 
@@ -252,20 +253,14 @@ public partial class InvoiceViewerPage : ContentPage
 
             InvoicePdfService.SaveReceiptPdf(_invoice, filePath);
 
-            bool openFile = await DisplayAlertAsync(
-                "PDF exportado",
-                $"Archivo guardado en:\n{filePath}",
-                "Abrir archivo",
-                "Cerrar");
+            ToastService.ShowSuccess(this, "PDF exportado correctamente");
 
-            if (openFile)
+            // Open the file in the default viewer
+            Process.Start(new ProcessStartInfo
             {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = filePath,
-                    UseShellExecute = true
-                });
-            }
+                FileName = filePath,
+                UseShellExecute = true
+            });
         }
         catch (Exception ex)
         {
