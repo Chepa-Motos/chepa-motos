@@ -7,11 +7,11 @@
              BackgroundColor="{StaticResource Background}"
              NavigationPage.HasNavigationBar="False">
 
-    <Grid RowDefinitions="*,Auto">
+    <Grid x:Name="RootGrid" RowDefinitions="*,Auto">
         <!-- ═══════════════════════════════════════════════ -->
         <!-- SCROLLABLE BODY                                 -->
         <!-- ═══════════════════════════════════════════════ -->
-        <ScrollView Grid.Row="0">
+        <ScrollView x:Name="FormScrollView" Grid.Row="0">
             <VerticalStackLayout Spacing="0" Padding="0">
 
                 <!-- ─── Shop header ─────────────────────── -->
@@ -210,7 +210,9 @@
                                                        Placeholder="Descripción del ítem"
                                                        PlaceholderColor="{StaticResource TextMuted}"
                                                        FontFamily="IBMPlexSans" FontSize="13"
-                                                       BackgroundColor="Transparent" />
+                                                       BackgroundColor="Transparent"
+                                                       Focused="OnDescriptionEntryFocused"
+                                                       Completed="OnDescriptionEntryCompleted" />
                                             </Border>
                                             <Border Grid.Column="2" StrokeShape="RoundRectangle 4" Stroke="{StaticResource Border}" StrokeThickness="1" BackgroundColor="{StaticResource Surface}" Padding="0">
                                                 <Entry Text="{Binding UnitPrice, Mode=TwoWay}"
@@ -219,7 +221,8 @@
                                                        FontFamily="IBMPlexMono" FontSize="13"
                                                        HorizontalTextAlignment="End"
                                                        Keyboard="Numeric"
-                                                       BackgroundColor="Transparent">
+                                                       BackgroundColor="Transparent"
+                                                       Completed="OnPriceEntryCompleted">
                                                     <Entry.Behaviors>
                                                         <behaviors:CurrencyInputBehavior />
                                                     </Entry.Behaviors>
@@ -346,6 +349,43 @@
                         Clicked="OnConfirmClicked" />
             </HorizontalStackLayout>
         </VerticalStackLayout>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- AUTOCOMPLETE SUGGESTIONS OVERLAY                -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <BoxView x:Name="DismissOverlay"
+                 Grid.Row="0"
+                 Grid.RowSpan="2"
+                 BackgroundColor="#01000000"
+                 IsVisible="False"
+                 InputTransparent="False"
+                 ZIndex="99">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnDismissOverlayTapped" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <Border x:Name="SuggestionsPopup"
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                IsVisible="False"
+                StrokeShape="RoundRectangle 6"
+                Stroke="{StaticResource Border}"
+                StrokeThickness="1"
+                BackgroundColor="{StaticResource Surface}"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                WidthRequest="320"
+                MaximumHeightRequest="220"
+                ZIndex="100"
+                Shadow="{x:Null}">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.15" />
+            </Border.Shadow>
+            <ScrollView>
+                <VerticalStackLayout x:Name="SuggestionsContainer" Spacing="0" />
+            </ScrollView>
+        </Border>
 
     </Grid>
 

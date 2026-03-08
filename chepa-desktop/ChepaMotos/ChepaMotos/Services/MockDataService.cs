@@ -150,6 +150,41 @@ public static class MockDataService
     public static string FormatCurrency(decimal value)
         => $"${value:N0}".Replace(",", ".");
 
+    // ── Item suggestions (autocomplete) ──────────────────
+
+    /// <summary>
+    /// Simulates GET /invoice-items/suggestions?model={model}&amp;q={query}.
+    /// Searches SERVICE invoice items whose vehicle model contains `model`
+    /// and whose description starts with or contains `query`.
+    /// Returns max 10 suggestions ordered by frequency.
+    /// </summary>
+    public static List<ItemSuggestion> GetItemSuggestions(string model, string query)
+    {
+        if (string.IsNullOrWhiteSpace(model) || string.IsNullOrWhiteSpace(query) || query.Length < 2)
+            return [];
+
+        var q = query.Trim();
+
+        // Collect item descriptions + prices from SERVICE invoices whose vehicle model matches
+        var matchingItems = _invoices
+            .Where(i => i.InvoiceType == "SERVICE" && !i.IsCancelled && i.Vehicle is not null
+                        && i.Vehicle.Model.Contains(model.Trim(), StringComparison.OrdinalIgnoreCase))
+            .SelectMany(i => i.Items)
+            .Where(item => item.Description.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .GroupBy(item => item.Description, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new ItemSuggestion
+            {
+                Description = g.First().Description,
+                UnitPrice = g.OrderByDescending(x => x.Id).First().UnitPrice, // most recent price
+            })
+            .OrderByDescending(s => s.Description.StartsWith(q, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(s => s.Description)
+            .Take(10)
+            .ToList();
+
+        return matchingItems;
+    }
+
     // ══════════════════════════════════════════════════════
     // SEED DATA
     // ══════════════════════════════════════════════════════
