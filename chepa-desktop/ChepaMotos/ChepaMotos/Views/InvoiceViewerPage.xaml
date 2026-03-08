@@ -210,16 +210,46 @@
                 </Grid>
             </Border>
 
-            <!-- Close button -->
-            <HorizontalStackLayout HorizontalOptions="End" Spacing="10" Padding="24,10">
-                <Button Text="Cerrar"
-                        FontFamily="IBMPlexSansMedium" FontSize="13"
-                        TextColor="{StaticResource White}"
-                        BackgroundColor="{StaticResource TextPrimary}"
-                        CornerRadius="8"
-                        Padding="18,10"
-                        Clicked="OnCloseClicked" />
-            </HorizontalStackLayout>
+            <!-- Action buttons -->
+            <Grid ColumnDefinitions="Auto,*,Auto" Padding="24,10">
+                <!-- Left: Print + Export -->
+                <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                    <Button Text="🖨 Imprimir"
+                            FontFamily="IBMPlexSansMedium" FontSize="13"
+                            TextColor="{StaticResource TextPrimary}"
+                            BackgroundColor="{StaticResource Surface2}"
+                            CornerRadius="8"
+                            Padding="18,10"
+                            Clicked="OnPrintClicked" />
+                    <Button Text="📄 Exportar PDF"
+                            FontFamily="IBMPlexSansMedium" FontSize="13"
+                            TextColor="{StaticResource TextPrimary}"
+                            BackgroundColor="{StaticResource Surface2}"
+                            CornerRadius="8"
+                            Padding="18,10"
+                            Clicked="OnExportPdfClicked" />
+                </HorizontalStackLayout>
+
+                <!-- Right: Anular + Cerrar -->
+                <HorizontalStackLayout Grid.Column="2" Spacing="10">
+                    <Button x:Name="CancelInvoiceButton"
+                            Text="Anular factura"
+                            FontFamily="IBMPlexSansMedium" FontSize="13"
+                            TextColor="{StaticResource AnuladaText}"
+                            BackgroundColor="{StaticResource AnuladaBg}"
+                            CornerRadius="8"
+                            Padding="18,10"
+                            Clicked="OnCancelInvoiceClicked"
+                            IsVisible="False" />
+                    <Button Text="Cerrar"
+                            FontFamily="IBMPlexSansMedium" FontSize="13"
+                            TextColor="{StaticResource White}"
+                            BackgroundColor="{StaticResource TextPrimary}"
+                            CornerRadius="8"
+                            Padding="18,10"
+                            Clicked="OnCloseClicked" />
+                </HorizontalStackLayout>
+            </Grid>
         </VerticalStackLayout>
 
     </Grid>

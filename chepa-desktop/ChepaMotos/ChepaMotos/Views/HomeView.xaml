@@ -32,10 +32,10 @@
                         Padding="16">
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Total facturado" Style="{StaticResource KpiTitle}" />
-                        <Label Text="$1.247.300"
+                        <Label x:Name="KpiTotalValue"
                                Style="{StaticResource KpiValue}"
                                TextColor="{StaticResource Accent}" />
-                        <Label Text="12 facturas hoy"
+                        <Label x:Name="KpiTotalSubtitle"
                                FontFamily="IBMPlexMono" FontSize="11"
                                TextColor="{StaticResource TextMuted}" />
                     </VerticalStackLayout>
@@ -50,7 +50,7 @@
                         Padding="16">
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Corte taller" Style="{StaticResource KpiTitle}" />
-                        <Label Text="$374.190"
+                        <Label x:Name="KpiShopValue"
                                Style="{StaticResource KpiValue}"
                                TextColor="{StaticResource Green}" />
                         <Label Text="30% del total"
@@ -68,7 +68,7 @@
                         Padding="16">
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Factura promedio" Style="{StaticResource KpiTitle}" />
-                        <Label Text="$103.941"
+                        <Label x:Name="KpiAvgValue"
                                Style="{StaticResource KpiValue}" />
                         <Label Text="servicio + venta"
                                FontFamily="IBMPlexMono" FontSize="11"
@@ -85,9 +85,9 @@
                         Padding="16">
                     <VerticalStackLayout Spacing="6">
                         <Label Text="Mecánicos activos" Style="{StaticResource KpiTitle}" />
-                        <Label Text="4"
+                        <Label x:Name="KpiMechanicsValue"
                                Style="{StaticResource KpiValue}" />
-                        <Label Text="de 6 registrados"
+                        <Label x:Name="KpiMechanicsSubtitle"
                                FontFamily="IBMPlexMono" FontSize="11"
                                TextColor="{StaticResource TextMuted}" />
                     </VerticalStackLayout>
@@ -144,64 +144,8 @@
                                Style="{StaticResource SectionHeading}"
                                Padding="16,14,16,10" />
 
-                        <!-- Mechanic 1 -->
-                        <Grid ColumnDefinitions="*,Auto,Auto"
-                              Padding="16,10">
-                            <Label Grid.Column="0" Text="Jose" Style="{StaticResource TableCell}" />
-                            <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}">
-                                <Label Text="Activo" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
-                            </Border>
-                            <Label Grid.Column="2" Text="5 fact."
-                                   FontFamily="IBMPlexMono" FontSize="11"
-                                   TextColor="{StaticResource TextMuted}"
-                                   VerticalTextAlignment="Center"
-                                   Margin="8,0,0,0" />
-                        </Grid>
-                        <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-
-                        <!-- Mechanic 2 -->
-                        <Grid ColumnDefinitions="*,Auto,Auto"
-                              Padding="16,10">
-                            <Label Grid.Column="0" Text="Carlos" Style="{StaticResource TableCell}" />
-                            <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}">
-                                <Label Text="Activo" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
-                            </Border>
-                            <Label Grid.Column="2" Text="3 fact."
-                                   FontFamily="IBMPlexMono" FontSize="11"
-                                   TextColor="{StaticResource TextMuted}"
-                                   VerticalTextAlignment="Center"
-                                   Margin="8,0,0,0" />
-                        </Grid>
-                        <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-
-                        <!-- Mechanic 3 -->
-                        <Grid ColumnDefinitions="*,Auto,Auto"
-                              Padding="16,10">
-                            <Label Grid.Column="0" Text="Pedro" Style="{StaticResource TableCell}" />
-                            <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}">
-                                <Label Text="Activo" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
-                            </Border>
-                            <Label Grid.Column="2" Text="2 fact."
-                                   FontFamily="IBMPlexMono" FontSize="11"
-                                   TextColor="{StaticResource TextMuted}"
-                                   VerticalTextAlignment="Center"
-                                   Margin="8,0,0,0" />
-                        </Grid>
-                        <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-
-                        <!-- Mechanic 4 -->
-                        <Grid ColumnDefinitions="*,Auto,Auto"
-                              Padding="16,10">
-                            <Label Grid.Column="0" Text="Miguel" Style="{StaticResource TableCell}" />
-                            <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}">
-                                <Label Text="Activo" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
-                            </Border>
-                            <Label Grid.Column="2" Text="2 fact."
-                                   FontFamily="IBMPlexMono" FontSize="11"
-                                   TextColor="{StaticResource TextMuted}"
-                                   VerticalTextAlignment="Center"
-                                   Margin="8,0,0,0" />
-                        </Grid>
+                        <!-- Dynamic mechanics list -->
+                        <VerticalStackLayout x:Name="MechanicsContainer" Spacing="0" />
 
                     </VerticalStackLayout>
                 </Border>

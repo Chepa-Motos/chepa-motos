@@ -11,8 +11,14 @@
                        Style="{StaticResource PageHeading}" />
                 <Button Grid.Column="1"
                         Text="+ Nuevo mecánico"
-                        Style="{StaticResource CtaAccentButton}" />
+                        Style="{StaticResource CtaAccentButton}"
+                        Clicked="OnAddMechanicClicked" />
             </Grid>
+
+            <!-- Summary -->
+            <Label x:Name="SummaryLabel"
+                   FontFamily="IBMPlexMono" FontSize="12"
+                   TextColor="{StaticResource TextMuted}" />
 
             <!-- Mechanics list -->
             <Border Stroke="{StaticResource Border}"
@@ -20,81 +26,7 @@
                     StrokeThickness="1"
                     BackgroundColor="{StaticResource Surface}"
                     Padding="0">
-                <VerticalStackLayout Spacing="0">
-
-                    <!-- Mechanic 1 -->
-                    <Grid ColumnDefinitions="*,Auto,Auto"
-                          Padding="16,14">
-                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                            <Label Text="Jose Garcia"
-                                   FontFamily="IBMPlexSansMedium" FontSize="14"
-                                   TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="5 facturas hoy · $304.100"
-                                   FontFamily="IBMPlexMono" FontSize="11"
-                                   TextColor="{StaticResource TextMuted}" />
-                        </VerticalStackLayout>
-                        <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}" Margin="0,0,12,0">
-                            <Label Text="Activo" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
-                        </Border>
-                        <Switch Grid.Column="2" IsToggled="True" />
-                    </Grid>
-                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-
-                    <!-- Mechanic 2 -->
-                    <Grid ColumnDefinitions="*,Auto,Auto"
-                          Padding="16,14">
-                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                            <Label Text="Carlos Martínez"
-                                   FontFamily="IBMPlexSansMedium" FontSize="14"
-                                   TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="3 facturas hoy · $198.500"
-                                   FontFamily="IBMPlexMono" FontSize="11"
-                                   TextColor="{StaticResource TextMuted}" />
-                        </VerticalStackLayout>
-                        <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}" Margin="0,0,12,0">
-                            <Label Text="Activo" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
-                        </Border>
-                        <Switch Grid.Column="2" IsToggled="True" />
-                    </Grid>
-                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-
-                    <!-- Mechanic 3 -->
-                    <Grid ColumnDefinitions="*,Auto,Auto"
-                          Padding="16,14">
-                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                            <Label Text="Pedro López"
-                                   FontFamily="IBMPlexSansMedium" FontSize="14"
-                                   TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="2 facturas hoy · $89.500"
-                                   FontFamily="IBMPlexMono" FontSize="11"
-                                   TextColor="{StaticResource TextMuted}" />
-                        </VerticalStackLayout>
-                        <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource GreenLight}" Margin="0,0,12,0">
-                            <Label Text="Activo" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource Green}" />
-                        </Border>
-                        <Switch Grid.Column="2" IsToggled="True" />
-                    </Grid>
-                    <BoxView HeightRequest="1" Color="{StaticResource Border}" />
-
-                    <!-- Mechanic 4 (inactive) -->
-                    <Grid ColumnDefinitions="*,Auto,Auto"
-                          Padding="16,14"
-                          Opacity="0.6">
-                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                            <Label Text="Andrés Ríos"
-                                   FontFamily="IBMPlexSansMedium" FontSize="14"
-                                   TextColor="{StaticResource TextPrimary}" />
-                            <Label Text="Inactivo"
-                                   FontFamily="IBMPlexMono" FontSize="11"
-                                   TextColor="{StaticResource TextMuted}" />
-                        </VerticalStackLayout>
-                        <Border Grid.Column="1" Style="{StaticResource Badge}" BackgroundColor="{StaticResource Surface2}" Margin="0,0,12,0">
-                            <Label Text="Inactivo" FontFamily="IBMPlexSansMedium" FontSize="11" TextColor="{StaticResource TextMuted}" />
-                        </Border>
-                        <Switch Grid.Column="2" IsToggled="False" />
-                    </Grid>
-
-                </VerticalStackLayout>
+                <VerticalStackLayout x:Name="MechanicsContainer" Spacing="0" />
             </Border>
 
         </VerticalStackLayout>

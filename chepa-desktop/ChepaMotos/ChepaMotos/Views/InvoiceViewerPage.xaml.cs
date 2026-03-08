@@ -1,12 +1,22 @@
 using ChepaMotos.Models;
+using ChepaMotos.Services;
+using System.Diagnostics;
 
 namespace ChepaMotos.Views;
 
 public partial class InvoiceViewerPage : ContentPage
 {
+    private Invoice _invoice;
+
+    /// <summary>
+    /// Fired after an invoice is successfully cancelled, so parent views can refresh.
+    /// </summary>
+    public event Action? InvoiceCancelled;
+
     public InvoiceViewerPage(Invoice invoice)
     {
         InitializeComponent();
+        _invoice = invoice;
         LoadInvoice(invoice);
     }
 
@@ -30,13 +40,14 @@ public partial class InvoiceViewerPage : ContentPage
             TypeBadgeLabel.TextColor = (Color)Application.Current.Resources["Blue"];
         }
 
-        // Status badge
+        // Status badge + Anular button visibility
         if (invoice.IsCancelled)
         {
-            StatusBadge.IsVisible = true;
-            StatusBadge.BackgroundColor = Color.FromArgb("#FCE8E8");
-            StatusBadgeLabel.Text = "Anulada";
-            StatusBadgeLabel.TextColor = Color.FromArgb("#C0392B");
+            ShowCancelledState();
+        }
+        else
+        {
+            CancelInvoiceButton.IsVisible = true;
         }
 
         // Fields based on type
@@ -150,10 +161,116 @@ public partial class InvoiceViewerPage : ContentPage
         }
     }
 
+    private async void OnCancelInvoiceClicked(object? sender, EventArgs e)
+    {
+        bool confirm = await DisplayAlertAsync(
+            "Anular factura",
+            $"¿Está seguro de que desea anular la Factura #{_invoice.Id:D3}?\n\nEsta acción no se puede deshacer.",
+            "Sí, anular",
+            "Cancelar");
+
+        if (!confirm) return;
+
+        // TODO: [API] Replace with: await InvoiceService.CancelInvoice(_invoice.Id)
+        // Maps to: PATCH /invoices/{id}/cancel
+        MockDataService.CancelInvoice(_invoice.Id);
+
+        _invoice.IsCancelled = true;
+        ShowCancelledState();
+        CancelInvoiceButton.IsVisible = false;
+
+        InvoiceCancelled?.Invoke();
+    }
+
+    private void ShowCancelledState()
+    {
+        StatusBadge.IsVisible = true;
+        StatusBadge.BackgroundColor = Color.FromArgb("#FCE8E8");
+        StatusBadgeLabel.Text = "Anulada";
+        StatusBadgeLabel.TextColor = Color.FromArgb("#C0392B");
+    }
+
     private void OnCloseClicked(object? sender, EventArgs e)
     {
         if (Window is Window window)
             Application.Current?.CloseWindow(window);
+    }
+
+    // ── Print / Export PDF ───────────────────────────────
+
+    private async void OnPrintClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            // Generate PDF to a temp file
+            var tempPath = Path.Combine(Path.GetTempPath(), $"ChepaMotos_Factura_{_invoice.Id:D3}.pdf");
+            InvoicePdfService.SaveReceiptPdf(_invoice, tempPath);
+
+            // Try the "print" verb first (requires a PDF reader that supports it)
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = tempPath,
+                    Verb = "print",
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // Fallback: open the PDF in the default viewer so the user can print from there
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = tempPath,
+                    UseShellExecute = true
+                });
+
+                await DisplayAlertAsync(
+                    "Imprimir",
+                    "Se abrió el PDF en el visor predeterminado. Usa Ctrl+P para imprimir desde ahí.",
+                    "Entendido");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"No se pudo imprimir: {ex.Message}", "Aceptar");
+        }
+    }
+
+    private async void OnExportPdfClicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            var typeLabel = _invoice.InvoiceType == "SERVICE" ? "Servicio" : "Venta";
+            var defaultName = $"Factura_{_invoice.Id:D3}_{typeLabel}_{_invoice.CreatedAt:yyyyMMdd}.pdf";
+
+            // Use the Documents folder as default save location
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var chepaFolder = Path.Combine(documentsPath, "ChepaMotos");
+            Directory.CreateDirectory(chepaFolder);
+            var filePath = Path.Combine(chepaFolder, defaultName);
+
+            InvoicePdfService.SaveReceiptPdf(_invoice, filePath);
+
+            bool openFile = await DisplayAlertAsync(
+                "PDF exportado",
+                $"Archivo guardado en:\n{filePath}",
+                "Abrir archivo",
+                "Cerrar");
+
+            if (openFile)
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"No se pudo exportar: {ex.Message}", "Aceptar");
+        }
     }
 
     private static string FormatCurrency(decimal value)
