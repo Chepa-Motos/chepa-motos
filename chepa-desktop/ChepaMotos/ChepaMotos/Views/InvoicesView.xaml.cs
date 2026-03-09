@@ -74,7 +74,7 @@ public partial class InvoicesView : ContentView
             };
             // TODO: [API] Replace with: var invoices = await InvoiceService.GetInvoices(date, type)
             // Maps to: GET /invoices?date=YYYY-MM-DD&type=SERVICE|DELIVERY
-            invoices = MockDataService.GetInvoices(date: date, type: type);
+            invoices = MockDataService.GetInvoices(date: date, type: type, cancelled: false);
         }
 
         // Sort by newest first

@@ -31,10 +31,7 @@ public partial class MainLayout : ContentPage
         {
             border.BackgroundColor = Colors.Transparent;
             if (border.Content is Label label)
-                label.Style = (Style)Resources.MergedDictionaries
-                    .SelectMany(d => d)
-                    .FirstOrDefault(kv => kv.Key.ToString() == "SidebarNavLabel").Value
-                    ?? Application.Current!.Resources["SidebarNavLabel"] as Style;
+                label.Style = Application.Current!.Resources["SidebarNavLabel"] as Style;
         }
 
         // Highlight selected

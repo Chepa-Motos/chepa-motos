@@ -25,6 +25,11 @@ public partial class HomeView : ContentView
             _timer.Tick += (_, _) => UpdateDateTime();
             _timer.Start();
         }
+        else if (Handler is null && _timer is not null)
+        {
+            _timer.Stop();
+            _timer = null;
+        }
     }
 
     private void UpdateDateTime()

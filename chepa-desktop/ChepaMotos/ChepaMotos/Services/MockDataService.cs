@@ -96,6 +96,88 @@ public static class MockDataService
             invoice.IsCancelled = true;
     }
 
+    /// <summary>
+    /// Creates a SERVICE invoice in memory. Mirrors POST /invoices/service.
+    /// Reuses existing vehicle if plate matches, otherwise creates a new one.
+    /// </summary>
+    public static Invoice AddServiceInvoice(long mechanicId, string plate, string model,
+        decimal laborAmount, List<(string description, decimal quantity, decimal unitPrice)> items)
+    {
+        var mechanic = _mechanics.FirstOrDefault(m => m.Id == mechanicId)
+            ?? throw new InvalidOperationException($"Mechanic {mechanicId} not found");
+
+        // Reuse or create vehicle
+        var vehicle = _vehicles.FirstOrDefault(v => v.Plate.Equals(plate, StringComparison.OrdinalIgnoreCase));
+        if (vehicle is null)
+        {
+            vehicle = new Vehicle
+            {
+                Id = _vehicles.Count > 0 ? _vehicles.Max(v => v.Id) + 1 : 1,
+                Plate = plate.ToUpperInvariant(),
+                Model = model.Trim(),
+            };
+            _vehicles.Add(vehicle);
+        }
+
+        var nextItemId = _invoices.SelectMany(i => i.Items).DefaultIfEmpty().Max(i => i?.Id ?? 0) + 1;
+        var invoiceItems = items.Select((item, idx) => new InvoiceItem
+        {
+            Id = nextItemId + idx,
+            Description = item.description.Trim(),
+            Quantity = item.quantity,
+            UnitPrice = item.unitPrice,
+            Subtotal = item.quantity * item.unitPrice,
+        }).ToList();
+
+        var totalItems = invoiceItems.Sum(i => i.Subtotal);
+
+        var invoice = new Invoice
+        {
+            Id = _invoices.Count > 0 ? _invoices.Max(i => i.Id) + 1 : 1,
+            InvoiceType = "SERVICE",
+            Mechanic = new Mechanic { Id = mechanic.Id, Name = mechanic.Name, IsActive = mechanic.IsActive },
+            Vehicle = vehicle,
+            CreatedAt = DateTime.Now,
+            LaborAmount = laborAmount,
+            TotalAmount = totalItems + laborAmount,
+            Items = invoiceItems,
+        };
+
+        _invoices.Insert(0, invoice);
+        return invoice;
+    }
+
+    /// <summary>
+    /// Creates a DELIVERY invoice in memory. Mirrors POST /invoices/delivery.
+    /// </summary>
+    public static Invoice AddDeliveryInvoice(string buyerName,
+        List<(string description, decimal quantity, decimal unitPrice)> items)
+    {
+        var nextItemId = _invoices.SelectMany(i => i.Items).DefaultIfEmpty().Max(i => i?.Id ?? 0) + 1;
+        var invoiceItems = items.Select((item, idx) => new InvoiceItem
+        {
+            Id = nextItemId + idx,
+            Description = item.description.Trim(),
+            Quantity = item.quantity,
+            UnitPrice = item.unitPrice,
+            Subtotal = item.quantity * item.unitPrice,
+        }).ToList();
+
+        var invoice = new Invoice
+        {
+            Id = _invoices.Count > 0 ? _invoices.Max(i => i.Id) + 1 : 1,
+            InvoiceType = "DELIVERY",
+            BuyerName = buyerName.Trim(),
+            CreatedAt = DateTime.Now,
+            LaborAmount = 0m,
+            TotalAmount = invoiceItems.Sum(i => i.Subtotal),
+            Items = invoiceItems,
+        };
+
+        _invoices.Insert(0, invoice);
+        return invoice;
+    }
+
     // ── Liquidations ─────────────────────────────────────
 
     public static List<Liquidation> GetLiquidations(long? mechanicId = null, DateTime? date = null)
@@ -239,7 +321,7 @@ public static class MockDataService
             {
                 Id = 14, InvoiceType = "SERVICE", Mechanic = m1, Vehicle = v1,
                 CreatedAt = today.AddHours(9).AddMinutes(45),
-                LaborAmount = 65000m, TotalAmount = 209100m,
+                LaborAmount = 65000m, TotalAmount = 149100m,
                 Items =
                 [
                     new() { Id = 51, Description = "Tornillo Leva", Quantity = 1, UnitPrice = 3900m, Subtotal = 3900m },
@@ -401,12 +483,12 @@ public static class MockDataService
             {
                 Id = 1, InvoiceType = "SERVICE", Mechanic = m4, Vehicle = v1,
                 CreatedAt = twoDaysAgo.AddHours(15).AddMinutes(10),
-                LaborAmount = 60000m, TotalAmount = 245000m,
+                LaborAmount = 60000m, TotalAmount = 244999m,
                 Items =
                 [
                     new() { Id = 15, Description = "Kit de embrague completo", Quantity = 1, UnitPrice = 95000m, Subtotal = 95000m },
                     new() { Id = 16, Description = "Aceite transmisión", Quantity = 1, UnitPrice = 35000m, Subtotal = 35000m },
-                    new() { Id = 17, Description = "Resorte embrague", Quantity = 3, UnitPrice = 18333m, Subtotal = 55000m },
+                    new() { Id = 17, Description = "Resorte embrague", Quantity = 3, UnitPrice = 18333m, Subtotal = 54999m },
                 ],
             },
         ];

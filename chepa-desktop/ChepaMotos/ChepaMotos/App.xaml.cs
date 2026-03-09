@@ -5,6 +5,7 @@ namespace ChepaMotos
     public partial class App : Application
     {
         private Window? _mainWindow;
+        private bool _isClosing;
 
         public App()
         {
@@ -32,6 +33,7 @@ namespace ChepaMotos
 
                     appWindow.Closing += async (appWin, args) =>
                     {
+                        if (_isClosing) return;
                         args.Cancel = true;
                         var mainPage = window.Page;
                         if (mainPage == null) return;
@@ -44,13 +46,11 @@ namespace ChepaMotos
 
                         if (confirm)
                         {
-                            // Close all invoice windows first
+                            _isClosing = true;
                             var otherWindows = Windows.Where(w => w != _mainWindow).ToList();
                             foreach (var w in otherWindows)
                                 CloseWindow(w);
 
-                            // Now close the main window for real
-                            appWin.Closing -= null; // prevent re-entry
                             Current?.Quit();
                         }
                     };

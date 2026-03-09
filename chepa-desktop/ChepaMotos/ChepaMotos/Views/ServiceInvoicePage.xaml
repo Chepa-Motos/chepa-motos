@@ -76,16 +76,8 @@
                                     FontFamily="IBMPlexSans"
                                     FontSize="13"
                                     TextColor="{StaticResource TextPrimary}"
-                                    TitleColor="{StaticResource TextMuted}">
-                                <Picker.ItemsSource>
-                                    <x:Array Type="{x:Type x:String}">
-                                        <x:String>Jose</x:String>
-                                        <x:String>Carlos</x:String>
-                                        <x:String>Pedro</x:String>
-                                        <x:String>Miguel</x:String>
-                                    </x:Array>
-                                </Picker.ItemsSource>
-                            </Picker>
+                                    TitleColor="{StaticResource TextMuted}"
+                                    Title="Seleccionar..." />
                         </Border>
                         <Label x:Name="MechanicError"
                                FontFamily="IBMPlexSans" FontSize="11"
@@ -296,7 +288,8 @@
                         BackgroundColor="{StaticResource Surface}"
                         Padding="0">
                     <Entry x:Name="LaborEntry"
-                           Text="65.000"
+                           Placeholder="0"
+                           PlaceholderColor="{StaticResource TextMuted}"
                            FontFamily="IBMPlexMono" FontSize="13"
                            HorizontalTextAlignment="End"
                            Keyboard="Numeric"

@@ -11,6 +11,7 @@ public partial class ServiceInvoicePage : ContentPage
 {
     private readonly ObservableCollection<InvoiceItemRow> _items = [];
     private static readonly Regex PlateRegex = new(@"^[A-Z]{3}[0-9]{2}[A-Z]$", RegexOptions.Compiled);
+    private List<Mechanic> _mechanics = [];
 
     // Autocomplete state
     private CancellationTokenSource? _debounceCts;
@@ -26,10 +27,12 @@ public partial class ServiceInvoicePage : ContentPage
     {
         InitializeComponent();
 
-        // Seed with placeholder data
-        AddItem(new InvoiceItemRow { Quantity = "1", Description = "Tornillo Leva", UnitPrice = "3.900" });
-        AddItem(new InvoiceItemRow { Quantity = "2", Description = "Pastillas de freno", UnitPrice = "18.500" });
-        AddItem(new InvoiceItemRow()); // empty row ready for input
+        // Load active mechanics into picker
+        _mechanics = MockDataService.GetMechanics(activeOnly: true);
+        MechanicPicker.ItemsSource = _mechanics.Select(m => m.Name).ToList();
+
+        // Start with one empty row
+        AddItem(new InvoiceItemRow());
 
         BindableLayout.SetItemsSource(ItemsContainer, _items);
 
@@ -86,11 +89,31 @@ public partial class ServiceInvoicePage : ContentPage
 
         // TODO: [API] Replace with: await InvoiceService.CreateServiceInvoice(request)
         // Maps to: POST /invoices/service
+        var mechanicId = _mechanics[MechanicPicker.SelectedIndex].Id;
+        var plate = PlateEntry.Text?.Trim().ToUpperInvariant() ?? "";
+        var model = ModelEntry.Text?.Trim() ?? "";
+        var labor = CurrencyInputBehavior.GetValue(LaborEntry.Text);
+
+        var items = _items
+            .Where(i => !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0)
+            .Select(i => (i.Description.Trim(), ParseItemQuantity(i.Quantity), CurrencyInputBehavior.GetValue(i.UnitPrice)))
+            .ToList();
+
+        MockDataService.AddServiceInvoice(mechanicId, plate, model, labor, items);
 
         InvoiceConfirmed?.Invoke();
 
         if (Window is Window window)
             Application.Current?.CloseWindow(window);
+    }
+
+    private static decimal ParseItemQuantity(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return 0m;
+        var digits = new string(text.Where(c => char.IsDigit(c) || c == ',').ToArray());
+        digits = digits.Replace(",", ".");
+        return decimal.TryParse(digits, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0m;
     }
 
     // ── Plate handling ───────────────────────────────────
@@ -192,7 +215,6 @@ public partial class ServiceInvoicePage : ContentPage
     {
         if (sender is Button btn && btn.CommandParameter is InvoiceItemRow item)
         {
-            item.SubtotalChanged -= (_, _) => RecalculateTotal();
             _items.Remove(item);
             RecalculateTotal();
         }

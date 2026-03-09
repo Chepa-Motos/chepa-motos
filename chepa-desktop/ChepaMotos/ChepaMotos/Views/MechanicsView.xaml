@@ -26,16 +26,18 @@
                     StrokeThickness="1"
                     BackgroundColor="{StaticResource Surface}"
                     Padding="0">
-                <VerticalStackLayout x:Name="MechanicsContainer" Spacing="0" />
+                <Grid>
+                    <VerticalStackLayout x:Name="MechanicsContainer" Spacing="0" />
 
-                <!-- Empty state -->
-                <Label x:Name="EmptyLabel"
-                       Text="No hay mecanicos registrados"
-                       FontFamily="IBMPlexSans" FontSize="14"
-                       TextColor="{StaticResource TextMuted}"
-                       HorizontalTextAlignment="Center"
-                       Padding="24,40"
-                       IsVisible="False" />
+                    <!-- Empty state -->
+                    <Label x:Name="EmptyLabel"
+                           Text="No hay mecánicos registrados"
+                           FontFamily="IBMPlexSans" FontSize="14"
+                           TextColor="{StaticResource TextMuted}"
+                           HorizontalTextAlignment="Center"
+                           Padding="24,40"
+                           IsVisible="False" />
+                </Grid>
             </Border>
 
         </VerticalStackLayout>

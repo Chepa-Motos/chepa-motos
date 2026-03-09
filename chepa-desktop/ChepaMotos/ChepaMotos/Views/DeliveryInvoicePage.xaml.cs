@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using ChepaMotos.Behaviors;
+using ChepaMotos.Services;
 using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
@@ -12,10 +13,8 @@ public partial class DeliveryInvoicePage : ContentPage
     {
         InitializeComponent();
 
-        // Seed with placeholder data
-        AddItem(new InvoiceItemRow { Quantity = "2", Description = "Suzuki 150 Palanca de Freno", UnitPrice = "18.500" });
-        AddItem(new InvoiceItemRow { Quantity = "1", Description = "Cable de embrague AKT", UnitPrice = "12.000" });
-        AddItem(new InvoiceItemRow()); // empty row ready for input
+        // Start with one empty row
+        AddItem(new InvoiceItemRow());
 
         BindableLayout.SetItemsSource(ItemsContainer, _items);
 
@@ -47,11 +46,28 @@ public partial class DeliveryInvoicePage : ContentPage
 
         // TODO: [API] Replace with: await InvoiceService.CreateDeliveryInvoice(request)
         // Maps to: POST /invoices/delivery
+        var buyerName = BuyerEntry.Text?.Trim() ?? "";
+
+        var items = _items
+            .Where(i => !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0)
+            .Select(i => (i.Description.Trim(), ParseItemQuantity(i.Quantity), CurrencyInputBehavior.GetValue(i.UnitPrice)))
+            .ToList();
+
+        MockDataService.AddDeliveryInvoice(buyerName, items);
 
         InvoiceConfirmed?.Invoke();
 
         if (Window is Window window)
             Application.Current?.CloseWindow(window);
+    }
+
+    private static decimal ParseItemQuantity(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return 0m;
+        var digits = new string(text.Where(c => char.IsDigit(c) || c == ',').ToArray());
+        digits = digits.Replace(",", ".");
+        return decimal.TryParse(digits, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0m;
     }
 
     // ── Form validation ──────────────────────────────────
@@ -117,7 +133,6 @@ public partial class DeliveryInvoicePage : ContentPage
     {
         if (sender is Button btn && btn.CommandParameter is InvoiceItemRow item)
         {
-            item.SubtotalChanged -= (_, _) => RecalculateTotal();
             _items.Remove(item);
             RecalculateTotal();
         }
