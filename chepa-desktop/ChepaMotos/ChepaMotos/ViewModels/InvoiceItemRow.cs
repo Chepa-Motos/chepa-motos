@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using ChepaMotos.Behaviors;
+using ChepaMotos.Helpers;
 
 namespace ChepaMotos.ViewModels;
 
@@ -73,34 +74,7 @@ public class InvoiceItemRow : INotifyPropertyChanged
 
     private static decimal ParseNumber(string? text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return 0m;
-        // Keep digits, periods (thousands sep or decimal), and commas (decimal sep)
-        var cleaned = new string(text.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        // If it has periods as thousands separators but no comma, strip periods
-        // If it has a comma, treat comma as decimal separator
-        if (cleaned.Contains(','))
-        {
-            // e.g. "1.500,5" → "1500.5" or "1,5" → "1.5"
-            cleaned = cleaned.Replace(".", "").Replace(",", ".");
-        }
-        else
-        {
-            // e.g. "1.500" (thousands) or "1.5" (decimal)
-            // Count periods: if more than one, they're thousands separators
-            var periodCount = cleaned.Count(c => c == '.');
-            if (periodCount > 1)
-                cleaned = cleaned.Replace(".", "");
-            // If exactly one period and digits after are exactly 3, it's likely thousands
-            else if (periodCount == 1)
-            {
-                var afterDot = cleaned[(cleaned.IndexOf('.') + 1)..];
-                if (afterDot.Length == 3)
-                    cleaned = cleaned.Replace(".", ""); // thousands separator
-                // else keep it as decimal point
-            }
-        }
-        return decimal.TryParse(cleaned, System.Globalization.NumberStyles.Any,
-            System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0m;
+        return NumericInputParser.ParseDecimal(text);
     }
 
     private static string FormatCurrency(decimal value)

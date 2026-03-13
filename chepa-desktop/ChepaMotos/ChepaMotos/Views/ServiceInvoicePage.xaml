@@ -107,7 +107,7 @@
                                    TextChanged="OnPlateTextChanged" />
                         </Border>
                         <Label x:Name="PlateWarning"
-                               Text="Formato de placa no comun detectado"
+                               Text="Formato de placa no común detectado"
                                FontFamily="IBMPlexSans" FontSize="11"
                                TextColor="{StaticResource Amber}"
                                IsVisible="False" />
@@ -370,8 +370,7 @@
                 VerticalOptions="Start"
                 WidthRequest="320"
                 MaximumHeightRequest="220"
-                ZIndex="100"
-                Shadow="{x:Null}">
+                ZIndex="100">
             <Border.Shadow>
                 <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.15" />
             </Border.Shadow>

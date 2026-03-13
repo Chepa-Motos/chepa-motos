@@ -146,7 +146,7 @@ public partial class MechanicsView : ContentView
         // Maps to: PATCH /mechanics/{id}/status  Body: { "is_active": bool }
         MockDataService.UpdateMechanicStatus(mechanicId, isActive);
         LoadMechanics();
-        ToastService.ShowSuccess(this, isActive ? "Mecanico activado" : "Mecanico desactivado");
+        ToastService.ShowSuccess(this, isActive ? "Mecánico activado" : "Mecánico desactivado");
     }
 
     private async void OnAddMechanicClicked(object? sender, EventArgs e)
@@ -169,7 +169,7 @@ public partial class MechanicsView : ContentView
             // Maps to: POST /mechanics  Body: { "name": "..." }
             MockDataService.AddMechanic(name.Trim());
             LoadMechanics();
-            ToastService.ShowSuccess(this, "Mecanico agregado");
+            ToastService.ShowSuccess(this, "Mecánico agregado");
         }
     }
 }

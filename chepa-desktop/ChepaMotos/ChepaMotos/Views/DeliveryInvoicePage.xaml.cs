@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using ChepaMotos.Behaviors;
+using ChepaMotos.Helpers;
 using ChepaMotos.Services;
 using ChepaMotos.ViewModels;
 
@@ -63,11 +64,7 @@ public partial class DeliveryInvoicePage : ContentPage
 
     private static decimal ParseItemQuantity(string? text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return 0m;
-        var digits = new string(text.Where(c => char.IsDigit(c) || c == ',').ToArray());
-        digits = digits.Replace(",", ".");
-        return decimal.TryParse(digits, System.Globalization.NumberStyles.Any,
-            System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0m;
+        return NumericInputParser.ParseDecimal(text);
     }
 
     // ── Form validation ──────────────────────────────────
