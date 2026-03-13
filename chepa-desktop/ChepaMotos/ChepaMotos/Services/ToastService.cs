@@ -1,5 +1,7 @@
 namespace ChepaMotos.Services;
 
+using ChepaMotos.Helpers;
+
 /// <summary>
 /// Displays a dark toast notification at the bottom-right corner of a page.
 /// Auto-dismisses after 3 seconds.
@@ -22,14 +24,14 @@ public static class ToastService
     /// </summary>
     public static void ShowSuccess(ContentView view, string message)
     {
-        var page = FindParentPage(view);
+        var page = view.FindParentPage();
         if (page is not null)
             Show(page, message, ToastType.Success);
     }
 
     public static void ShowInfo(ContentView view, string message)
     {
-        var page = FindParentPage(view);
+        var page = view.FindParentPage();
         if (page is not null)
             Show(page, message, ToastType.Info);
     }
@@ -59,8 +61,8 @@ public static class ToastService
         // Animate in
         toast.Opacity = 0;
         toast.TranslationY = 20;
-        toast.FadeToAsync(1, 200, Easing.CubicOut);
-        toast.TranslateToAsync(0, 0, 200, Easing.CubicOut);
+        _ = toast.FadeToAsync(1, 200, Easing.CubicOut);
+        _ = toast.TranslateToAsync(0, 0, 200, Easing.CubicOut);
 
         // Auto-dismiss after 3 seconds
         _ = DismissAfterDelay(rootGrid, toast, 3000);
@@ -136,14 +138,4 @@ public static class ToastService
         return null;
     }
 
-    private static Page? FindParentPage(Element element)
-    {
-        var current = element.Parent;
-        while (current is not null)
-        {
-            if (current is Page page) return page;
-            current = current.Parent;
-        }
-        return null;
-    }
 }

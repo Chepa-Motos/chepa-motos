@@ -101,7 +101,8 @@ public static class MockDataService
     /// Reuses existing vehicle if plate matches, otherwise creates a new one.
     /// </summary>
     public static Invoice AddServiceInvoice(long mechanicId, string plate, string model,
-        decimal laborAmount, List<(string description, decimal quantity, decimal unitPrice)> items)
+        decimal laborAmount, DateTime createdAt,
+        List<(string description, decimal quantity, decimal unitPrice)> items)
     {
         var mechanic = _mechanics.FirstOrDefault(m => m.Id == mechanicId)
             ?? throw new InvalidOperationException($"Mechanic {mechanicId} not found");
@@ -137,7 +138,7 @@ public static class MockDataService
             InvoiceType = "SERVICE",
             Mechanic = new Mechanic { Id = mechanic.Id, Name = mechanic.Name, IsActive = mechanic.IsActive },
             Vehicle = vehicle,
-            CreatedAt = DateTime.Now,
+            CreatedAt = createdAt.Date,
             LaborAmount = laborAmount,
             TotalAmount = totalItems + laborAmount,
             Items = invoiceItems,
@@ -150,7 +151,7 @@ public static class MockDataService
     /// <summary>
     /// Creates a DELIVERY invoice in memory. Mirrors POST /invoices/delivery.
     /// </summary>
-    public static Invoice AddDeliveryInvoice(string buyerName,
+    public static Invoice AddDeliveryInvoice(string buyerName, DateTime createdAt,
         List<(string description, decimal quantity, decimal unitPrice)> items)
     {
         var nextItemId = _invoices.SelectMany(i => i.Items).DefaultIfEmpty().Max(i => i?.Id ?? 0) + 1;
@@ -168,7 +169,7 @@ public static class MockDataService
             Id = _invoices.Count > 0 ? _invoices.Max(i => i.Id) + 1 : 1,
             InvoiceType = "DELIVERY",
             BuyerName = buyerName.Trim(),
-            CreatedAt = DateTime.Now,
+            CreatedAt = createdAt.Date,
             LaborAmount = 0m,
             TotalAmount = invoiceItems.Sum(i => i.Subtotal),
             Items = invoiceItems,

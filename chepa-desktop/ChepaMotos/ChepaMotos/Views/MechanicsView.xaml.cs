@@ -1,4 +1,5 @@
 using ChepaMotos.Models;
+using ChepaMotos.Helpers;
 using ChepaMotos.Services;
 namespace ChepaMotos.Views;
 
@@ -171,20 +172,5 @@ public partial class MechanicsView : ContentView
             LoadMechanics();
             ToastService.ShowSuccess(this, "Mecánico agregado");
         }
-    }
-}
-
-// Extension to find parent Page from a View
-public static class ViewExtensions
-{
-    public static Page? FindParentPage(this Element element)
-    {
-        var current = element.Parent;
-        while (current != null)
-        {
-            if (current is Page page) return page;
-            current = current.Parent;
-        }
-        return null;
     }
 }

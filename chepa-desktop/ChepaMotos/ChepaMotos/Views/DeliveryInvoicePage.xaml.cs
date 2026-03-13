@@ -48,13 +48,14 @@ public partial class DeliveryInvoicePage : ContentPage
         // TODO: [API] Replace with: await InvoiceService.CreateDeliveryInvoice(request)
         // Maps to: POST /invoices/delivery
         var buyerName = BuyerEntry.Text?.Trim() ?? "";
+        var invoiceDate = DeliveryDatePicker.Date ?? DateTime.Today;
 
         var items = _items
             .Where(i => !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0)
             .Select(i => (i.Description.Trim(), ParseItemQuantity(i.Quantity), CurrencyInputBehavior.GetValue(i.UnitPrice)))
             .ToList();
 
-        MockDataService.AddDeliveryInvoice(buyerName, items);
+        MockDataService.AddDeliveryInvoice(buyerName, invoiceDate, items);
 
         InvoiceConfirmed?.Invoke();
 

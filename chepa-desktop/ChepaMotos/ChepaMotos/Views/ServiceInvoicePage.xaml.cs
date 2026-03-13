@@ -94,13 +94,14 @@ public partial class ServiceInvoicePage : ContentPage
         var plate = PlateEntry.Text?.Trim().ToUpperInvariant() ?? "";
         var model = ModelEntry.Text?.Trim() ?? "";
         var labor = CurrencyInputBehavior.GetValue(LaborEntry.Text);
+        var invoiceDate = ServiceDatePicker.Date ?? DateTime.Today;
 
         var items = _items
             .Where(i => !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0)
             .Select(i => (i.Description.Trim(), ParseItemQuantity(i.Quantity), CurrencyInputBehavior.GetValue(i.UnitPrice)))
             .ToList();
 
-        MockDataService.AddServiceInvoice(mechanicId, plate, model, labor, items);
+        MockDataService.AddServiceInvoice(mechanicId, plate, model, labor, invoiceDate, items);
 
         InvoiceConfirmed?.Invoke();
 

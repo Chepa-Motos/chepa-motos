@@ -120,16 +120,30 @@ public partial class MainLayout : ContentPage
     private static void AttachCloseConfirmation(Window window, ContentPage page)
     {
 #if WINDOWS
-        window.HandlerChanged += (s, e) =>
+        var closeHooked = false;
+        var confirmationOpen = false;
+
+        bool TryHookNativeClose()
         {
+            if (closeHooked)
+                return true;
+
             if (window.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
             {
                 var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
                 var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
                 var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+                closeHooked = true;
 
                 appWindow.Closing += async (appWin, args) =>
                 {
+                    if (confirmationOpen)
+                    {
+                        args.Cancel = true;
+                        return;
+                    }
+
+                    confirmationOpen = true;
                     args.Cancel = true;
 
                     bool confirm = await page.DisplayAlertAsync(
@@ -140,9 +154,25 @@ public partial class MainLayout : ContentPage
 
                     if (confirm)
                         Application.Current?.CloseWindow(window);
+
+                    confirmationOpen = false;
                 };
+
+                return true;
             }
+
+            return false;
+        }
+
+        EventHandler? handlerChanged = null;
+        handlerChanged = (_, _) =>
+        {
+            if (TryHookNativeClose() && handlerChanged is not null)
+                window.HandlerChanged -= handlerChanged;
         };
+
+        if (!TryHookNativeClose())
+            window.HandlerChanged += handlerChanged;
 #endif
     }
 }

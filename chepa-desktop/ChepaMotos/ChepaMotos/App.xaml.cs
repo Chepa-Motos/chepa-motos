@@ -23,13 +23,18 @@ namespace ChepaMotos
             _mainWindow = window;
 
 #if WINDOWS
+            var closeHooked = false;
             window.HandlerChanged += (s, e) =>
             {
+                if (closeHooked)
+                    return;
+
                 if (window.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
                 {
                     var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
                     var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
                     var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+                    closeHooked = true;
 
                     appWindow.Closing += async (appWin, args) =>
                     {
