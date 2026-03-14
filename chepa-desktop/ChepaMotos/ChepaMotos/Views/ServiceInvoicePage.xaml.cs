@@ -58,6 +58,7 @@ public partial class ServiceInvoicePage : ContentPage
     {
         base.OnDisappearing();
         CancelPendingAutocomplete();
+        DetachNativeKeyHandlers();
         if (Window is Window window)
             window.Destroying -= OnWindowClosing;
     }
@@ -413,6 +414,18 @@ public partial class ServiceInvoicePage : ContentPage
             textBox.PreviewKeyDown += OnNativeDescriptionKeyDown;
         }
 #endif
+    }
+
+    private void DetachNativeKeyHandlers()
+    {
+#if WINDOWS
+        foreach (var nativeView in _hookedNativeViews)
+        {
+            if (nativeView is Microsoft.UI.Xaml.Controls.TextBox textBox)
+                textBox.PreviewKeyDown -= OnNativeDescriptionKeyDown;
+        }
+#endif
+        _hookedNativeViews.Clear();
     }
 
 #if WINDOWS
