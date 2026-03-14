@@ -57,6 +57,7 @@ public partial class ServiceInvoicePage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        CancelPendingAutocomplete();
         if (Window is Window window)
             window.Destroying -= OnWindowClosing;
     }
@@ -78,7 +79,10 @@ public partial class ServiceInvoicePage : ContentPage
             "Volver");
 
         if (confirm && Window is Window window)
+        {
+            CancelPendingAutocomplete();
             Application.Current?.CloseWindow(window);
+        }
     }
 
     /// <summary>Fired after a service invoice is successfully confirmed.</summary>
@@ -107,12 +111,22 @@ public partial class ServiceInvoicePage : ContentPage
         InvoiceConfirmed?.Invoke();
 
         if (Window is Window window)
+        {
+            CancelPendingAutocomplete();
             Application.Current?.CloseWindow(window);
+        }
     }
 
     private static decimal ParseItemQuantity(string? text)
     {
         return NumericInputParser.ParseDecimal(text);
+    }
+
+    private void CancelPendingAutocomplete()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = null;
     }
 
     // ── Plate handling ───────────────────────────────────
@@ -560,7 +574,7 @@ public partial class ServiceInvoicePage : ContentPage
     {
         if (_activeItemRow is null) return;
 
-        _debounceCts?.Cancel();
+        CancelPendingAutocomplete();
         _isSelectingSuggestion = true;
         _activeItemRow.Description = suggestion.Description;
         _activeItemRow.UnitPrice = $"{suggestion.UnitPrice:N0}".Replace(",", ".");

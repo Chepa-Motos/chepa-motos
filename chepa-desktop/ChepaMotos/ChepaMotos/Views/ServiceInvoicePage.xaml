@@ -76,8 +76,7 @@
                                     FontFamily="IBMPlexSans"
                                     FontSize="13"
                                     TextColor="{StaticResource TextPrimary}"
-                                    TitleColor="{StaticResource TextMuted}"
-                                    Title="Seleccionar..." />
+                                    TitleColor="{StaticResource TextMuted}" />
                         </Border>
                         <Label x:Name="MechanicError"
                                FontFamily="IBMPlexSans" FontSize="11"
