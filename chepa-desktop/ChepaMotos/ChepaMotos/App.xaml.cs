@@ -41,7 +41,12 @@ namespace ChepaMotos
                         if (_isClosing) return;
                         args.Cancel = true;
                         var mainPage = window.Page;
-                        if (mainPage == null) return;
+                        if (mainPage == null)
+                        {
+                            // If the main page is unexpectedly null, do not block closing the window.
+                            args.Cancel = false;
+                            return;
+                        }
 
                         bool confirm = await mainPage.DisplayAlertAsync(
                             "Cerrar aplicación",
