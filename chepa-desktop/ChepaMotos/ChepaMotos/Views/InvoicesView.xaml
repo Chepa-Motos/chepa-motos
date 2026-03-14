@@ -24,8 +24,8 @@
                                 FontSize="13"
                                 TextColor="{StaticResource TextPrimary}"
                                 BackgroundColor="Transparent"
-                                MinimumDate="01/01/2024"
-                                MaximumDate="12/31/2030"
+                                MinimumDate="2024-01-01"
+                                MaximumDate="2030-12-31"
                                 DateSelected="OnDateSelected" />
                 </Border>
             </Grid>
