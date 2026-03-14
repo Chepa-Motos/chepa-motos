@@ -138,7 +138,7 @@ public static class MockDataService
             InvoiceType = "SERVICE",
             Mechanic = new Mechanic { Id = mechanic.Id, Name = mechanic.Name, IsActive = mechanic.IsActive },
             Vehicle = vehicle,
-            CreatedAt = createdAt.Date,
+            CreatedAt = createdAt,
             LaborAmount = laborAmount,
             TotalAmount = totalItems + laborAmount,
             Items = invoiceItems,
@@ -169,7 +169,7 @@ public static class MockDataService
             Id = _invoices.Count > 0 ? _invoices.Max(i => i.Id) + 1 : 1,
             InvoiceType = "DELIVERY",
             BuyerName = buyerName.Trim(),
-            CreatedAt = createdAt.Date,
+            CreatedAt = createdAt,
             LaborAmount = 0m,
             TotalAmount = invoiceItems.Sum(i => i.Subtotal),
             Items = invoiceItems,
@@ -255,13 +255,20 @@ public static class MockDataService
             .SelectMany(i => i.Items)
             .Where(item => item.Description.Contains(q, StringComparison.OrdinalIgnoreCase))
             .GroupBy(item => item.Description, StringComparer.OrdinalIgnoreCase)
-            .Select(g => new ItemSuggestion
+            .Select(g => new
             {
-                Description = g.First().Description,
-                UnitPrice = g.OrderByDescending(x => x.Id).First().UnitPrice, // most recent price
+                Suggestion = new ItemSuggestion
+                {
+                    Description = g.First().Description,
+                    UnitPrice = g.OrderByDescending(x => x.Id).First().UnitPrice, // most recent price
+                },
+                Frequency = g.Count(),
+                StartsWithQuery = g.First().Description.StartsWith(q, StringComparison.OrdinalIgnoreCase),
             })
-            .OrderByDescending(s => s.Description.StartsWith(q, StringComparison.OrdinalIgnoreCase))
-            .ThenBy(s => s.Description)
+            .OrderByDescending(x => x.Frequency)
+            .ThenByDescending(x => x.StartsWithQuery)
+            .ThenBy(x => x.Suggestion.Description)
+            .Select(x => x.Suggestion)
             .Take(10)
             .ToList();
 

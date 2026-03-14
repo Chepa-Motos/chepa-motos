@@ -61,8 +61,9 @@ public partial class ServiceInvoicePage : ContentPage
             window.Destroying -= OnWindowClosing;
     }
 
-    private async void OnWindowClosing(object? sender, EventArgs e)
+    private void OnWindowClosing(object? sender, EventArgs e)
     {
+        // THIS IS AN ASYNC METHOD - async keyword removed to avoid compiler error
         // The Destroying event fires after the close is already committed,
         // so we can't cancel it. Instead we handle close via the cancel button.
         // This is kept as a hook for future use.
