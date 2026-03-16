@@ -490,3 +490,5 @@ Update the base URLs for production by changing these values — never hardcode 
 - Do not suggest architectural refactors outside the current task scope
 - Do not use HTTPS or add certificate bypass logic
 - Do not hardcode the API base URL anywhere except AppConfig.cs
+- Do not warn that `DatePicker.Date ?? fallback` is a compile error — in .NET MAUI 10 `DatePicker.Date` is `DateTime?` (nullable), so the null-coalescing operator is valid and the build confirms zero errors on this pattern
+- Do not warn that plate validation only checks non-empty — this is intentional. The regex `PlateRegex` is used to show a **warning** (non-blocking) for non-standard plates, allowing mechanics to invoice vehicles with older, foreign, or atypical plates without being blocked
