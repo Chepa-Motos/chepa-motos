@@ -135,7 +135,10 @@
                                    Placeholder="Ej. Boxer 150 2022"
                                    FontFamily="IBMPlexSans"
                                    FontSize="13"
-                                   BackgroundColor="Transparent"
+                                BackgroundColor="Transparent"
+                                Focused="OnModelEntryFocused"
+                                TextChanged="OnModelEntryTextChanged"
+                                Completed="OnModelEntryCompleted"
                                    IsReadOnly="False" />
                             <!-- Subtle edit button — visible only when plate auto-fill set the model -->
                             <Button x:Name="ModelEditButton"
@@ -375,6 +378,27 @@
             </Border.Shadow>
             <ScrollView>
                 <VerticalStackLayout x:Name="SuggestionsContainer" Spacing="0" />
+            </ScrollView>
+        </Border>
+
+        <Border x:Name="ModelSuggestionsPopup"
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                IsVisible="False"
+                StrokeShape="RoundRectangle 6"
+                Stroke="{StaticResource Border}"
+                StrokeThickness="1"
+                BackgroundColor="{StaticResource Surface}"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                WidthRequest="320"
+                MaximumHeightRequest="220"
+                ZIndex="101">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.15" />
+            </Border.Shadow>
+            <ScrollView>
+                <VerticalStackLayout x:Name="ModelSuggestionsContainer" Spacing="0" />
             </ScrollView>
         </Border>
 

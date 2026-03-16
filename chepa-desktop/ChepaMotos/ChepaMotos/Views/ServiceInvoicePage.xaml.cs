@@ -16,12 +16,17 @@ public partial class ServiceInvoicePage : ContentPage
 
     // Autocomplete state
     private CancellationTokenSource? _debounceCts;
+    private CancellationTokenSource? _modelDebounceCts;
     private InvoiceItemRow? _activeItemRow;
     private Entry? _activeDescriptionEntry;
     private bool _isSelectingSuggestion;
+    private bool _isSelectingModelSuggestion;
     private int _selectedSuggestionIndex = -1;
+    private int _selectedModelSuggestionIndex = -1;
     private readonly List<Grid> _suggestionRows = [];
+    private readonly List<Grid> _modelSuggestionRows = [];
     private readonly List<ItemSuggestion> _currentSuggestions = [];
+    private readonly List<string> _currentModelSuggestions = [];
     private readonly HashSet<object> _hookedNativeViews = [];
 
     public ServiceInvoicePage()
@@ -58,6 +63,7 @@ public partial class ServiceInvoicePage : ContentPage
     {
         base.OnDisappearing();
         CancelPendingAutocomplete();
+        CancelPendingModelAutocomplete();
         DetachNativeKeyHandlers();
         if (Window is Window window)
             window.Destroying -= OnWindowClosing;
@@ -82,6 +88,7 @@ public partial class ServiceInvoicePage : ContentPage
         if (confirm && Window is Window window)
         {
             CancelPendingAutocomplete();
+            CancelPendingModelAutocomplete();
             Application.Current?.CloseWindow(window);
         }
     }
@@ -114,6 +121,7 @@ public partial class ServiceInvoicePage : ContentPage
         if (Window is Window window)
         {
             CancelPendingAutocomplete();
+            CancelPendingModelAutocomplete();
             Application.Current?.CloseWindow(window);
         }
     }
@@ -123,11 +131,75 @@ public partial class ServiceInvoicePage : ContentPage
         return NumericInputParser.ParseDecimal(text);
     }
 
+    private static void CancelPendingAutocomplete(ref CancellationTokenSource? cts)
+    {
+        cts?.Cancel();
+        cts?.Dispose();
+        cts = null;
+    }
+
     private void CancelPendingAutocomplete()
     {
-        _debounceCts?.Cancel();
-        _debounceCts?.Dispose();
-        _debounceCts = null;
+        CancelPendingAutocomplete(ref _debounceCts);
+    }
+
+    private void CancelPendingModelAutocomplete()
+    {
+        CancelPendingAutocomplete(ref _modelDebounceCts);
+    }
+
+    private void RunDebouncedSuggestions<T>(
+        ref CancellationTokenSource? cts,
+        Func<bool> shouldSkip,
+        Func<List<T>> fetch,
+        Action<List<T>> show)
+    {
+        CancelPendingAutocomplete(ref cts);
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(300, token);
+            if (token.IsCancellationRequested || shouldSkip()) return;
+
+            var suggestions = fetch();
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (token.IsCancellationRequested || shouldSkip()) return;
+                show(suggestions);
+            });
+        }, token);
+    }
+
+    private static void ResetSuggestionState<T>(
+        VerticalStackLayout container,
+        List<Grid> rows,
+        List<T> suggestions,
+        ref int selectedIndex)
+    {
+        container.Children.Clear();
+        rows.Clear();
+        suggestions.Clear();
+        selectedIndex = -1;
+    }
+
+    private static void MoveSelection(List<Grid> rows, ref int selectedIndex, int delta)
+    {
+        if (rows.Count == 0) return;
+
+        if (selectedIndex >= 0 && selectedIndex < rows.Count)
+            rows[selectedIndex].BackgroundColor = Colors.Transparent;
+
+        selectedIndex += delta;
+
+        if (selectedIndex >= rows.Count)
+            selectedIndex = 0;
+        if (selectedIndex < 0)
+            selectedIndex = rows.Count - 1;
+
+        rows[selectedIndex].BackgroundColor = Color.FromArgb("#F7F6F3");
     }
 
     // ── Plate handling ───────────────────────────────────
@@ -269,6 +341,69 @@ public partial class ServiceInvoicePage : ContentPage
         ModelFieldBorder.Stroke = new SolidColorBrush((Color)Application.Current.Resources["Border"]);
         ModelEditButton.IsVisible = false;
         ModelEntry.Focus();
+
+        // Trigger fresh suggestions if the user is editing an existing model value.
+        TriggerModelSuggestions(ModelEntry.Text);
+    }
+
+    private void OnModelEntryFocused(object? sender, FocusEventArgs e)
+    {
+        if (sender is Entry entry)
+            HookNativeKeyHandler(entry);
+
+        if (ModelEntry.IsReadOnly)
+            return;
+
+        TriggerModelSuggestions(ModelEntry.Text);
+    }
+
+    private void OnModelEntryCompleted(object? sender, EventArgs e)
+    {
+        if (ModelSuggestionsPopup.IsVisible && _currentModelSuggestions.Count > 0)
+        {
+            var index = _selectedModelSuggestionIndex >= 0 ? _selectedModelSuggestionIndex : 0;
+            SelectModelSuggestionByKeyboard(index);
+        }
+        else
+            HideModelSuggestions();
+    }
+
+    private void OnModelEntryTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isSelectingModelSuggestion || ModelEntry.IsReadOnly)
+        {
+            HideModelSuggestions();
+            return;
+        }
+
+        TriggerModelSuggestions(e.NewTextValue);
+    }
+
+    private void TriggerModelSuggestions(string? text)
+    {
+        if (ModelEntry.IsReadOnly)
+        {
+            HideModelSuggestions();
+            return;
+        }
+
+        var query = text?.Trim() ?? "";
+        if (query.Length < 2)
+        {
+            HideModelSuggestions();
+            return;
+        }
+
+        RunDebouncedSuggestions(
+            ref _modelDebounceCts,
+            shouldSkip: () => _isSelectingModelSuggestion || ModelEntry.IsReadOnly,
+            fetch: () =>
+            {
+                // TODO: [API] Replace with: var suggestions = await VehicleService.GetModelSuggestions(query)
+                // Proposed endpoint: GET /vehicles/models/suggestions?q={query}
+                return MockDataService.GetModelSuggestions(query);
+            },
+            show: ShowModelSuggestions);
     }
 
     // ── Autocomplete ─────────────────────────────────────
@@ -298,26 +433,16 @@ public partial class ServiceInvoicePage : ContentPage
             return;
         }
 
-        // 300ms debounce
-        CancelPendingAutocomplete();
-        _debounceCts = new CancellationTokenSource();
-        var token = _debounceCts.Token;
-
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(300, token);
-            if (token.IsCancellationRequested) return;
-
-            // TODO: [API] Replace with: var suggestions = await InvoiceItemService.GetSuggestions(model, query)
-            // Maps to: GET /invoice-items/suggestions?model={model}&q={query}
-            var suggestions = MockDataService.GetItemSuggestions(model, query);
-
-            MainThread.BeginInvokeOnMainThread(() =>
+        RunDebouncedSuggestions(
+            ref _debounceCts,
+            shouldSkip: () => _isSelectingSuggestion,
+            fetch: () =>
             {
-                if (token.IsCancellationRequested) return;
-                ShowSuggestions(suggestions);
-            });
-        }, token);
+                // TODO: [API] Replace with: var suggestions = await InvoiceItemService.GetSuggestions(model, query)
+                // Maps to: GET /invoice-items/suggestions?model={model}&q={query}
+                return MockDataService.GetItemSuggestions(model, query);
+            },
+            show: ShowSuggestions);
     }
 
     // ── Keyboard navigation ──────────────────────────────
@@ -431,7 +556,30 @@ public partial class ServiceInvoicePage : ContentPage
 #if WINDOWS
     private void OnNativeDescriptionKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
-        if (e.Key == Windows.System.VirtualKey.Down && SuggestionsPopup.IsVisible)
+        if (e.Key == Windows.System.VirtualKey.Down && ModelSuggestionsPopup.IsVisible)
+        {
+            e.Handled = true;
+            MoveModelSuggestionSelection(1);
+        }
+        else if (e.Key == Windows.System.VirtualKey.Up && ModelSuggestionsPopup.IsVisible)
+        {
+            e.Handled = true;
+            MoveModelSuggestionSelection(-1);
+        }
+        else if (e.Key == Windows.System.VirtualKey.Tab && ModelSuggestionsPopup.IsVisible)
+        {
+            e.Handled = true;
+            var index = _selectedModelSuggestionIndex >= 0 ? _selectedModelSuggestionIndex : 0;
+            SelectModelSuggestionByKeyboard(index);
+            FocusFirstDescriptionEntry();
+        }
+        else if (e.Key == Windows.System.VirtualKey.Enter && ModelSuggestionsPopup.IsVisible)
+        {
+            e.Handled = true;
+            var index = _selectedModelSuggestionIndex >= 0 ? _selectedModelSuggestionIndex : 0;
+            SelectModelSuggestionByKeyboard(index);
+        }
+        else if (e.Key == Windows.System.VirtualKey.Down && SuggestionsPopup.IsVisible)
         {
             e.Handled = true;
             MoveSuggestionSelection(1);
@@ -459,36 +607,39 @@ public partial class ServiceInvoicePage : ContentPage
             e.Handled = true;
             HideSuggestions();
         }
+        else if (e.Key == Windows.System.VirtualKey.Escape && ModelSuggestionsPopup.IsVisible)
+        {
+            e.Handled = true;
+            HideModelSuggestions();
+        }
     }
 #endif
 
     private void MoveSuggestionSelection(int delta)
     {
-        if (_suggestionRows.Count == 0) return;
+        MoveSelection(_suggestionRows, ref _selectedSuggestionIndex, delta);
+    }
 
-        // Unhighlight current
-        if (_selectedSuggestionIndex >= 0 && _selectedSuggestionIndex < _suggestionRows.Count)
-            _suggestionRows[_selectedSuggestionIndex].BackgroundColor = Colors.Transparent;
+    private void FocusFirstDescriptionEntry()
+    {
+        if (_items.Count == 0)
+            return;
 
-        _selectedSuggestionIndex += delta;
+        _ = FocusDescriptionEntryForRow(_items[0]);
+    }
 
-        if (_selectedSuggestionIndex >= _suggestionRows.Count)
-            _selectedSuggestionIndex = 0;
-        if (_selectedSuggestionIndex < 0)
-            _selectedSuggestionIndex = _suggestionRows.Count - 1;
-
-        // Highlight new
-        _suggestionRows[_selectedSuggestionIndex].BackgroundColor = Color.FromArgb("#F7F6F3");
+    private void MoveModelSuggestionSelection(int delta)
+    {
+        MoveSelection(_modelSuggestionRows, ref _selectedModelSuggestionIndex, delta);
     }
 
     // ── Suggestions popup ────────────────────────────────
 
     private void ShowSuggestions(List<ItemSuggestion> suggestions)
     {
-        SuggestionsContainer.Children.Clear();
-        _suggestionRows.Clear();
-        _currentSuggestions.Clear();
-        _selectedSuggestionIndex = -1;
+        HideModelSuggestions();
+
+        ResetSuggestionState(SuggestionsContainer, _suggestionRows, _currentSuggestions, ref _selectedSuggestionIndex);
 
         if (suggestions.Count == 0 || _activeItemRow is null)
         {
@@ -569,18 +720,109 @@ public partial class ServiceInvoicePage : ContentPage
             SuggestionsContainer.Children.RemoveAt(SuggestionsContainer.Children.Count - 1);
 
         PositionSuggestionsPopup();
-        DismissOverlay.IsVisible = true;
         SuggestionsPopup.IsVisible = true;
+        UpdateDismissOverlayVisibility();
     }
 
     private void HideSuggestions()
     {
         SuggestionsPopup.IsVisible = false;
-        DismissOverlay.IsVisible = false;
-        SuggestionsContainer.Children.Clear();
-        _suggestionRows.Clear();
-        _currentSuggestions.Clear();
-        _selectedSuggestionIndex = -1;
+        ResetSuggestionState(SuggestionsContainer, _suggestionRows, _currentSuggestions, ref _selectedSuggestionIndex);
+        UpdateDismissOverlayVisibility();
+    }
+
+    private void ShowModelSuggestions(List<string> suggestions)
+    {
+        HideSuggestions();
+
+        ResetSuggestionState(ModelSuggestionsContainer, _modelSuggestionRows, _currentModelSuggestions, ref _selectedModelSuggestionIndex);
+
+        if (suggestions.Count == 0)
+        {
+            HideModelSuggestions();
+            return;
+        }
+
+        _currentModelSuggestions.AddRange(suggestions);
+
+        foreach (var suggestion in suggestions)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = [new ColumnDefinition(GridLength.Star)],
+                Padding = new Thickness(12, 8),
+            };
+
+            row.Children.Add(new Label
+            {
+                Text = suggestion,
+                FontFamily = "IBMPlexSans",
+                FontSize = 13,
+                TextColor = (Color)Application.Current!.Resources["TextPrimary"],
+                VerticalTextAlignment = TextAlignment.Center,
+            });
+
+            var capturedRow = row;
+            var pointer = new PointerGestureRecognizer();
+            pointer.PointerEntered += (_, _) =>
+            {
+                if (_selectedModelSuggestionIndex >= 0 && _selectedModelSuggestionIndex < _modelSuggestionRows.Count
+                    && _modelSuggestionRows[_selectedModelSuggestionIndex] != capturedRow)
+                    _modelSuggestionRows[_selectedModelSuggestionIndex].BackgroundColor = Colors.Transparent;
+
+                capturedRow.BackgroundColor = Color.FromArgb("#F7F6F3");
+                _selectedModelSuggestionIndex = _modelSuggestionRows.IndexOf(capturedRow);
+            };
+            pointer.PointerExited += (_, _) => capturedRow.BackgroundColor = Colors.Transparent;
+            row.GestureRecognizers.Add(pointer);
+
+            var capturedSuggestion = suggestion;
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += (_, _) => SelectModelSuggestion(capturedSuggestion);
+            row.GestureRecognizers.Add(tap);
+
+            _modelSuggestionRows.Add(row);
+            ModelSuggestionsContainer.Children.Add(row);
+            ModelSuggestionsContainer.Children.Add(new BoxView
+            {
+                HeightRequest = 1,
+                Color = (Color)Application.Current!.Resources["Border"],
+            });
+        }
+
+        if (ModelSuggestionsContainer.Children.Count > 0)
+            ModelSuggestionsContainer.Children.RemoveAt(ModelSuggestionsContainer.Children.Count - 1);
+
+        PositionModelSuggestionsPopup();
+        ModelSuggestionsPopup.IsVisible = true;
+        UpdateDismissOverlayVisibility();
+    }
+
+    private void HideModelSuggestions()
+    {
+        ModelSuggestionsPopup.IsVisible = false;
+        ResetSuggestionState(ModelSuggestionsContainer, _modelSuggestionRows, _currentModelSuggestions, ref _selectedModelSuggestionIndex);
+        UpdateDismissOverlayVisibility();
+    }
+
+    private void SelectModelSuggestionByKeyboard(int index)
+    {
+        if (index < 0 || index >= _currentModelSuggestions.Count) return;
+        SelectModelSuggestion(_currentModelSuggestions[index]);
+    }
+
+    private void SelectModelSuggestion(string suggestion)
+    {
+        CancelPendingModelAutocomplete();
+        _isSelectingModelSuggestion = true;
+        ModelEntry.Text = suggestion;
+        _isSelectingModelSuggestion = false;
+        HideModelSuggestions();
+    }
+
+    private void UpdateDismissOverlayVisibility()
+    {
+        DismissOverlay.IsVisible = SuggestionsPopup.IsVisible || ModelSuggestionsPopup.IsVisible;
     }
 
     private void SelectSuggestion(ItemSuggestion suggestion)
@@ -598,6 +840,7 @@ public partial class ServiceInvoicePage : ContentPage
     private void OnDismissOverlayTapped(object? sender, TappedEventArgs e)
     {
         HideSuggestions();
+        HideModelSuggestions();
     }
 
     private void PositionSuggestionsPopup()
@@ -627,5 +870,31 @@ public partial class ServiceInvoicePage : ContentPage
         SuggestionsPopup.Margin = new Thickness(78, 300, 0, 0);
         SuggestionsPopup.HorizontalOptions = LayoutOptions.Start;
         SuggestionsPopup.VerticalOptions = LayoutOptions.Start;
+    }
+
+    private void PositionModelSuggestionsPopup()
+    {
+#if WINDOWS
+        if (ModelEntry.Handler?.PlatformView is Microsoft.UI.Xaml.UIElement modelNative
+            && RootGrid.Handler?.PlatformView is Microsoft.UI.Xaml.UIElement rootNative)
+        {
+            var transform = modelNative.TransformToVisual(rootNative);
+            var point = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
+
+            var entryHeight = modelNative.ActualSize.Y;
+            var topOffset = point.Y + entryHeight + 2;
+            var leftOffset = point.X;
+
+            ModelSuggestionsPopup.Margin = new Thickness(leftOffset, topOffset, 0, 0);
+            ModelSuggestionsPopup.HorizontalOptions = LayoutOptions.Start;
+            ModelSuggestionsPopup.VerticalOptions = LayoutOptions.Start;
+            return;
+        }
+#endif
+
+        // Fallback under model field area.
+        ModelSuggestionsPopup.Margin = new Thickness(24, 196, 0, 0);
+        ModelSuggestionsPopup.HorizontalOptions = LayoutOptions.Start;
+        ModelSuggestionsPopup.VerticalOptions = LayoutOptions.Start;
     }
 }

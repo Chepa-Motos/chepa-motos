@@ -240,6 +240,44 @@ public static class MockDataService
     // ── Item suggestions (autocomplete) ──────────────────
 
     /// <summary>
+    /// Simulates model autocomplete suggestions for service invoices.
+    /// Uses both known vehicle models and historical SERVICE invoice vehicle models.
+    /// Returns max 10 suggestions ordered by frequency, then starts-with, then alphabetically.
+    /// </summary>
+    public static List<string> GetModelSuggestions(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Trim().Length < 2)
+            return [];
+
+        var q = query.Trim();
+
+        // Canonical vehicle list + service history model usage.
+        var candidateModels = _vehicles
+            .Select(v => v.Model)
+            .Concat(_invoices
+                .Where(i => i.InvoiceType == "SERVICE" && !i.IsCancelled && i.Vehicle is not null)
+                .Select(i => i.Vehicle!.Model))
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .Select(m => m.Trim())
+            .Where(m => m.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .GroupBy(m => m, StringComparer.OrdinalIgnoreCase)
+            .Select(g => new
+            {
+                Model = g.First(),
+                Frequency = g.Count(),
+                StartsWithQuery = g.First().StartsWith(q, StringComparison.OrdinalIgnoreCase),
+            })
+            .OrderByDescending(x => x.Frequency)
+            .ThenByDescending(x => x.StartsWithQuery)
+            .ThenBy(x => x.Model)
+            .Take(10)
+            .Select(x => x.Model)
+            .ToList();
+
+        return candidateModels;
+    }
+
+    /// <summary>
     /// Simulates GET /invoice-items/suggestions?model={model}&amp;q={query}.
     /// Searches SERVICE invoice items whose vehicle model contains `model`
     /// and whose description starts with or contains `query`.
