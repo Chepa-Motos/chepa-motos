@@ -28,6 +28,7 @@ public partial class ServiceInvoicePage : ContentPage
     private readonly List<ItemSuggestion> _currentSuggestions = [];
     private readonly List<string> _currentModelSuggestions = [];
     private readonly HashSet<object> _hookedNativeViews = [];
+    private readonly Dictionary<InvoiceItemRow, object> _rowNativeTextBoxes = [];
 
     public ServiceInvoicePage()
     {
@@ -301,6 +302,7 @@ public partial class ServiceInvoicePage : ContentPage
     {
         if (sender is Button btn && btn.CommandParameter is InvoiceItemRow item)
         {
+            DetachRowNativeKeyHandler(item);
             _items.Remove(item);
             RecalculateTotal();
         }
@@ -453,6 +455,10 @@ public partial class ServiceInvoicePage : ContentPage
         _activeDescriptionEntry = entry;
         _activeItemRow = entry.BindingContext as InvoiceItemRow;
         HookNativeKeyHandler(entry);
+#if WINDOWS
+        if (_activeItemRow is not null && entry.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.TextBox textBox)
+            _rowNativeTextBoxes[_activeItemRow] = textBox;
+#endif
     }
 
     private void OnDescriptionEntryCompleted(object? sender, EventArgs e)
@@ -541,6 +547,19 @@ public partial class ServiceInvoicePage : ContentPage
 #endif
     }
 
+    private void DetachRowNativeKeyHandler(InvoiceItemRow row)
+    {
+#if WINDOWS
+        if (_rowNativeTextBoxes.TryGetValue(row, out var nativeView))
+        {
+            if (nativeView is Microsoft.UI.Xaml.Controls.TextBox textBox)
+                textBox.PreviewKeyDown -= OnNativeDescriptionKeyDown;
+            _hookedNativeViews.Remove(nativeView);
+            _rowNativeTextBoxes.Remove(row);
+        }
+#endif
+    }
+
     private void DetachNativeKeyHandlers()
     {
 #if WINDOWS
@@ -551,6 +570,7 @@ public partial class ServiceInvoicePage : ContentPage
         }
 #endif
         _hookedNativeViews.Clear();
+        _rowNativeTextBoxes.Clear();
     }
 
 #if WINDOWS
