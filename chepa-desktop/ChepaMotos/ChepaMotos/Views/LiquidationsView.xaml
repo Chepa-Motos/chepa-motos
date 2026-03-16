@@ -20,7 +20,7 @@
                         Padding="0"
                         VerticalOptions="Center">
                     <DatePicker x:Name="LiqDatePicker"
-                                Date="{Binding SelectedDate}"
+                                Date="{Binding SelectedDate, Mode=OneWay}"
                                 Format="dd/MM/yyyy"
                                 FontFamily="IBMPlexMono"
                                 FontSize="13"
