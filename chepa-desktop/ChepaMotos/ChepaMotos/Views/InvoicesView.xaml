@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
              x:Class="ChepaMotos.Views.InvoicesView">
 
     <ScrollView>
@@ -19,6 +20,7 @@
                         Padding="0"
                         VerticalOptions="Center">
                     <DatePicker x:Name="FilterDatePicker"
+                                Date="{Binding SelectedDate}"
                                 Format="dd/MM/yyyy"
                                 FontFamily="IBMPlexMono"
                                 FontSize="13"
@@ -79,6 +81,7 @@
 
                 <!-- Result count -->
                 <Label x:Name="ResultCountLabel"
+                      Text="{Binding ResultCountText}"
                        FontFamily="IBMPlexMono" FontSize="12"
                        TextColor="{StaticResource TextMuted}"
                        VerticalTextAlignment="Center"
@@ -107,17 +110,122 @@
                         <Label Grid.Column="7" Text="HORA" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
                     </Grid>
 
-                    <!-- Dynamic rows -->
-                    <VerticalStackLayout x:Name="InvoiceRowsContainer" Spacing="0" />
+                          <!-- Dynamic rows -->
+                          <CollectionView ItemsSource="{Binding Invoices}"
+                                 SelectionMode="None">
+                           <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:InvoiceRowViewModel">
+                                <VerticalStackLayout Spacing="0">
+                                 <Grid ColumnDefinitions="60,80,120,120,100,100,80,80"
+                                    Padding="16,10"
+                                    Opacity="{Binding RowOpacity}">
+                                     <Label Grid.Column="0"
+                                         Text="{Binding IdText}"
+                                         FontFamily="IBMPlexMono"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextPrimary}"
+                                         VerticalTextAlignment="Center" />
+
+                                     <Border Grid.Column="1"
+                                          StrokeShape="RoundRectangle 4"
+                                          StrokeThickness="0"
+                                          BackgroundColor="{Binding TypeBackgroundColor}"
+                                          Padding="8,2"
+                                          VerticalOptions="Center"
+                                          HorizontalOptions="Start">
+                                      <Label Text="{Binding TypeText}"
+                                          FontFamily="IBMPlexSansMedium"
+                                          FontSize="11"
+                                          TextColor="{Binding TypeTextColor}" />
+                                     </Border>
+
+                                     <Border Grid.Column="2"
+                                          IsVisible="{Binding ShowPlateBadge}"
+                                          StrokeShape="RoundRectangle 4"
+                                          StrokeThickness="1"
+                                          Stroke="{StaticResource Border}"
+                                          BackgroundColor="{StaticResource Surface2}"
+                                          Padding="8,2"
+                                          VerticalOptions="Center"
+                                          HorizontalOptions="Start">
+                                      <Label Text="{Binding PlateText}"
+                                          FontFamily="IBMPlexMono"
+                                          FontSize="11"
+                                          TextColor="{StaticResource TextPrimary}" />
+                                     </Border>
+
+                                     <Label Grid.Column="2"
+                                         IsVisible="{Binding ShowPlateDash}"
+                                         Text="—"
+                                         FontFamily="IBMPlexSans"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextMuted}"
+                                         VerticalTextAlignment="Center" />
+
+                                     <Label Grid.Column="3"
+                                         Text="{Binding BuyerText}"
+                                         FontFamily="IBMPlexSans"
+                                         FontSize="13"
+                                         TextColor="{Binding BuyerTextColor}"
+                                         VerticalTextAlignment="Center"
+                                         LineBreakMode="TailTruncation" />
+
+                                     <Label Grid.Column="4"
+                                         Text="{Binding MechanicText}"
+                                         FontFamily="IBMPlexSans"
+                                         FontSize="13"
+                                         TextColor="{Binding MechanicTextColor}"
+                                         VerticalTextAlignment="Center" />
+
+                                     <Label Grid.Column="5"
+                                         Text="{Binding TotalText}"
+                                         FontFamily="IBMPlexMono"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextPrimary}"
+                                         VerticalTextAlignment="Center"
+                                         HorizontalTextAlignment="End" />
+
+                                     <Border Grid.Column="6"
+                                          StrokeShape="RoundRectangle 4"
+                                          StrokeThickness="0"
+                                          BackgroundColor="{Binding StatusBackgroundColor}"
+                                          Padding="8,2"
+                                          VerticalOptions="Center"
+                                          HorizontalOptions="Start">
+                                      <Label Text="{Binding StatusText}"
+                                          FontFamily="IBMPlexSansMedium"
+                                          FontSize="11"
+                                          TextColor="{Binding StatusTextColor}" />
+                                     </Border>
+
+                                     <Label Grid.Column="7"
+                                         Text="{Binding TimeText}"
+                                         FontFamily="IBMPlexMono"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextMuted}"
+                                         VerticalTextAlignment="Center"
+                                         HorizontalTextAlignment="End" />
+
+                                     <Grid.GestureRecognizers>
+                                      <TapGestureRecognizer Tapped="OnInvoiceRowTapped" />
+                                     </Grid.GestureRecognizers>
+                                 </Grid>
+
+                                 <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                           </CollectionView.ItemTemplate>
+                          </CollectionView>
 
                     <!-- Empty state -->
                     <Label x:Name="EmptyLabel"
+                              IsVisible="{Binding EmptyVisible}"
                            Text="No hay facturas para esta fecha"
                            FontFamily="IBMPlexSans" FontSize="14"
                            TextColor="{StaticResource TextMuted}"
                            HorizontalTextAlignment="Center"
                            Padding="24,40"
-                           IsVisible="False" />
+                              />
 
                 </VerticalStackLayout>
             </Border>
