@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
              x:Class="ChepaMotos.Views.LiquidationsView">
 
     <ScrollView>
@@ -19,6 +20,7 @@
                         Padding="0"
                         VerticalOptions="Center">
                     <DatePicker x:Name="LiqDatePicker"
+                                Date="{Binding SelectedDate}"
                                 Format="dd/MM/yyyy"
                                 FontFamily="IBMPlexMono"
                                 FontSize="13"
@@ -37,7 +39,7 @@
                         BackgroundColor="{StaticResource Surface}" Padding="16,14">
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Total facturado" FontFamily="IBMPlexSans" FontSize="12" TextColor="{StaticResource TextSecondary}" />
-                        <Label x:Name="SummaryTotalLabel" FontFamily="IBMPlexMono" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource Accent}" />
+                        <Label x:Name="SummaryTotalLabel" Text="{Binding SummaryTotalText}" FontFamily="IBMPlexMono" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource Accent}" />
                     </VerticalStackLayout>
                 </Border>
                 <Border Grid.Column="1"
@@ -45,7 +47,7 @@
                         BackgroundColor="{StaticResource Surface}" Padding="16,14">
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Total mecánicos" FontFamily="IBMPlexSans" FontSize="12" TextColor="{StaticResource TextSecondary}" />
-                        <Label x:Name="SummaryMechanicLabel" FontFamily="IBMPlexMono" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource Green}" />
+                        <Label x:Name="SummaryMechanicLabel" Text="{Binding SummaryMechanicText}" FontFamily="IBMPlexMono" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource Green}" />
                     </VerticalStackLayout>
                 </Border>
                 <Border Grid.Column="2"
@@ -53,7 +55,7 @@
                         BackgroundColor="{StaticResource Surface}" Padding="16,14">
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Total taller" FontFamily="IBMPlexSans" FontSize="12" TextColor="{StaticResource TextSecondary}" />
-                        <Label x:Name="SummaryShopLabel" FontFamily="IBMPlexMono" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+                        <Label x:Name="SummaryShopLabel" Text="{Binding SummaryShopText}" FontFamily="IBMPlexMono" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
                     </VerticalStackLayout>
                 </Border>
             </Grid>
@@ -78,17 +80,76 @@
                         <Label Grid.Column="5" Text="TALLER (30%)" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
                     </Grid>
 
-                    <!-- Dynamic rows -->
-                    <VerticalStackLayout x:Name="LiquidationRowsContainer" Spacing="0" />
+                          <!-- Dynamic rows -->
+                          <CollectionView ItemsSource="{Binding LiquidationRows}"
+                                 SelectionMode="None">
+                           <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:LiquidationRowViewModel">
+                                <VerticalStackLayout Spacing="0">
+                                 <Grid ColumnDefinitions="120,*,80,120,120,120"
+                                    Padding="16,10">
+                                     <Label Grid.Column="0"
+                                         Text="{Binding DateText}"
+                                         FontFamily="IBMPlexMono"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextPrimary}"
+                                         VerticalTextAlignment="Center" />
+
+                                     <Label Grid.Column="1"
+                                         Text="{Binding MechanicName}"
+                                         FontFamily="IBMPlexSans"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextPrimary}"
+                                         VerticalTextAlignment="Center" />
+
+                                     <Label Grid.Column="2"
+                                         Text="{Binding InvoiceCountText}"
+                                         FontFamily="IBMPlexMono"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextPrimary}"
+                                         VerticalTextAlignment="Center"
+                                         HorizontalTextAlignment="Center" />
+
+                                     <Label Grid.Column="3"
+                                         Text="{Binding TotalRevenueText}"
+                                         FontFamily="IBMPlexMono"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextPrimary}"
+                                         VerticalTextAlignment="Center"
+                                         HorizontalTextAlignment="End" />
+
+                                     <Label Grid.Column="4"
+                                         Text="{Binding MechanicShareText}"
+                                         FontFamily="IBMPlexMono"
+                                         FontSize="13"
+                                         TextColor="{StaticResource Green}"
+                                         VerticalTextAlignment="Center"
+                                         HorizontalTextAlignment="End" />
+
+                                     <Label Grid.Column="5"
+                                         Text="{Binding ShopShareText}"
+                                         FontFamily="IBMPlexMono"
+                                         FontSize="13"
+                                         TextColor="{StaticResource TextPrimary}"
+                                         VerticalTextAlignment="Center"
+                                         HorizontalTextAlignment="End" />
+                                 </Grid>
+
+                                 <BoxView HeightRequest="1" Color="{StaticResource Border}" />
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                           </CollectionView.ItemTemplate>
+                          </CollectionView>
 
                     <!-- Empty state -->
                     <Label x:Name="EmptyLabel"
+                              IsVisible="{Binding EmptyVisible}"
                            Text="No hay liquidaciones para esta fecha"
                            FontFamily="IBMPlexSans" FontSize="14"
                            TextColor="{StaticResource TextMuted}"
                            HorizontalTextAlignment="Center"
                            Padding="24,40"
-                           IsVisible="False" />
+                              />
 
                 </VerticalStackLayout>
             </Border>
