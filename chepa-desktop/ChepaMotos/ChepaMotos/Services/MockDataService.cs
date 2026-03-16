@@ -104,6 +104,8 @@ public static class MockDataService
         decimal laborAmount, DateTime createdAt,
         List<(string description, decimal quantity, decimal unitPrice)> items)
     {
+        var recordedAt = createdAt.Date.Add(DateTime.Now.TimeOfDay);
+
         var mechanic = _mechanics.FirstOrDefault(m => m.Id == mechanicId)
             ?? throw new InvalidOperationException($"Mechanic {mechanicId} not found");
 
@@ -138,7 +140,7 @@ public static class MockDataService
             InvoiceType = "SERVICE",
             Mechanic = new Mechanic { Id = mechanic.Id, Name = mechanic.Name, IsActive = mechanic.IsActive },
             Vehicle = vehicle,
-            CreatedAt = createdAt,
+            CreatedAt = recordedAt,
             LaborAmount = laborAmount,
             TotalAmount = totalItems + laborAmount,
             Items = invoiceItems,
@@ -154,6 +156,8 @@ public static class MockDataService
     public static Invoice AddDeliveryInvoice(string buyerName, DateTime createdAt,
         List<(string description, decimal quantity, decimal unitPrice)> items)
     {
+        var recordedAt = createdAt.Date.Add(DateTime.Now.TimeOfDay);
+
         var nextItemId = _invoices.SelectMany(i => i.Items).DefaultIfEmpty().Max(i => i?.Id ?? 0) + 1;
         var invoiceItems = items.Select((item, idx) => new InvoiceItem
         {
@@ -169,7 +173,7 @@ public static class MockDataService
             Id = _invoices.Count > 0 ? _invoices.Max(i => i.Id) + 1 : 1,
             InvoiceType = "DELIVERY",
             BuyerName = buyerName.Trim(),
-            CreatedAt = createdAt,
+            CreatedAt = recordedAt,
             LaborAmount = 0m,
             TotalAmount = invoiceItems.Sum(i => i.Subtotal),
             Items = invoiceItems,
