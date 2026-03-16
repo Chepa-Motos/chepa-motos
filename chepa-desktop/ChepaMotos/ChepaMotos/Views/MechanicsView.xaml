@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
              x:Class="ChepaMotos.Views.MechanicsView">
 
     <ScrollView>
@@ -17,6 +18,7 @@
 
             <!-- Summary -->
             <Label x:Name="SummaryLabel"
+                     Text="{Binding SummaryText}"
                    FontFamily="IBMPlexMono" FontSize="12"
                    TextColor="{StaticResource TextMuted}" />
 
@@ -27,16 +29,60 @@
                     BackgroundColor="{StaticResource Surface}"
                     Padding="0">
                 <Grid>
-                    <VerticalStackLayout x:Name="MechanicsContainer" Spacing="0" />
+                    <CollectionView ItemsSource="{Binding Mechanics}"
+                                    SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MechanicRowViewModel">
+                                <VerticalStackLayout Spacing="0">
+                                    <Grid ColumnDefinitions="*,Auto,Auto"
+                                          Padding="16,14"
+                                          Opacity="{Binding RowOpacity}">
+                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding Name}"
+                                                   FontFamily="IBMPlexSansMedium"
+                                                   FontSize="14"
+                                                   TextColor="{StaticResource TextPrimary}" />
+                                            <Label Text="{Binding Subtitle}"
+                                                   FontFamily="IBMPlexMono"
+                                                   FontSize="11"
+                                                   TextColor="{StaticResource TextMuted}" />
+                                        </VerticalStackLayout>
+
+                                        <Border Grid.Column="1"
+                                                StrokeShape="RoundRectangle 4"
+                                                StrokeThickness="0"
+                                                BackgroundColor="{Binding BadgeBackgroundColor}"
+                                                Padding="8,2"
+                                                VerticalOptions="Center"
+                                                Margin="0,0,12,0">
+                                            <Label Text="{Binding BadgeText}"
+                                                   FontFamily="IBMPlexSansMedium"
+                                                   FontSize="11"
+                                                   TextColor="{Binding BadgeTextColor}" />
+                                        </Border>
+
+                                        <Switch Grid.Column="2"
+                                                IsToggled="{Binding IsActive}"
+                                                VerticalOptions="Center"
+                                                Toggled="OnMechanicToggled" />
+                                    </Grid>
+
+                                    <BoxView HeightRequest="1"
+                                             Color="{StaticResource Border}" />
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
 
                     <!-- Empty state -->
                     <Label x:Name="EmptyLabel"
+                           IsVisible="{Binding EmptyVisible}"
                            Text="No hay mecánicos registrados"
                            FontFamily="IBMPlexSans" FontSize="14"
                            TextColor="{StaticResource TextMuted}"
                            HorizontalTextAlignment="Center"
                            Padding="24,40"
-                           IsVisible="False" />
+                           />
                 </Grid>
             </Border>
 
