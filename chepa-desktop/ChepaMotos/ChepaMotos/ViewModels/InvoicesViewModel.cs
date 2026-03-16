@@ -94,6 +94,8 @@ public class InvoicesViewModel : INotifyPropertyChanged
                 TypeTextColor = isService ? Color.FromArgb("#C13B0A") : Color.FromArgb("#1A4A82"),
                 ShowPlateBadge = invoice.Vehicle is not null,
                 PlateText = invoice.Vehicle?.Plate ?? "—",
+                BikeText = invoice.Vehicle?.Model ?? "—",
+                BikeTextColor = invoice.Vehicle is not null ? Color.FromArgb("#18170F") : Color.FromArgb("#9A9790"),
                 BuyerText = invoice.BuyerName ?? "—",
                 BuyerTextColor = invoice.BuyerName is not null ? Color.FromArgb("#18170F") : Color.FromArgb("#9A9790"),
                 MechanicText = invoice.Mechanic?.Name?.Split(' ')[0] ?? "—",
@@ -128,6 +130,8 @@ public class InvoiceRowViewModel
     public bool ShowPlateBadge { get; init; }
     public bool ShowPlateDash => !ShowPlateBadge;
     public required string PlateText { get; init; }
+    public required string BikeText { get; init; }
+    public required Color BikeTextColor { get; init; }
     public required string BuyerText { get; init; }
     public required Color BuyerTextColor { get; init; }
     public required string MechanicText { get; init; }

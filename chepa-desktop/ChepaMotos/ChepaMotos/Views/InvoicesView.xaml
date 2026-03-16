@@ -97,17 +97,18 @@
                 <VerticalStackLayout Spacing="0">
 
                     <!-- Header -->
-                    <Grid ColumnDefinitions="60,80,120,120,100,100,80,80"
+                    <Grid ColumnDefinitions="60,80,110,150,130,100,100,80,80"
                           Padding="16,8"
                           BackgroundColor="{StaticResource Surface2}">
                         <Label Grid.Column="0" Text="#" Style="{StaticResource TableHeader}" />
                         <Label Grid.Column="1" Text="TIPO" Style="{StaticResource TableHeader}" />
                         <Label Grid.Column="2" Text="PLACA" Style="{StaticResource TableHeader}" />
-                        <Label Grid.Column="3" Text="COMPRADOR" Style="{StaticResource TableHeader}" />
-                        <Label Grid.Column="4" Text="MECÁNICO" Style="{StaticResource TableHeader}" />
-                        <Label Grid.Column="5" Text="TOTAL" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
-                        <Label Grid.Column="6" Text="ESTADO" Style="{StaticResource TableHeader}" />
-                        <Label Grid.Column="7" Text="HORA" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="3" Text="MOTO" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="4" Text="COMPRADOR" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="5" Text="MECÁNICO" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="6" Text="TOTAL" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
+                        <Label Grid.Column="7" Text="ESTADO" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="8" Text="HORA" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
                     </Grid>
 
                           <!-- Dynamic rows -->
@@ -116,7 +117,7 @@
                            <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="vm:InvoiceRowViewModel">
                                 <VerticalStackLayout Spacing="0">
-                                 <Grid ColumnDefinitions="60,80,120,120,100,100,80,80"
+                                            <Grid ColumnDefinitions="60,80,110,150,130,100,100,80,80"
                                     Padding="16,10"
                                     Opacity="{Binding RowOpacity}">
                                      <Label Grid.Column="0"
@@ -163,6 +164,14 @@
                                          VerticalTextAlignment="Center" />
 
                                      <Label Grid.Column="3"
+                                         Text="{Binding BikeText}"
+                                         FontFamily="IBMPlexSans"
+                                         FontSize="13"
+                                         TextColor="{Binding BikeTextColor}"
+                                         VerticalTextAlignment="Center"
+                                         LineBreakMode="TailTruncation" />
+
+                                     <Label Grid.Column="4"
                                          Text="{Binding BuyerText}"
                                          FontFamily="IBMPlexSans"
                                          FontSize="13"
@@ -170,14 +179,14 @@
                                          VerticalTextAlignment="Center"
                                          LineBreakMode="TailTruncation" />
 
-                                     <Label Grid.Column="4"
+                                     <Label Grid.Column="5"
                                          Text="{Binding MechanicText}"
                                          FontFamily="IBMPlexSans"
                                          FontSize="13"
                                          TextColor="{Binding MechanicTextColor}"
                                          VerticalTextAlignment="Center" />
 
-                                     <Label Grid.Column="5"
+                                     <Label Grid.Column="6"
                                          Text="{Binding TotalText}"
                                          FontFamily="IBMPlexMono"
                                          FontSize="13"
@@ -185,7 +194,7 @@
                                          VerticalTextAlignment="Center"
                                          HorizontalTextAlignment="End" />
 
-                                     <Border Grid.Column="6"
+                                     <Border Grid.Column="7"
                                           StrokeShape="RoundRectangle 4"
                                           StrokeThickness="0"
                                           BackgroundColor="{Binding StatusBackgroundColor}"
@@ -198,7 +207,7 @@
                                           TextColor="{Binding StatusTextColor}" />
                                      </Border>
 
-                                     <Label Grid.Column="7"
+                                     <Label Grid.Column="8"
                                          Text="{Binding TimeText}"
                                          FontFamily="IBMPlexMono"
                                          FontSize="13"
