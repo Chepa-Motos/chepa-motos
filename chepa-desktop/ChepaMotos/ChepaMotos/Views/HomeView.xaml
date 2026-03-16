@@ -269,7 +269,7 @@
                         <!-- Empty state -->
                         <Label x:Name="MechanicsEmptyLabel"
                                IsVisible="{Binding MechanicsEmptyVisible}"
-                               Text="No hay mecanicos activos"
+                               Text="No hay mecánicos activos"
                                FontFamily="IBMPlexSans" FontSize="14"
                                TextColor="{StaticResource TextMuted}"
                                HorizontalTextAlignment="Center"

@@ -4,6 +4,7 @@ namespace ChepaMotos.Views;
 
 public partial class HomeView : ContentView
 {
+    private static readonly string[] MonthAbbreviations = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
     private IDispatcherTimer? _timer;
     private readonly HomeViewModel _viewModel = new();
 
@@ -36,8 +37,7 @@ public partial class HomeView : ContentView
     private void UpdateDateTime()
     {
         var now = DateTime.Now;
-        var months = new[] { "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic" };
-        DateTimeLabel.Text = $"{now.Day} {months[now.Month - 1]} {now.Year}  ·  {now:HH:mm:ss}";
+        DateTimeLabel.Text = $"{now.Day} {MonthAbbreviations[now.Month - 1]} {now.Year}  ·  {now:HH:mm:ss}";
     }
 
     // ── Load data from MockDataService ───────────────────
