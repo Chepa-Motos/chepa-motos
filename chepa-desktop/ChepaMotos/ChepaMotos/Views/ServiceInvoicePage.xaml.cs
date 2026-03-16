@@ -299,7 +299,7 @@ public partial class ServiceInvoicePage : ContentPage
         }
 
         // 300ms debounce
-        _debounceCts?.Cancel();
+        CancelPendingAutocomplete();
         _debounceCts = new CancellationTokenSource();
         var token = _debounceCts.Token;
 
