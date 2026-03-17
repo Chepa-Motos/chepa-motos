@@ -1,9 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using ChepaMotos.Views;
 
 namespace ChepaMotos
 {
     public partial class App : Application
     {
+        private Window? _mainWindow;
+        private bool _isClosing;
+
         public App()
         {
             InitializeComponent();
@@ -11,7 +14,66 @@ namespace ChepaMotos
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell());
+            var window = new Window(new MainLayout());
+            window.Title = "Chepa Motos";
+            window.Width = 1280;
+            window.Height = 800;
+            window.MinimumWidth = 1024;
+            window.MinimumHeight = 600;
+            _mainWindow = window;
+
+#if WINDOWS
+            var closeHooked = false;
+            window.HandlerChanged += (s, e) =>
+            {
+                if (closeHooked)
+                    return;
+
+                if (window.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
+                {
+                    var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(nativeWindow);
+                    var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                    var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(windowId);
+                    closeHooked = true;
+
+                    appWindow.Closing += async (appWin, args) =>
+                    {
+                        if (_isClosing) return;
+                        args.Cancel = true;
+                        var mainPage = window.Page;
+                        if (mainPage == null)
+                        {
+                            // If the main page is unexpectedly null, do not block closing the window.
+                            args.Cancel = false;
+                            return;
+                        }
+
+                        bool confirm = await mainPage.DisplayAlertAsync(
+                            "Cerrar aplicación",
+                            "¿Estás seguro de que deseas cerrar Chepa Motos? Se cerrarán todas las ventanas abiertas.",
+                            "Sí, cerrar",
+                            "Volver");
+
+                        if (confirm)
+                        {
+                            _isClosing = true;
+                            var otherWindows = Windows.Where(w => w != _mainWindow).ToList();
+                            foreach (var w in otherWindows)
+                                CloseWindow(w);
+
+                            Current?.Quit();
+                        }
+                    };
+
+                    if (appWindow.Presenter is Microsoft.UI.Windowing.OverlappedPresenter presenter)
+                    {
+                        presenter.Maximize();
+                    }
+                }
+            };
+#endif
+
+            return window;
         }
     }
 }

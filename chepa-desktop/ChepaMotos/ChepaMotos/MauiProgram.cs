@@ -11,8 +11,17 @@ namespace ChepaMotos
                 .UseMauiApp<App>()
                 .ConfigureFonts(fonts =>
                 {
-                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                    // IBM Plex Sans
+                    fonts.AddFont("IBMPlexSans-Light.ttf", "IBMPlexSansLight");
+                    fonts.AddFont("IBMPlexSans-Regular.ttf", "IBMPlexSans");
+                    fonts.AddFont("IBMPlexSans-Medium.ttf", "IBMPlexSansMedium");
+                    fonts.AddFont("IBMPlexSans-SemiBold.ttf", "IBMPlexSansSemiBold");
+                    fonts.AddFont("IBMPlexSans-Bold.ttf", "IBMPlexSansBold");
+
+                    // IBM Plex Mono
+                    fonts.AddFont("IBMPlexMono-Regular.ttf", "IBMPlexMono");
+                    fonts.AddFont("IBMPlexMono-Medium.ttf", "IBMPlexMonoMedium");
+                    fonts.AddFont("IBMPlexMono-SemiBold.ttf", "IBMPlexMonoSemiBold");
                 });
 
 #if DEBUG
