@@ -8,7 +8,7 @@
 --  10 vehículos
 --  20 facturas SERVICE con ítems variados
 --   5 facturas DELIVERY
---   4 liquidaciones diarias (dos días, dos mecánicos cada día)
+--   8 liquidaciones diarias (dos días, cuatro mecánicos cada día)
 -- =============================================================
 
 -- -------------------------------------------------------------
@@ -272,10 +272,27 @@ VALUES (1, '2026-01-27', 248800.00, 174160.00, 74640.00, 2);
 INSERT INTO daily_liquidation (mechanic_id, date, total_revenue, mechanic_share, shop_share, invoice_count)
 VALUES (2, '2026-01-27', 297600.00, 208320.00, 89280.00, 2);
 
--- Carlos: facturas 5, 6 → total = 112000 + 74800 = 186800
+-- Carlos: facturas 5, 6 → total = 112000 + 74900 = 186900
 INSERT INTO daily_liquidation (mechanic_id, date, total_revenue, mechanic_share, shop_share, invoice_count)
 VALUES (3, '2026-01-27', 186900.00, 130830.00, 56070.00, 2);
 
 -- Julián: factura 8 (factura 7 anulada) → total = 62900
 INSERT INTO daily_liquidation (mechanic_id, date, total_revenue, mechanic_share, shop_share, invoice_count)
 VALUES (4, '2026-01-27', 62900.00, 44030.00, 18870.00, 1);
+
+-- Día 2026-01-28
+-- Jose:   facturas 9, 10, 11, 18 → total = 209200 + 95000 + 121800 + 55000 = 481000
+INSERT INTO daily_liquidation (mechanic_id, date, total_revenue, mechanic_share, shop_share, invoice_count)
+VALUES (1, '2026-01-28', 481000.00, 336700.00, 144300.00, 4);
+
+-- Andrés: facturas 12, 13, 19 → total = 175300 + 145000 + 88000 = 408300
+INSERT INTO daily_liquidation (mechanic_id, date, total_revenue, mechanic_share, shop_share, invoice_count)
+VALUES (2, '2026-01-28', 408300.00, 285810.00, 122490.00, 3);
+
+-- Carlos: facturas 14, 15, 20 → total = 185000 + 160000 + 67000 = 412000
+INSERT INTO daily_liquidation (mechanic_id, date, total_revenue, mechanic_share, shop_share, invoice_count)
+VALUES (3, '2026-01-28', 412000.00, 288400.00, 123600.00, 3);
+
+-- Julián: facturas 16, 17 → total = 62000 + 130400 = 192400
+INSERT INTO daily_liquidation (mechanic_id, date, total_revenue, mechanic_share, shop_share, invoice_count)
+VALUES (4, '2026-01-28', 192400.00, 134680.00, 57720.00, 2);

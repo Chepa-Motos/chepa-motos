@@ -27,9 +27,7 @@ CREATE TABLE mechanic (
 CREATE TABLE vehicle (
     vehicle_id      BIGINT          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     plate           VARCHAR(20)     NOT NULL UNIQUE,
-    model           VARCHAR(100)    NOT NULL,
-
-
+    model           VARCHAR(100)    NOT NULL
 );
 
 CREATE TABLE invoice (
@@ -92,9 +90,6 @@ CREATE INDEX idx_invoice_mechanic_id   ON invoice (mechanic_id);
 CREATE INDEX idx_invoice_vehicle_id    ON invoice (vehicle_id);
 CREATE INDEX idx_invoice_created_at    ON invoice (created_at);
 CREATE INDEX idx_invoice_is_cancelled  ON invoice (is_cancelled);
-
--- vehicle
-CREATE INDEX idx_vehicle_plate         ON vehicle (plate);
 
 -- invoice_item — trigrama para autocomplete case-insensitive
 CREATE INDEX idx_invoice_item_description_trgm
