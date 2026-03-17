@@ -96,9 +96,6 @@ CREATE INDEX idx_invoice_is_cancelled  ON invoice (is_cancelled);
 -- vehicle
 CREATE INDEX idx_vehicle_plate         ON vehicle (plate);
 
--- daily_liquidation
-CREATE INDEX idx_liquidation_mechanic_date ON daily_liquidation (mechanic_id, date);
-
 -- invoice_item — trigrama para autocomplete case-insensitive
 CREATE INDEX idx_invoice_item_description_trgm
     ON invoice_item USING GIN (LOWER(description) gin_trgm_ops);
