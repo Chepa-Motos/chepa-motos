@@ -134,12 +134,12 @@ INSERT INTO invoice_item (invoice_id, description, quantity, unit_price, subtota
 
 -- Factura 11 — Jose, Honda Wave
 INSERT INTO invoice (invoice_type, mechanic_id, vehicle_id, created_at, labor_amount, total_amount, is_cancelled)
-VALUES ('SERVICE', 1, 10, '2026-01-28 14:30:00', 40000.00, 104100.00, false);
+VALUES ('SERVICE', 1, 10, '2026-01-28 14:30:00', 40000.00, 121800.00, false);
 
 INSERT INTO invoice_item (invoice_id, description, quantity, unit_price, subtotal) VALUES
     (11, 'Freno delantero',    1, 36900.00, 36900.00),
     (11, 'Bujía',              1, 26000.00, 26000.00),
-    (11, 'Filtro de aire',     1, 18900.00,  1200.00);
+    (11, 'Filtro de aire',     1, 18900.00, 18900.00);
 
 -- Factura 12 — Andrés, KTM Duke (cliente recurrente)
 INSERT INTO invoice (invoice_type, mechanic_id, vehicle_id, created_at, labor_amount, total_amount, is_cancelled)
