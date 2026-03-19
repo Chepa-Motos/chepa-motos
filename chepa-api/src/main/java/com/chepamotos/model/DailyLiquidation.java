@@ -1,4 +1,4 @@
-package com.chepamotos.modelo;
+package com.chepamotos.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;

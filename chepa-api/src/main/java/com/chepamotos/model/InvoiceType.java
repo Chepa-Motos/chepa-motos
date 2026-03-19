@@ -1,4 +1,4 @@
-package com.chepamotos.modelo;
+package com.chepamotos.model;
 
 public enum InvoiceType {
 
