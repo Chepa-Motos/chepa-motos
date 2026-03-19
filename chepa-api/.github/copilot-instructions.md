@@ -1,8 +1,8 @@
-# ChepaMotos — Copilot Instructions
+# ChepaMotos — Backend Copilot Instructions
 
-You are a senior .NET MAUI developer working on **ChepaMotos**, a Windows desktop billing application for a motorcycle repair shop. This document contains everything you need to understand the project and generate correct, consistent code.
+You are a senior Java/Spring Boot developer working on **ChepaMotos**, the REST API that powers a billing application for a motorcycle repair shop. This document contains everything you need to understand the project and generate correct, consistent code.
 
-Read this entire file before generating any code. Do not invent endpoints, field names, or business rules — everything is defined here.
+Read this entire file before generating any code. Do not invent endpoints, field names, or business rules — everything is defined here. When in doubt about project structure, dependencies, or configuration, read the actual project files — they are the source of truth.
 
 ---
 
@@ -10,277 +10,209 @@ Read this entire file before generating any code. Do not invent endpoints, field
 
 **Business:** Chepa Motos is a motorcycle repair shop and spare parts store in Medellín, Colombia. The system replaces a manual paper-based billing process that had 20-30% error rates.
 
-**Primary user:** Jose Garcia, the shop manager. He uses the desktop app daily to oversee billing, mechanics, and end-of-day liquidations.
-
-**Secondary users:** Commercial advisors who create invoices at the front desk.
+**Primary consumer of the API:** A .NET MAUI desktop application running on Windows inside a private LAN. There is no browser client, no public internet exposure, no external integrations.
 
 **Stack:**
-- Frontend: .NET MAUI 10, Windows desktop (primary) + Android (future)
-- Backend: Java 25 + Spring Boot 4.0.2 REST API (separate project)
-- Database: PostgreSQL 18 (accessed only by the backend, never directly)
-- Analytics: Metabase OSS embedded via WebView
-
----
-
-## Project structure
-
-```
-ChepaMotos/                        ← VS Code workspace root
-├── .github/
-│   └── copilot-instructions.md    ← this file
-├── .vscode/
-│   └── settings.json
-├── ChepaMotos/                    ← MAUI project
-│   ├── Models/                    ← DTOs matching API contract exactly
-│   ├── Services/                  ← HTTP client calls, one service per resource
-│   ├── ViewModels/                ← Business logic and state
-│   ├── Views/                     ← XAML pages and windows
-│   ├── Converters/                ← Value converters
-│   ├── Config/
-│   │   └── AppConfig.cs           ← API base URL and settings
-│   └── ChepaMotos.csproj
-```
+- Language: Java 25
+- Framework: Spring Boot 4.0.3
+- Database: PostgreSQL 18 (Docker container)
+- ORM: Spring Data JPA / Hibernate
+- Build: Gradle
+- Analytics: Metabase OSS — connects directly to PostgreSQL, the API does not serve Metabase
 
 ---
 
 ## Architecture rules — follow these without exception
 
-**1. Never make HTTP calls from Views or ViewModels directly.**
-All HTTP calls go through a service class in `Services/`. Views bind to ViewModels. ViewModels call services.
+**1. Never put business logic in controllers.**
+Controllers only receive requests, call the service layer, and return responses. All business logic lives in services.
 
-**2. Never hardcode the API base URL.**
-Always read from `AppConfig.BaseUrl`. This is how we switch between development (`http://localhost:8080/api`) and production (`http://[SERVER_IP]:8080/api`).
+**2. Never expose JPA entities directly.**
+Controllers always return DTOs, never entities. Map entities to response DTOs in the service layer.
 
-**3. Invoice data lives in memory until confirmed.**
-No API call is made while the user is filling out an invoice. The single API call happens only when the user taps "Confirmar factura". Do not create draft-saving logic.
+**3. All endpoints return the standard response envelope.**
+Every successful response wraps its payload in `ApiResponse<T>`. Every error response uses `ApiErrorResponse`. No exceptions to this rule.
 
-**4. The app uses HTTP, not HTTPS.**
-The API runs on a private LAN. Do not add certificate bypass logic or HTTPS configuration.
+**4. All string inputs are normalized in the service layer before persisting.**
+- `plate`: `.trim().toUpperCase()`
+- `model`, `description`, `buyer_name`: `.trim()`
+Do not rely on the frontend to send clean data.
 
-**5. No local storage or SQLite.**
-All data comes from the API. Do not cache data locally beyond what lives in ViewModel state during a session.
+**5. The backend calculates all monetary values.**
+`subtotal` for each item = `quantity × unit_price`. `total_amount` for invoice = sum of subtotals + `labor_amount`. Never trust these values from the request body.
 
-**6. Do not add authentication.**
-There is no login screen, no JWT handling, no session management. The MVP has no auth layer.
+**6. Invoices are never deleted — only cancelled.**
+`is_cancelled = true` is the only way to remove an invoice from active results. No `DELETE` endpoints exist for invoices.
 
-**7. Keep abstractions minimal.**
-Do not create base classes, generic repositories, or design pattern infrastructure unless explicitly asked. Generate the simplest code that solves the problem.
+**7. Use `@Transactional` on service methods that write to the database.**
+Creating an invoice + its items must be a single atomic transaction. Vehicle creation or update, if needed, is part of the same transaction.
 
----
+**8. The API uses HTTP, not HTTPS.**
+It runs on a private LAN. Do not add SSL configuration or redirect logic.
 
-## Design system
+**9. Do not add authentication or Spring Security.**
+The MVP has no auth layer. Do not add `@PreAuthorize`, filters, or security configuration.
 
-The visual design is defined by this reference prototype built in HTML/CSS. Translate these design decisions directly into MAUI equivalents (colors, spacing, typography, layout structure).
-
-### Color palette
-
-```
-Background:        #F2F1ED  (warm off-white, main app background)
-Surface:           #FFFFFF  (cards, panels, inputs)
-Surface-2:         #ECEAE4  (subtle backgrounds, table headers)
-Border:            #D8D5CC  (all borders)
-Border-strong:     #B0ADA4  (focused/active borders)
-Text-primary:      #18170F  (main text)
-Text-secondary:    #5C5A52  (labels, secondary text)
-Text-muted:        #9A9790  (placeholders, timestamps)
-Accent:            #C13B0A  (primary action, Factura de Servicio button, totals)
-Accent-hover:      #9E3008
-Accent-light:      #F7E8E2  (accent backgrounds)
-Green:             #2A6E44  (positive values, active status, mechanic share)
-Green-light:       #DFF0E8
-Blue:              #1A4A82  (Factura de Venta button, delivery badge)
-Blue-light:        #DDE8F5  (auto-filled fields background)
-Amber:             #A85F08  (liquidation button hover)
-Amber-light:       #FDF0DC
-Sidebar:           #141310  (dark sidebar background)
-```
-
-### Typography
-- Primary font: IBM Plex Sans (weights: 300, 400, 500, 600, 700)
-- Monospace font: IBM Plex Mono (weights: 400, 500, 600) — used for all numeric values, IDs, plates, timestamps, KPI values, table column headers
-
-### Layout
-- Sidebar width: 224px, dark background (#141310)
-- Border radius: 8px for cards and buttons
-- Standard padding: 14-18px for content areas, 12-16px for panels
-
-### Key UI patterns
-
-**Sidebar:** Dark background with navigation items. Two CTA buttons at the bottom — "Factura de Servicio" (accent/red) and "Factura de Venta" (blue). No single "Nueva Factura" button — these are two separate buttons that open their respective invoice windows directly.
-
-**KPI cards:** 4-column grid at top of home screen. Monospace font for values. Total facturado in accent color, Corte taller in green.
-
-**Tables:** Sticky monospace headers in muted color, alternating hover on rows. Plate numbers displayed in a tag style (monospace, surface-2 background, border).
-
-**Invoice window:** Opens as a separate window (not a page navigation). Dark titlebar, shop header, grid of fields, items table with editable rows, labor field (SERVICE only), dark total bar at bottom.
-
-**Auto-filled fields:** Blue-light background (#DDE8F5), blue border (#A8C0DC), blue text — used when plate lookup auto-fills the model field.
-
-**Badges:**
-- Activa: green-light background, green text
-- Anulada: #FCE8E8 background, #C0392B text
-- Venta: blue-light background, blue text
-
-**Toast notifications:** Dark background (#18170F), white text, green checkmark icon, bottom-right corner, auto-dismiss after 3 seconds.
-
-### Reference prototype (HTML)
-
-This is the complete interactive prototype approved by the client. Use it as the ground truth for layout, colors, component structure and interactions.
-
-```html
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Chepa Motos — Prototipo</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
-:root {
-  --bg: #F2F1ED; --surface: #FFFFFF; --surface-2: #ECEAE4;
-  --border: #D8D5CC; --border-strong: #B0ADA4;
-  --text-1: #18170F; --text-2: #5C5A52; --text-3: #9A9790;
-  --accent: #C13B0A; --accent-hover: #9E3008; --accent-light: #F7E8E2;
-  --green: #2A6E44; --green-light: #DFF0E8;
-  --blue: #1A4A82; --blue-light: #DDE8F5;
-  --amber: #A85F08; --amber-light: #FDF0DC;
-  --sidebar: #141310; --sidebar-w: 224px;
-  --mono: 'IBM Plex Mono', monospace; --sans: 'IBM Plex Sans', sans-serif;
-  --radius: 8px;
-}
-</style>
-</head>
-<body>
-<!-- Sidebar: dark, brand at top, nav items, two CTA buttons at bottom -->
-<!-- Home: 4 KPI cards + two-column panel (invoices table + mechanics list) -->
-<!-- Invoice window: separate window, dark titlebar, shop header, fields grid, items table, labor+total -->
-<!-- Facturas page: filter buttons (Todas/Servicio/Venta/Anuladas) + full table -->
-<!-- Liquidaciones page: table with date/mechanic/count/revenue/shares -->
-<!-- Dashboards page: WebView placeholder for Metabase -->
-<!-- Mecánicos page: list with toggle switches for active/inactive -->
-</body>
-</html>
-```
+**10. Keep abstractions minimal.**
+Do not create generic base classes, abstract repositories, or unnecessary design pattern infrastructure unless explicitly asked.
 
 ---
 
-## Domain model
+## Database schema
 
-### Entities (as stored in PostgreSQL)
+### Column naming convention
+All primary keys use the full name pattern: `mechanic_id`, `vehicle_id`, `invoice_id`, `invoice_item_id`, `daily_liquidation_id`. Map these in JPA using `@Column(name = "mechanic_id")` etc.
+
+### Entities
 
 **mechanic**
-| Column | Type | Notes |
+| Column | Type | Constraints |
 |---|---|---|
-| id | BIGINT IDENTITY | PK |
+| mechanic_id | BIGINT GENERATED ALWAYS AS IDENTITY | PRIMARY KEY |
 | name | VARCHAR(100) | NOT NULL |
 | is_active | BOOLEAN | NOT NULL, DEFAULT true |
 
 **vehicle**
-| Column | Type | Notes |
+| Column | Type | Constraints |
 |---|---|---|
-| id | BIGINT IDENTITY | PK |
+| vehicle_id | BIGINT GENERATED ALWAYS AS IDENTITY | PRIMARY KEY |
 | plate | VARCHAR(20) | NOT NULL, UNIQUE |
 | model | VARCHAR(100) | NOT NULL |
 
 **invoice**
-| Column | Type | Notes |
+| Column | Type | Constraints |
 |---|---|---|
-| id | BIGINT IDENTITY | PK |
-| invoice_type | ENUM | 'SERVICE' or 'DELIVERY' |
-| mechanic_id | BIGINT FK | NULL for DELIVERY |
-| vehicle_id | BIGINT FK | NULL for DELIVERY |
-| buyer_name | VARCHAR(150) | NULL for SERVICE |
-| created_at | TIMESTAMP | DEFAULT now() |
-| labor_amount | NUMERIC(10,2) | DEFAULT 0 — always 0 for DELIVERY |
-| total_amount | NUMERIC(10,2) | Sum of items + labor_amount |
-| is_cancelled | BOOLEAN | DEFAULT false — soft delete only |
+| invoice_id | BIGINT GENERATED ALWAYS AS IDENTITY | PRIMARY KEY |
+| invoice_type | ENUM('SERVICE','DELIVERY') | NOT NULL |
+| mechanic_id | BIGINT FK | NULL — only SERVICE invoices have this |
+| vehicle_id | BIGINT FK | NULL — only SERVICE invoices have this |
+| buyer_name | VARCHAR(150) | NULL — only DELIVERY invoices have this |
+| created_at | TIMESTAMP | NOT NULL, DEFAULT now() |
+| labor_amount | NUMERIC(10,2) | NOT NULL, DEFAULT 0 |
+| total_amount | NUMERIC(10,2) | NOT NULL, DEFAULT 0 |
+| is_cancelled | BOOLEAN | NOT NULL, DEFAULT false |
 
 **invoice_item**
-| Column | Type | Notes |
+| Column | Type | Constraints |
 |---|---|---|
-| id | BIGINT IDENTITY | PK |
+| invoice_item_id | BIGINT GENERATED ALWAYS AS IDENTITY | PRIMARY KEY |
 | invoice_id | BIGINT FK | NOT NULL |
-| description | VARCHAR(255) | NOT NULL, trimmed |
+| description | VARCHAR(255) | NOT NULL — stored trimmed |
 | quantity | NUMERIC(10,2) | NOT NULL |
 | unit_price | NUMERIC(10,2) | NOT NULL |
-| subtotal | NUMERIC(10,2) | quantity × unit_price, calculated by backend |
+| subtotal | NUMERIC(10,2) | NOT NULL — calculated by backend, never trusted from request |
 
 **daily_liquidation**
-| Column | Type | Notes |
+| Column | Type | Constraints |
 |---|---|---|
-| id | BIGINT IDENTITY | PK |
+| daily_liquidation_id | BIGINT GENERATED ALWAYS AS IDENTITY | PRIMARY KEY |
 | mechanic_id | BIGINT FK | NOT NULL |
 | date | DATE | NOT NULL |
-| invoice_count | INTEGER | SERVICE invoices only |
-| total_revenue | NUMERIC(10,2) | Sum of active SERVICE invoices |
-| mechanic_share | NUMERIC(10,2) | 70% of total_revenue |
-| shop_share | NUMERIC(10,2) | 30% of total_revenue |
+| total_revenue | NUMERIC(10,2) | NOT NULL |
+| mechanic_share | NUMERIC(10,2) | NOT NULL |
+| shop_share | NUMERIC(10,2) | NOT NULL |
+| invoice_count | INTEGER | NOT NULL |
+| — | UNIQUE(mechanic_id, date) | prevents double liquidation per mechanic per day |
 
-### Business rules
+### PostgreSQL ENUM type
+The `invoice_type` column uses a native PostgreSQL ENUM type named `invoice_type`. With Hibernate 6 (included in Spring Boot 4), map it as:
 
-- A SERVICE invoice must have mechanic_id + vehicle_id. buyer_name must be null.
-- A DELIVERY invoice must have buyer_name. mechanic_id and vehicle_id must be null. labor_amount is always 0.
-- Invoices are never deleted — only cancelled via is_cancelled = true.
-- Daily liquidation only includes active (is_cancelled = false) SERVICE invoices.
-- Mechanic commission: 70% of total revenue from their SERVICE invoices that day.
-- Shop cut: 30% of total revenue.
-- If a plate already exists when creating a SERVICE invoice, the backend reuses the existing vehicle record.
-
----
-
-## String normalization rules
-
-Apply these consistently across all user inputs:
-
-- **Plate:** uppercase, no spaces, no hyphens — `"bxr42h"` → `"BXR42H"`. Colombian plate format: 3 letters + 2 digits + 1 letter (e.g. `ABC12H`). Validate with regex `^[A-Z]{3}[0-9]{2}[A-Z]$`.
-- **Model, description, buyer_name:** trimmed of leading/trailing whitespace. Capitalize first letter on input for better UX.
-- All string comparisons in search/autocomplete are case-insensitive.
-
----
-
-## Currency format
-
-All monetary values are displayed as `$209.100` (Colombian peso format — period as thousands separator, no decimals displayed).
-
-```csharp
-// Format helper
-public static string FormatCurrency(decimal value)
-    => $"${value:N0}".Replace(",", ".");
+```java
+@Enumerated(EnumType.STRING)
+@Column(name = "invoice_type", columnDefinition = "invoice_type")
+private InvoiceType invoiceType;
 ```
 
-All values are sent to and received from the API as `decimal` with two decimal places (e.g. `209100.00`).
+---
+
+## Business rules
+
+**Invoice types:**
+- `SERVICE`: must have `mechanic_id` + `vehicle_id`. `buyer_name` must be null. `labor_amount` >= 0.
+- `DELIVERY`: must have `buyer_name`. `mechanic_id` and `vehicle_id` must be null. `labor_amount` is always 0 — ignore any value sent in the request and always persist 0.
+- The database enforces this via a CHECK constraint. The service layer must also validate before hitting the DB.
+
+**Vehicle logic on SERVICE invoice:**
+- If the plate does NOT exist → create a new vehicle record with the plate and model from the request, in the same transaction as the invoice.
+- If the plate EXISTS → update the vehicle's model with the value from the request, then reuse the record. This allows intentional model corrections. The frontend blocks editing after plate auto-fill and requires an explicit edit action before allowing model changes — so any model value sent with an existing plate is intentional.
+
+**Invoice cancellation:**
+Sets `is_cancelled = true`. Irreversible. If already cancelled, return `INVOICE_ALREADY_CANCELLED` (409). Never delete the record.
+
+**Daily liquidation logic:**
+1. Find all active mechanics who have active SERVICE invoices on the given date (or just the specified mechanic if `mechanic_id` is provided).
+2. For each mechanic:
+   - Check no liquidation exists for `mechanic_id + date` — if it does, return `LIQUIDATION_ALREADY_EXISTS` (409).
+   - Sum `total_amount` of all `is_cancelled = false` SERVICE invoices for that mechanic on that date.
+   - `mechanic_share` = `total_revenue × 0.70`
+   - `shop_share` = `total_revenue × 0.30`
+   - `invoice_count` = count of those invoices.
+   - Persist the `daily_liquidation` record.
+3. Return an array of all created liquidation objects.
+- DELIVERY invoices are completely excluded — they generate no commission.
+
+**Autocomplete suggestions:**
+- Query `invoice_item` → join `invoice` → join `vehicle`.
+- Filter: `invoice_type = 'SERVICE'`, `is_cancelled = false`, `LOWER(vehicle.model) ILIKE LOWER(:model || '%')`, `LOWER(description) ILIKE LOWER(:q || '%')`.
+- Group by description, return the most recent `unit_price` for each unique description.
+- Order by frequency (count) descending.
+- Return max 10 results.
+- Return empty array `[]` if no results — never throw an exception for empty results.
+- The trigram index on `LOWER(description)` in PostgreSQL makes this query fast at scale.
+
+---
+
+## Standard response envelope
+
+Every endpoint uses these wrappers without exception.
+
+```java
+public class ApiResponse<T> {
+    private T data;
+    private String timestamp;
+
+    public static <T> ApiResponse<T> of(T data) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.data = data;
+        response.timestamp = LocalDateTime.now().toString();
+        return response;
+    }
+}
+
+public class ApiErrorResponse {
+    private String code;
+    private String message;
+    private String timestamp;
+}
+```
+
+Implement a `@RestControllerAdvice` global exception handler that catches custom exceptions and maps them to `ApiErrorResponse`. Never let stack traces reach the client.
+
+---
+
+## Error codes
+
+| Code | HTTP | When to use |
+|---|---|---|
+| `VEHICLE_NOT_FOUND` | 404 | Plate lookup returns no result — expected business condition, do not log as error |
+| `MECHANIC_NOT_FOUND` | 404 | `mechanic_id` does not exist |
+| `INVOICE_NOT_FOUND` | 404 | Invoice ID does not exist |
+| `INVOICE_ALREADY_CANCELLED` | 409 | Cancelling an already-cancelled invoice |
+| `LIQUIDATION_ALREADY_EXISTS` | 409 | Liquidation already exists for mechanic + date |
+| `VALIDATION_ERROR` | 400 | Bean validation failures (`@Valid`) |
+| `INTERNAL_ERROR` | 500 | Unexpected exceptions |
 
 ---
 
 ## API contract
 
-**Base URL (dev):** `http://localhost:8080/api`  
-**Base URL (prod):** `http://[SERVER_IP]:8080/api`  
-**Format:** JSON · UTF-8  
-**Dates:** `"YYYY-MM-DD"` · Timestamps: `"YYYY-MM-DDTHH:mm:ss"`
-
-### Standard response envelope
-
-Success:
-```json
-{ "data": { }, "timestamp": "2026-01-28T10:15:00" }
-```
-
-Error:
-```json
-{ "code": "ERROR_CODE", "message": "Descripción del error", "timestamp": "2026-01-28T10:15:00" }
-```
-
-### Error codes
-
-| Code | HTTP | Meaning |
-|---|---|---|
-| `VEHICLE_NOT_FOUND` | 404 | No vehicle with that plate — treat as "new vehicle", not an error to show the user |
-| `MECHANIC_NOT_FOUND` | 404 | Mechanic does not exist |
-| `INVOICE_NOT_FOUND` | 404 | Invoice does not exist |
-| `INVOICE_ALREADY_CANCELLED` | 409 | Invoice was already cancelled |
-| `LIQUIDATION_ALREADY_EXISTS` | 409 | Mechanic already liquidated for that date |
-| `VALIDATION_ERROR` | 400 | Invalid input data |
-| `INTERNAL_ERROR` | 500 | Server error |
+**Base URL (dev):** `http://localhost:8080/api`
+**Base URL (prod):** `http://[SERVER_IP]:8080/api`
+**Content-Type:** `application/json`
+**Charset:** UTF-8
+**Date format:** `YYYY-MM-DD`
+**Timestamp format:** `YYYY-MM-DDTHH:mm:ss`
+**Currency:** `BigDecimal` with 2 decimal places — e.g. `209100.00`. Frontend is responsible for display formatting (`$209.100`).
 
 ---
 
@@ -288,8 +220,12 @@ Error:
 
 #### GET /mechanics
 ```
-Query: active (bool, default true)
-Response 200: { "data": [{ "id": 1, "name": "Jose", "is_active": true }] }
+Query: active (boolean, default true)
+Response 200:
+{
+  "data": [{ "id": 1, "name": "Jose", "is_active": true }],
+  "timestamp": "2026-01-28T10:15:00"
+}
 ```
 
 #### GET /mechanics/{id}
@@ -300,7 +236,8 @@ Response 404: MECHANIC_NOT_FOUND
 
 #### POST /mechanics
 ```
-Request:  { "name": "Carlos" }
+Request:    { "name": "Carlos" }
+Validation: name required, not blank, max 100 chars
 Response 201: { "data": { "id": 6, "name": "Carlos", "is_active": true } }
 Response 400: VALIDATION_ERROR
 ```
@@ -318,9 +255,11 @@ Response 404: MECHANIC_NOT_FOUND
 
 #### GET /vehicles/plate/{plate}
 ```
-Response 200: { "data": { "id": 3, "plate": "BXR42H", "model": "Boxer 150 2021" } }
-Response 404: VEHICLE_NOT_FOUND  ← not an error — means new vehicle
+Path param: plate (String) — normalize to uppercase before querying
+Response 200: { "data": { "id": 3, "plate": "BXR74F", "model": "Boxer 150 2021" } }
+Response 404: VEHICLE_NOT_FOUND
 ```
+Note: 404 here means the plate is new. The frontend handles this gracefully by keeping the model field editable. Do not log it as an error.
 
 ---
 
@@ -328,14 +267,19 @@ Response 404: VEHICLE_NOT_FOUND  ← not an error — means new vehicle
 
 #### GET /invoices
 ```
-Query: date (YYYY-MM-DD, default today), type (SERVICE|DELIVERY), mechanic_id, cancelled (bool, default false)
+Query:
+  date        (YYYY-MM-DD, default: today)
+  type        (SERVICE | DELIVERY, default: both)
+  mechanic_id (Long, optional)
+  cancelled   (boolean, default: false)
+
 Response 200:
 {
   "data": [{
     "id": 14,
     "invoice_type": "SERVICE",
     "mechanic": { "id": 1, "name": "Jose" },
-    "vehicle": { "id": 3, "plate": "BXR42H", "model": "Boxer 150 2021" },
+    "vehicle": { "id": 3, "plate": "BXR74F", "model": "Boxer 150 2021" },
     "buyer_name": null,
     "created_at": "2026-01-28T09:45:00",
     "labor_amount": 65000.00,
@@ -359,13 +303,32 @@ Response 404: INVOICE_NOT_FOUND
 Request:
 {
   "mechanic_id": 1,
-  "plate": "BXR42H",
+  "plate": "BXR74F",
   "model": "Boxer 150 2021",
   "labor_amount": 65000.00,
   "items": [
     { "description": "Tornillo Leva", "quantity": 1, "unit_price": 3900.00 }
   ]
 }
+
+Validations:
+  mechanic_id:         required — mechanic must exist and be active
+  plate:               required, not blank, max 20 chars — normalize to uppercase
+  model:               required, not blank, max 100 chars — trim
+  labor_amount:        required, >= 0
+  items:               required, min 1 item
+  items[].description: required, not blank, max 255 chars — trim
+  items[].quantity:    required, > 0
+  items[].unit_price:  required, >= 0
+
+Backend calculates:
+  items[].subtotal = quantity × unit_price
+  total_amount     = sum(subtotals) + labor_amount
+
+Vehicle logic:
+  plate EXISTS     → update vehicle.model with value from request, reuse the record
+  plate NOT FOUND  → create new vehicle (plate + model) in same transaction
+
 Response 201: full invoice object
 Response 400: VALIDATION_ERROR
 Response 404: MECHANIC_NOT_FOUND
@@ -380,13 +343,22 @@ Request:
     { "description": "Suzuki 150 Palanca de Freno", "quantity": 2, "unit_price": 18500.00 }
   ]
 }
-Response 201: full invoice object (mechanic: null, vehicle: null, labor_amount: 0)
+
+Validations:
+  buyer_name: required, not blank, max 150 chars — trim
+  items:      required, min 1 item
+  Same item validations as SERVICE
+
+labor_amount is always 0 — always persist as 0, ignore any value in request
+mechanic and vehicle are always null
+
+Response 201: full invoice object (mechanic: null, vehicle: null, labor_amount: 0.00)
 Response 400: VALIDATION_ERROR
 ```
 
 #### PATCH /invoices/{id}/cancel
 ```
-Request: {}
+Request: {} (empty body)
 Response 200: { "data": { "id": 14, "is_cancelled": true } }
 Response 404: INVOICE_NOT_FOUND
 Response 409: INVOICE_ALREADY_CANCELLED
@@ -398,20 +370,25 @@ Response 409: INVOICE_ALREADY_CANCELLED
 
 #### GET /invoice-items/suggestions
 ```
-Query: model (string, required), q (string, required, min 2 chars)
-Example: GET /invoice-items/suggestions?model=Boxer 150&q=fre
+Query:
+  model (String, required) — vehicle model to scope the search
+  q     (String, required, min 2 chars) — search prefix
+
 Response 200:
 {
   "data": [
     { "description": "Freno Delantero", "unit_price": 45000.00 },
-    { "description": "Freno Trasero", "unit_price": 38000.00 }
+    { "description": "Freno Trasero",   "unit_price": 38000.00 }
   ]
 }
+
+Rules:
+  - Only SERVICE invoices (invoice_type = 'SERVICE')
+  - Only active invoices (is_cancelled = false)
+  - Uses LOWER(description) ILIKE LOWER(:q || '%') — leverages trigram index
+  - Returns max 10 results ordered by frequency descending
+  - Returns [] if no results — never an error, never throw an exception
 ```
-- Returns max 10 suggestions ordered by frequency descending
-- Only queries SERVICE invoices (not DELIVERY)
-- Returns empty array if no suggestions — not an error
-- **Apply 300ms debounce before calling. Do not call with fewer than 2 characters.**
 
 ---
 
@@ -419,7 +396,10 @@ Response 200:
 
 #### GET /liquidations
 ```
-Query: mechanic_id, date (YYYY-MM-DD)
+Query:
+  mechanic_id (Long, optional)
+  date        (YYYY-MM-DD, optional)
+
 Response 200:
 {
   "data": [{
@@ -438,57 +418,46 @@ Response 200:
 ```
 Request (single mechanic): { "date": "2026-01-28", "mechanic_id": 1 }
 Request (all mechanics):   { "date": "2026-01-28", "mechanic_id": null }
-Response 201: array of liquidation objects created
+
+Response 201: array of created liquidation objects
 Response 404: MECHANIC_NOT_FOUND
 Response 409: LIQUIDATION_ALREADY_EXISTS
 ```
 
 ---
 
-## Navigation structure
+## Endpoint summary
 
-```
-Sidebar (always visible)
-├── Inicio          → HomeView (default)
-├── Facturas        → InvoicesView
-├── Liquidaciones   → LiquidationsView
-├── Dashboards      → DashboardsView (WebView → Metabase URL from config)
-├── Mecánicos       → MechanicsView
-├── [Factura de Servicio button] → opens ServiceInvoiceWindow
-└── [Factura de Venta button]    → opens DeliveryInvoiceWindow
-```
-
-Invoice windows open as separate MAUI windows on top of the main window, not as page navigation. They are dismissed on cancel or after successful confirmation.
-
----
-
-## AppConfig
-
-```csharp
-public static class AppConfig
-{
-    public static string BaseUrl { get; } =
-        DeviceInfo.Platform == DevicePlatform.Android
-            ? "http://10.0.2.2:8080/api"   // Android emulator → localhost
-            : "http://localhost:8080/api";   // Windows dev
-
-    public static string MetabaseUrl { get; } = "http://localhost:3000/embed/dashboard/[TOKEN]";
-}
-```
-
-Update the base URLs for production by changing these values — never hardcode elsewhere.
+| Method | Path | Description |
+|---|---|---|
+| GET | `/mechanics` | List mechanics |
+| GET | `/mechanics/{id}` | Get mechanic by ID |
+| POST | `/mechanics` | Create mechanic |
+| PATCH | `/mechanics/{id}/status` | Activate / deactivate mechanic |
+| GET | `/vehicles/plate/{plate}` | Lookup vehicle by plate |
+| GET | `/invoices` | List invoices with filters |
+| GET | `/invoices/{id}` | Get invoice by ID |
+| POST | `/invoices/service` | Create SERVICE invoice |
+| POST | `/invoices/delivery` | Create DELIVERY invoice |
+| PATCH | `/invoices/{id}/cancel` | Cancel invoice |
+| GET | `/invoice-items/suggestions` | Autocomplete suggestions |
+| GET | `/liquidations` | List liquidations |
+| POST | `/liquidations` | Execute daily liquidation |
 
 ---
 
 ## What NOT to do
 
-- Do not add authentication, login screens, or token management
-- Do not add SQLite, local caching, or offline support
-- Do not create abstract base classes or generic service patterns unless asked
-- Do not use `MessagingCenter` — it was removed in .NET 10. Use `WeakReferenceMessenger` from CommunityToolkit.Mvvm instead
-- Do not add unit tests unless explicitly requested
+- Do not add Spring Security, JWT, or any authentication layer
+- Do not use `ddl-auto=create` or `ddl-auto=update` — schema is managed exclusively by `schema.sql`
+- Do not expose JPA entities in controller responses — always use DTOs
+- Do not add Flyway or Liquibase unless explicitly asked
+- Do not add MapStruct or ModelMapper — map manually with simple methods
+- Do not add Swagger/OpenAPI unless explicitly asked
+- Do not add caching (Redis, Caffeine, etc.)
+- Do not add `@DeleteMapping` endpoints for invoices — cancellation only, never deletion
+- Do not trust `subtotal` or `total_amount` from the request body — always recalculate
+- Do not log `VEHICLE_NOT_FOUND` as an error — it is an expected business condition
+- Do not add HTTPS, SSL certificates, or port 443 configuration
 - Do not suggest architectural refactors outside the current task scope
-- Do not use HTTPS or add certificate bypass logic
-- Do not hardcode the API base URL anywhere except AppConfig.cs
-- Do not warn that `DatePicker.Date ?? fallback` is a compile error — in .NET MAUI 10 `DatePicker.Date` is `DateTime?` (nullable), so the null-coalescing operator is valid and the build confirms zero errors on this pattern
-- Do not warn that plate validation only checks non-empty — this is intentional. The regex `PlateRegex` is used to show a **warning** (non-blocking) for non-standard plates, allowing mechanics to invoice vehicles with older, foreign, or atypical plates without being blocked
+- Do not use Maven — this project uses Gradle
