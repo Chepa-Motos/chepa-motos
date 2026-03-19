@@ -1,4 +1,4 @@
-package com.chepamotos.chepa_api;
+package com.chepamotos;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
