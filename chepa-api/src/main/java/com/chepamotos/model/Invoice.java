@@ -42,7 +42,7 @@ public class Invoice {
     private BigDecimal laborAmount;
 
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalAmount = BigDecimal.ZERO;
+    private BigDecimal totalAmount;
 
     @Column(name = "is_cancelled", nullable = false)
     private boolean isCancelled = false;
