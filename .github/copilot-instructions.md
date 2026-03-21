@@ -32,36 +32,6 @@ Never assume the backend matches this document exactly — always verify against
 
 ---
 
-## Repository structure
-
-```
-chepa-motos/
-├── docker-compose.yml
-├── .env
-├── init/
-│   ├── 01_create_metabase_db.sql
-│   ├── 02_schema.sql
-│   └── 03_seed.sql
-├── chepa-api/
-│   └── src/main/java/com/chepamotos/
-│       ├── controller/        ← REST controllers — read these to verify endpoints
-│       ├── service/           ← Business logic — read if you need to understand behavior
-│       ├── dto/
-│       │   ├── request/       ← What the backend expects to receive
-│       │   └── response/      ← What the backend returns
-│       └── entity/            ← JPA entities — read for field names if needed
-└── chepa-desktop/
-    └── ChepaMotos/
-        ├── Config/
-        │   └── AppConfig.cs   ← Base URL — always use this, never hardcode
-        ├── Models/            ← Frontend DTOs — must match backend response shapes
-        ├── Services/          ← HTTP service classes — this is where you work
-        ├── ViewModels/        ← Consume services — do not make HTTP calls here
-        └── Views/             ← XAML — do not touch unless fixing a binding issue
-```
-
----
-
 ## Frontend service layer rules
 
 **1. One service class per backend resource.**
@@ -334,7 +304,7 @@ Liquidation {
     mechanic:       MechanicRef
     date:           string   (YYYY-MM-DD)
     invoice_count:  int
-    total_revenue:  decimal
+    total_revenue:  decimal (sum of labor_amount)
     mechanic_share: decimal
     shop_share:     decimal
 }
