@@ -143,7 +143,8 @@ Sets `is_cancelled = true`. Irreversible. If already cancelled, return `INVOICE_
 1. Find all active mechanics who have active SERVICE invoices on the given date (or just the specified mechanic if `mechanic_id` is provided).
 2. For each mechanic:
    - Check no liquidation exists for `mechanic_id + date` — if it does, return `LIQUIDATION_ALREADY_EXISTS` (409).
-   - Sum `total_amount` of all `is_cancelled = false` SERVICE invoices for that mechanic on that date.
+   - Sum `labor_amount` of all `is_cancelled = false` SERVICE invoices for that mechanic on that date.
+   - This sum is `total_revenue`  . 
    - `mechanic_share` = `total_revenue × 0.70`
    - `shop_share` = `total_revenue × 0.30`
    - `invoice_count` = count of those invoices.
