@@ -47,28 +47,32 @@ class MechanicRepositoryAdapterIntegrationTest {
 
     @Test
     void findAllByActive_filtersByStatus() {
-        mechanicRepositoryAdapter.save(Mechanic.createNew("Jose"));
-        Mechanic inactive = mechanicRepositoryAdapter.save(Mechanic.createNew("Andres"));
+        int baselineActive = mechanicRepositoryAdapter.findAllByActive(true).size();
+        int baselineInactive = mechanicRepositoryAdapter.findAllByActive(false).size();
+
+        mechanicRepositoryAdapter.save(Mechanic.createNew("Jose_test_active"));
+        Mechanic inactive = mechanicRepositoryAdapter.save(Mechanic.createNew("Andres_test_inactive"));
         mechanicRepositoryAdapter.save(inactive.withStatus(false));
 
         List<Mechanic> activeMechanics = mechanicRepositoryAdapter.findAllByActive(true);
         List<Mechanic> inactiveMechanics = mechanicRepositoryAdapter.findAllByActive(false);
 
-        assertEquals(1, activeMechanics.size());
-        assertEquals("Jose", activeMechanics.getFirst().name());
+        assertEquals(baselineActive + 1, activeMechanics.size());
+        assertTrue(activeMechanics.stream().anyMatch(mechanic -> "Jose_test_active".equals(mechanic.name()) && mechanic.active()));
 
-        assertEquals(1, inactiveMechanics.size());
-        assertEquals("Andres", inactiveMechanics.getFirst().name());
-        assertFalse(inactiveMechanics.getFirst().active());
+        assertEquals(baselineInactive + 1, inactiveMechanics.size());
+        assertTrue(inactiveMechanics.stream().anyMatch(mechanic -> "Andres_test_inactive".equals(mechanic.name()) && !mechanic.active()));
     }
 
     @Test
     void findAll_returnsAllSavedMechanics() {
-        mechanicRepositoryAdapter.save(Mechanic.createNew("Jose"));
-        mechanicRepositoryAdapter.save(Mechanic.createNew("Carlos"));
+        int baselineTotal = mechanicRepositoryAdapter.findAll().size();
+
+        mechanicRepositoryAdapter.save(Mechanic.createNew("Jose_test_total"));
+        mechanicRepositoryAdapter.save(Mechanic.createNew("Carlos_test_total"));
 
         List<Mechanic> all = mechanicRepositoryAdapter.findAll();
 
-        assertEquals(2, all.size());
+        assertEquals(baselineTotal + 2, all.size());
     }
 }
