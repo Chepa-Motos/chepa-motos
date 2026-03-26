@@ -3,6 +3,7 @@ package com.chepamotos.adapter.controller;
 import com.chepamotos.adapter.dto.ApiErrorResponse;
 import com.chepamotos.domain.exception.InvoiceAlreadyCancelledException;
 import com.chepamotos.domain.exception.InvoiceNotFoundException;
+import com.chepamotos.domain.exception.LiquidationAlreadyExistsException;
 import com.chepamotos.domain.exception.MechanicNotFoundException;
 import com.chepamotos.domain.exception.VehicleNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -33,6 +34,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvoiceAlreadyCancelledException.class)
     public ResponseEntity<ApiErrorResponse> handleInvoiceAlreadyCancelled(InvoiceAlreadyCancelledException exception) {
         return buildError(HttpStatus.CONFLICT, "INVOICE_ALREADY_CANCELLED", exception.getMessage());
+    }
+
+    @ExceptionHandler(LiquidationAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleLiquidationAlreadyExists(LiquidationAlreadyExistsException exception) {
+        return buildError(HttpStatus.CONFLICT, "LIQUIDATION_ALREADY_EXISTS", exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
