@@ -2,6 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.adapter.dto.ApiErrorResponse;
 import com.chepamotos.domain.exception.MechanicNotFoundException;
+import com.chepamotos.domain.exception.VehicleNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MechanicNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleMechanicNotFound(MechanicNotFoundException exception) {
         return buildError(HttpStatus.NOT_FOUND, "MECHANIC_NOT_FOUND", exception.getMessage());
+    }
+
+    @ExceptionHandler(VehicleNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleVehicleNotFound(VehicleNotFoundException exception) {
+        return buildError(HttpStatus.NOT_FOUND, "VEHICLE_NOT_FOUND", exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
