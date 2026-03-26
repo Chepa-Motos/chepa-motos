@@ -1,5 +1,6 @@
 package com.chepamotos.domain.service;
 
+import com.chepamotos.domain.exception.InvoiceAlreadyCancelledException;
 import com.chepamotos.domain.exception.InvoiceNotFoundException;
 import com.chepamotos.domain.model.Invoice;
 import com.chepamotos.domain.model.InvoiceItem;
@@ -35,6 +36,18 @@ public class InvoiceService {
     public Invoice getById(Long invoiceId) {
         return invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+    }
+
+    @Transactional
+    public Invoice cancel(Long invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
+
+        if (invoice.cancelled()) {
+            throw new InvoiceAlreadyCancelledException(invoiceId);
+        }
+
+        return invoiceRepository.save(invoice.cancel());
     }
 
     @Transactional

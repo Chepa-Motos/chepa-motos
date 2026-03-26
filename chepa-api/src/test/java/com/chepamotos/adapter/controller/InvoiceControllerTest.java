@@ -1,6 +1,7 @@
 package com.chepamotos.adapter.controller;
 
 import com.chepamotos.domain.exception.InvoiceNotFoundException;
+import com.chepamotos.domain.exception.InvoiceAlreadyCancelledException;
 import com.chepamotos.domain.model.Invoice;
 import com.chepamotos.domain.model.InvoiceItem;
 import com.chepamotos.domain.model.InvoiceType;
@@ -26,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -197,6 +199,51 @@ class InvoiceControllerTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
+
+                @Test
+                void cancel_whenInvoiceExists_returnsOkEnvelope() throws Exception {
+              Invoice cancelled = Invoice.restore(
+                1L,
+                InvoiceType.SERVICE,
+                Mechanic.restore(1L, "Jose", true),
+                Vehicle.restore(1L, "BXR42H", "Boxer 150 2021"),
+                null,
+                LocalDateTime.now(),
+                new BigDecimal("45000.00"),
+                true,
+                List.of(InvoiceItem.restore(1L, "Freno delantero", BigDecimal.ONE, new BigDecimal("36900.00")))
+              );
+
+              when(invoiceService.cancel(1L)).thenReturn(cancelled);
+
+              mockMvc.perform(patch("/api/invoices/1/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.is_cancelled").value(true))
+                .andExpect(jsonPath("$.timestamp").exists());
+                }
+
+                @Test
+                void cancel_whenInvoiceMissing_returns404WithStandardError() throws Exception {
+              when(invoiceService.cancel(anyLong())).thenThrow(new InvoiceNotFoundException(99L));
+
+              mockMvc.perform(patch("/api/invoices/99/cancel"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("INVOICE_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
+                }
+
+                @Test
+                void cancel_whenAlreadyCancelled_returns409WithStandardError() throws Exception {
+              when(invoiceService.cancel(anyLong())).thenThrow(new InvoiceAlreadyCancelledException(1L));
+
+              mockMvc.perform(patch("/api/invoices/1/cancel"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("INVOICE_ALREADY_CANCELLED"))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
+                }
 
     private Invoice sampleServiceInvoice() {
         Mechanic mechanic = Mechanic.restore(1L, "Jose", true);

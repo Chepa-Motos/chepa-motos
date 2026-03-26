@@ -3,6 +3,7 @@ package com.chepamotos.adapter.controller;
 import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.CreateServiceInvoiceRequest;
 import com.chepamotos.adapter.dto.CreateDeliveryInvoiceRequest;
+import com.chepamotos.adapter.dto.InvoiceCancelResponse;
 import com.chepamotos.adapter.dto.InvoiceResponse;
 import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.domain.service.InvoiceService;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -85,4 +87,10 @@ public class InvoiceController {
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data));
     }
+
+        @PatchMapping("/{id}/cancel")
+        public ResponseEntity<ApiResponse<InvoiceCancelResponse>> cancel(@PathVariable("id") Long invoiceId) {
+                InvoiceCancelResponse data = InvoiceCancelResponse.fromDomain(invoiceService.cancel(invoiceId));
+                return ResponseEntity.ok(ApiResponse.of(data));
+        }
 }
