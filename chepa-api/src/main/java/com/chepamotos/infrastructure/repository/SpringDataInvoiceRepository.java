@@ -13,6 +13,6 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
     @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items")
     List<Invoice> findAllWithDetails();
 
-    @Query("SELECT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items WHERE i.id = :id")
+    @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items WHERE i.id = :id")
     Optional<Invoice> findByIdWithDetails(@Param("id") Long id);
 }
