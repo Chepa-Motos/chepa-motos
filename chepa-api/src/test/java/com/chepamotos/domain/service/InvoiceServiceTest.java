@@ -10,6 +10,7 @@ import com.chepamotos.domain.model.Vehicle;
 import com.chepamotos.domain.port.InvoiceRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -91,10 +92,15 @@ class InvoiceServiceTest {
         when(invoiceRepository.save(any())).thenReturn(cancelled);
 
         Invoice result = invoiceService.cancel(10L);
+        ArgumentCaptor<Invoice> savedInvoiceCaptor = ArgumentCaptor.forClass(Invoice.class);
 
         assertTrue(result.cancelled());
         verify(invoiceRepository).findById(10L);
-        verify(invoiceRepository).save(any());
+        verify(invoiceRepository).save(savedInvoiceCaptor.capture());
+
+        Invoice savedArgument = savedInvoiceCaptor.getValue();
+        assertEquals(10L, savedArgument.id());
+        assertTrue(savedArgument.cancelled());
     }
 
     @Test
