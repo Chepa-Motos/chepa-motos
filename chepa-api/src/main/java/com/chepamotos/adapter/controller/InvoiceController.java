@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -78,7 +79,7 @@ public class InvoiceController {
                         null,  // vehiclePlate is null for DELIVERY
                         null,  // vehicleModel is null for DELIVERY
                         request.buyerName(),
-                        null,  // laborAmount is null (will default to 0)
+                        BigDecimal.ZERO,
                         itemData
                 )
         );
