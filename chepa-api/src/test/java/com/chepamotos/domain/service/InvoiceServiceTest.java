@@ -77,18 +77,18 @@ class InvoiceServiceTest {
         Invoice saved = sampleServiceInvoice(5L);
 
         when(mechanicService.getById(1L)).thenReturn(mechanic);
-        when(vehicleService.getByPlate("BXR42H")).thenReturn(vehicle);
+        when(vehicleService.resolveForServiceInvoice("BXR42H", "Boxer 150 2021")).thenReturn(vehicle);
         when(invoiceRepository.save(any())).thenReturn(saved);
 
         List<InvoiceService.InvoiceItemData> itemData = List.of(
                 new InvoiceService.InvoiceItemData("Freno delantero", BigDecimal.ONE, new BigDecimal("36900.00"))
         );
 
-        Invoice result = invoiceService.create(InvoiceType.SERVICE, 1L, "BXR42H", null, new BigDecimal("45000.00"), itemData);
+        Invoice result = invoiceService.create(InvoiceType.SERVICE, 1L, "BXR42H", "Boxer 150 2021", null, new BigDecimal("45000.00"), itemData);
 
         assertEquals(saved, result);
         verify(mechanicService).getById(1L);
-        verify(vehicleService).getByPlate("BXR42H");
+        verify(vehicleService).resolveForServiceInvoice("BXR42H", "Boxer 150 2021");
         verify(invoiceRepository).save(any());
     }
 
@@ -101,7 +101,7 @@ class InvoiceServiceTest {
                 new InvoiceService.InvoiceItemData("Boxer 150 Palanca de freno", new BigDecimal("2"), new BigDecimal("18500.00"))
         );
 
-        Invoice result = invoiceService.create(InvoiceType.DELIVERY, null, null, "Talleres La 80", BigDecimal.ZERO, itemData);
+        Invoice result = invoiceService.create(InvoiceType.DELIVERY, null, null, null, "Talleres La 80", BigDecimal.ZERO, itemData);
 
 
         assertEquals(saved, result);
@@ -111,7 +111,7 @@ class InvoiceServiceTest {
     @Test
     void create_whenEmptyItems_throwsDomainValidation() {
         assertThrows(IllegalArgumentException.class, () ->
-                invoiceService.create(InvoiceType.DELIVERY, null, null, "Buyer", BigDecimal.ZERO, List.of())
+            invoiceService.create(InvoiceType.DELIVERY, null, null, null, "Buyer", BigDecimal.ZERO, List.of())
         );
 
     }
@@ -123,7 +123,7 @@ class InvoiceServiceTest {
         );
 
         assertThrows(IllegalArgumentException.class, () ->
-                invoiceService.create(InvoiceType.DELIVERY, null, null, "   ", BigDecimal.ZERO, itemData));
+            invoiceService.create(InvoiceType.DELIVERY, null, null, null, "   ", BigDecimal.ZERO, itemData));
 
     }
 

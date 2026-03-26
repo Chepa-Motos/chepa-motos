@@ -38,7 +38,7 @@ public class InvoiceService {
     }
 
     @Transactional
-    public Invoice create(InvoiceType type, Long mechanicId, String vehiclePlate, String buyerName, BigDecimal laborAmount, List<InvoiceItemData> itemData) {
+    public Invoice create(InvoiceType type, Long mechanicId, String vehiclePlate, String vehicleModel, String buyerName, BigDecimal laborAmount, List<InvoiceItemData> itemData) {
         List<InvoiceItem> items = itemData.stream()
                 .map(i -> InvoiceItem.createNew(i.description(), i.quantity(), i.unitPrice()))
                 .toList();
@@ -46,7 +46,7 @@ public class InvoiceService {
         Invoice invoice;
         if (type == InvoiceType.SERVICE) {
             var mechanic = mechanicService.getById(mechanicId);
-            var vehicle = vehicleService.getByPlate(vehiclePlate);
+            var vehicle = vehicleService.resolveForServiceInvoice(vehiclePlate, vehicleModel);
             invoice = Invoice.createService(mechanic, vehicle, laborAmount, items);
         } else {
             invoice = Invoice.createDelivery(buyerName, items);

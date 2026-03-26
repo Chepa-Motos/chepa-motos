@@ -55,6 +55,7 @@ public class InvoiceController {
                         InvoiceType.SERVICE,
                         request.mechanicId(),
                         request.vehiclePlate(),
+                        request.model(),
                         null,  // buyerName is null for SERVICE
                         request.laborAmount(),
                         itemData
@@ -75,6 +76,7 @@ public class InvoiceController {
                         InvoiceType.DELIVERY,
                         null,  // mechanicId is null for DELIVERY
                         null,  // vehiclePlate is null for DELIVERY
+                        null,  // vehicleModel is null for DELIVERY
                         request.buyerName(),
                         null,  // laborAmount is null (will default to 0)
                         itemData

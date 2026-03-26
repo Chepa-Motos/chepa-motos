@@ -82,7 +82,7 @@ class InvoiceControllerTest {
 
     @Test
     void create_serviceInvoice_whenValid_returnsCreatedEnvelope() throws Exception {
-        when(invoiceService.create(any(), anyLong(), any(), any(), any(), any()))
+      when(invoiceService.create(any(), anyLong(), any(), any(), any(), any(), any()))
                 .thenReturn(sampleServiceInvoice());
 
         mockMvc.perform(post("/api/invoices/service")
@@ -107,7 +107,7 @@ class InvoiceControllerTest {
 
     @Test
     void create_deliveryInvoice_whenValid_returnsCreatedEnvelope() throws Exception {
-        when(invoiceService.create(any(), any(), any(), any(), any(), any()))
+      when(invoiceService.create(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(sampleDeliveryInvoice());
 
         mockMvc.perform(post("/api/invoices/delivery")
