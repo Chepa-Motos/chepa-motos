@@ -97,6 +97,24 @@ class LiquidationControllerTest {
     }
 
     @Test
+    void create_allMechanics_whenNoEligibleMechanics_returnsCreatedWithEmptyData() throws Exception {
+        when(liquidationService.create(any(), any())).thenReturn(List.of());
+
+        mockMvc.perform(post("/api/liquidations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "date": "2026-01-28",
+                                  "mechanic_id": null
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data").isEmpty())
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
     void create_whenMissingDate_returns400ValidationError() throws Exception {
         mockMvc.perform(post("/api/liquidations")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -125,6 +126,57 @@ class LiquidationServiceTest {
         assertTrue(result.stream().anyMatch(r -> r.mechanic().id().equals(1L) && r.invoiceCount() == 2));
         assertTrue(result.stream().anyMatch(r -> r.mechanic().id().equals(2L) && r.invoiceCount() == 1));
         verify(invoiceRepository).findActiveMechanicIdsWithActiveServiceInvoicesByDate(date);
+    }
+
+    @Test
+    void create_allMechanics_whenNoEligibleMechanics_returnsEmptyList() {
+        LocalDate date = LocalDate.of(2026, 1, 28);
+        when(invoiceRepository.findActiveMechanicIdsWithActiveServiceInvoicesByDate(date)).thenReturn(List.of());
+
+        List<DailyLiquidation> result = liquidationService.create(date, null);
+
+        assertTrue(result.isEmpty());
+        verify(invoiceRepository).findActiveMechanicIdsWithActiveServiceInvoicesByDate(date);
+        verify(dailyLiquidationRepository, never()).save(any(DailyLiquidation.class));
+    }
+
+    @Test
+    void create_singleMechanic_whenNoServiceInvoices_createsZeroTotals() {
+        LocalDate date = LocalDate.of(2026, 1, 28);
+        Mechanic mechanic = Mechanic.restore(1L, "Jose", true);
+
+        when(mechanicService.getById(1L)).thenReturn(mechanic);
+        when(dailyLiquidationRepository.existsByMechanicAndDate(1L, date)).thenReturn(false);
+        when(invoiceRepository.sumActiveServiceLaborByMechanicAndDate(1L, date)).thenReturn(BigDecimal.ZERO);
+        when(invoiceRepository.countActiveServiceInvoicesByMechanicAndDate(1L, date)).thenReturn(0);
+        when(dailyLiquidationRepository.save(any(DailyLiquidation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<DailyLiquidation> result = liquidationService.create(date, 1L);
+
+        assertEquals(1, result.size());
+        assertEquals(0, result.get(0).totalRevenue().compareTo(BigDecimal.ZERO));
+        assertEquals(0, result.get(0).mechanicShare().compareTo(BigDecimal.ZERO));
+        assertEquals(0, result.get(0).shopShare().compareTo(BigDecimal.ZERO));
+        assertEquals(0, result.get(0).invoiceCount());
+    }
+
+    @Test
+    void create_allMechanics_whenOneAlreadyLiquidated_throwsConflictAndStops() {
+        LocalDate date = LocalDate.of(2026, 1, 28);
+        Mechanic mechanic1 = Mechanic.restore(1L, "Jose", true);
+        Mechanic mechanic2 = Mechanic.restore(2L, "Andres", true);
+
+        when(invoiceRepository.findActiveMechanicIdsWithActiveServiceInvoicesByDate(date)).thenReturn(List.of(2L, 1L));
+        when(mechanicService.getById(1L)).thenReturn(mechanic1);
+        when(dailyLiquidationRepository.existsByMechanicAndDate(1L, date)).thenReturn(true);
+
+        assertThrows(LiquidationAlreadyExistsException.class, () -> liquidationService.create(date, null));
+
+        verify(invoiceRepository).findActiveMechanicIdsWithActiveServiceInvoicesByDate(date);
+        verify(dailyLiquidationRepository).existsByMechanicAndDate(1L, date);
+        verify(dailyLiquidationRepository, never()).save(any(DailyLiquidation.class));
+        verify(invoiceRepository, never()).sumActiveServiceLaborByMechanicAndDate(anyLong(), any(LocalDate.class));
+        verify(invoiceRepository, never()).countActiveServiceInvoicesByMechanicAndDate(anyLong(), any(LocalDate.class));
     }
 
     @Test

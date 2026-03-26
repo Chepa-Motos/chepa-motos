@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
@@ -59,6 +60,16 @@ class DailyLiquidationRepositoryAdapterIntegrationTest {
     }
 
     @Test
+    void existsByMechanicAndDate_returnsFalseWhenLiquidationDoesNotExist() {
+        Mechanic mechanic = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_liq_not_exists"));
+        LocalDate date = LocalDate.of(2099, 1, 22);
+
+        boolean exists = dailyLiquidationRepositoryAdapter.existsByMechanicAndDate(mechanic.id(), date);
+
+        assertFalse(exists);
+    }
+
+    @Test
     void findAll_appliesMechanicAndDateFilters() {
         LocalDate targetDate = LocalDate.of(2099, 1, 3);
         LocalDate otherDate = LocalDate.of(2099, 1, 4);
@@ -82,4 +93,69 @@ class DailyLiquidationRepositoryAdapterIntegrationTest {
         assertEquals(mechanicA.id(), filtered.get(0).mechanic().id());
         assertEquals(targetDate, filtered.get(0).date());
     }
+
+        @Test
+        void findAll_whenFiltersAreNull_returnsAllRows() {
+        LocalDate targetDate = LocalDate.of(2099, 1, 5);
+        LocalDate otherDate = LocalDate.of(2099, 1, 6);
+
+        Mechanic mechanicA = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_liq_null_A"));
+        Mechanic mechanicB = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_liq_null_B"));
+
+        dailyLiquidationRepositoryAdapter.save(
+            DailyLiquidation.create(mechanicA, targetDate, new BigDecimal("70000.00"), 2)
+        );
+        dailyLiquidationRepositoryAdapter.save(
+            DailyLiquidation.create(mechanicB, otherDate, new BigDecimal("40000.00"), 1)
+        );
+
+        List<DailyLiquidation> all = dailyLiquidationRepositoryAdapter.findAll(null, null);
+
+        assertTrue(all.stream().anyMatch(liq -> liq.mechanic().id().equals(mechanicA.id()) && liq.date().equals(targetDate)));
+        assertTrue(all.stream().anyMatch(liq -> liq.mechanic().id().equals(mechanicB.id()) && liq.date().equals(otherDate)));
+        }
+
+        @Test
+        void findAll_whenOnlyDateIsProvided_filtersByDateOnly() {
+        LocalDate targetDate = LocalDate.of(2099, 1, 7);
+        LocalDate otherDate = LocalDate.of(2099, 1, 8);
+
+        Mechanic mechanicA = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_liq_date_A"));
+        Mechanic mechanicB = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_liq_date_B"));
+
+        dailyLiquidationRepositoryAdapter.save(
+            DailyLiquidation.create(mechanicA, targetDate, new BigDecimal("50000.00"), 1)
+        );
+        dailyLiquidationRepositoryAdapter.save(
+            DailyLiquidation.create(mechanicB, otherDate, new BigDecimal("80000.00"), 2)
+        );
+
+        List<DailyLiquidation> byDate = dailyLiquidationRepositoryAdapter.findAll(null, targetDate);
+
+        assertEquals(1, byDate.size());
+        assertEquals(targetDate, byDate.get(0).date());
+        assertEquals(mechanicA.id(), byDate.get(0).mechanic().id());
+        }
+
+        @Test
+        void findAll_whenOnlyMechanicIsProvided_filtersByMechanicOnly() {
+        LocalDate dateA = LocalDate.of(2099, 1, 9);
+        LocalDate dateB = LocalDate.of(2099, 1, 10);
+
+        Mechanic mechanicA = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_liq_mech_A"));
+        Mechanic mechanicB = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_liq_mech_B"));
+
+        dailyLiquidationRepositoryAdapter.save(
+            DailyLiquidation.create(mechanicA, dateA, new BigDecimal("120000.00"), 3)
+        );
+        dailyLiquidationRepositoryAdapter.save(
+            DailyLiquidation.create(mechanicB, dateB, new BigDecimal("30000.00"), 1)
+        );
+
+        List<DailyLiquidation> byMechanic = dailyLiquidationRepositoryAdapter.findAll(mechanicA.id(), null);
+
+        assertEquals(1, byMechanic.size());
+        assertEquals(mechanicA.id(), byMechanic.get(0).mechanic().id());
+        assertEquals(dateA, byMechanic.get(0).date());
+        }
 }
