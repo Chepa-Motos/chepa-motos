@@ -1,6 +1,7 @@
 package com.chepamotos.adapter.controller;
 
 import com.chepamotos.adapter.dto.ApiErrorResponse;
+import com.chepamotos.domain.exception.InvoiceAlreadyCancelledException;
 import com.chepamotos.domain.exception.InvoiceNotFoundException;
 import com.chepamotos.domain.exception.MechanicNotFoundException;
 import com.chepamotos.domain.exception.VehicleNotFoundException;
@@ -27,6 +28,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvoiceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleInvoiceNotFound(InvoiceNotFoundException exception) {
         return buildError(HttpStatus.NOT_FOUND, "INVOICE_NOT_FOUND", exception.getMessage());
+    }
+
+    @ExceptionHandler(InvoiceAlreadyCancelledException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvoiceAlreadyCancelled(InvoiceAlreadyCancelledException exception) {
+        return buildError(HttpStatus.CONFLICT, "INVOICE_ALREADY_CANCELLED", exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

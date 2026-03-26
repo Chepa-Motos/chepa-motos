@@ -99,4 +99,19 @@ class InvoiceRepositoryAdapterIntegrationTest {
         List<Invoice> all = invoiceRepositoryAdapter.findAll();
         assertEquals(baseline + 1, all.size());
     }
+
+    @Test
+    void save_whenInvoiceCancelled_persistsCancelledFlag() {
+        Mechanic mechanic = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_cancel"));
+        Vehicle vehicle = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTINV4D", "Test Model Cancel"));
+        List<InvoiceItem> items = List.of(InvoiceItem.createNew("Cancel item", BigDecimal.ONE, new BigDecimal("12000.00")));
+
+        Invoice saved = invoiceRepositoryAdapter.save(Invoice.createService(mechanic, vehicle, new BigDecimal("10000.00"), items));
+        Invoice cancelled = saved.cancel();
+
+        Invoice persisted = invoiceRepositoryAdapter.save(cancelled);
+
+        assertTrue(persisted.cancelled());
+        assertEquals(saved.id(), persisted.id());
+    }
 }

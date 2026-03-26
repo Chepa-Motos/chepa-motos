@@ -1,6 +1,7 @@
 package com.chepamotos.domain.service;
 
 import com.chepamotos.domain.exception.InvoiceNotFoundException;
+import com.chepamotos.domain.exception.InvoiceAlreadyCancelledException;
 import com.chepamotos.domain.model.Invoice;
 import com.chepamotos.domain.model.InvoiceItem;
 import com.chepamotos.domain.model.InvoiceType;
@@ -9,6 +10,7 @@ import com.chepamotos.domain.model.Vehicle;
 import com.chepamotos.domain.port.InvoiceRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -69,6 +71,64 @@ class InvoiceServiceTest {
 
         assertThrows(InvoiceNotFoundException.class, () -> invoiceService.getById(99L));
         verify(invoiceRepository).findById(99L);
+    }
+
+    @Test
+    void cancel_whenActiveInvoice_marksCancelledAndSaves() {
+        Invoice active = sampleServiceInvoice(10L);
+        Invoice cancelled = Invoice.restore(
+                10L,
+                InvoiceType.SERVICE,
+                active.mechanic(),
+                active.vehicle(),
+                active.buyerName(),
+                active.createdAt(),
+                active.laborAmount(),
+                true,
+                active.items()
+        );
+
+        when(invoiceRepository.findById(10L)).thenReturn(Optional.of(active));
+        when(invoiceRepository.save(any())).thenReturn(cancelled);
+
+        Invoice result = invoiceService.cancel(10L);
+        ArgumentCaptor<Invoice> savedInvoiceCaptor = ArgumentCaptor.forClass(Invoice.class);
+
+        assertTrue(result.cancelled());
+        verify(invoiceRepository).findById(10L);
+        verify(invoiceRepository).save(savedInvoiceCaptor.capture());
+
+        Invoice savedArgument = savedInvoiceCaptor.getValue();
+        assertEquals(10L, savedArgument.id());
+        assertTrue(savedArgument.cancelled());
+    }
+
+    @Test
+    void cancel_whenNotFound_throwsInvoiceNotFoundException() {
+        when(invoiceRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        assertThrows(InvoiceNotFoundException.class, () -> invoiceService.cancel(999L));
+        verify(invoiceRepository).findById(999L);
+    }
+
+    @Test
+    void cancel_whenAlreadyCancelled_throwsInvoiceAlreadyCancelledException() {
+        Invoice cancelled = Invoice.restore(
+                20L,
+                InvoiceType.DELIVERY,
+                null,
+                null,
+                "Buyer",
+                LocalDateTime.now(),
+                BigDecimal.ZERO,
+                true,
+                List.of(InvoiceItem.restore(1L, "Item", BigDecimal.ONE, new BigDecimal("1000.00")))
+        );
+
+        when(invoiceRepository.findById(20L)).thenReturn(Optional.of(cancelled));
+
+        assertThrows(InvoiceAlreadyCancelledException.class, () -> invoiceService.cancel(20L));
+        verify(invoiceRepository).findById(20L);
     }
 
     @Test
