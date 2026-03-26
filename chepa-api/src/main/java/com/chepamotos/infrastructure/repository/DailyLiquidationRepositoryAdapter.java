@@ -19,7 +19,18 @@ public class DailyLiquidationRepositoryAdapter implements DailyLiquidationReposi
 
     @Override
     public List<DailyLiquidation> findAll(Long mechanicId, LocalDate date) {
-        return springDataDailyLiquidationRepository.findAllByFilters(mechanicId, date)
+        List<com.chepamotos.infrastructure.entity.DailyLiquidation> liquidations;
+        if (mechanicId != null && date != null) {
+            liquidations = springDataDailyLiquidationRepository.findAllByMechanicIdAndDate(mechanicId, date);
+        } else if (mechanicId != null) {
+            liquidations = springDataDailyLiquidationRepository.findAllByMechanicId(mechanicId);
+        } else if (date != null) {
+            liquidations = springDataDailyLiquidationRepository.findAllByDate(date);
+        } else {
+            liquidations = springDataDailyLiquidationRepository.findAllWithMechanic();
+        }
+
+        return liquidations
                 .stream()
                 .map(DailyLiquidationEntityMapper::toDomain)
                 .toList();

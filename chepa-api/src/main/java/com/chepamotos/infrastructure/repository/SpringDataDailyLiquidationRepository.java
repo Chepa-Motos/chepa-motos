@@ -10,8 +10,17 @@ import java.util.List;
 
 public interface SpringDataDailyLiquidationRepository extends JpaRepository<DailyLiquidation, Long> {
 
-    @Query("SELECT d FROM DailyLiquidation d JOIN FETCH d.mechanic m WHERE (:mechanicId IS NULL OR m.id = :mechanicId) AND (:date IS NULL OR d.date = :date)")
-    List<DailyLiquidation> findAllByFilters(@Param("mechanicId") Long mechanicId, @Param("date") LocalDate date);
+    @Query("SELECT d FROM DailyLiquidation d JOIN FETCH d.mechanic")
+    List<DailyLiquidation> findAllWithMechanic();
+
+    @Query("SELECT d FROM DailyLiquidation d JOIN FETCH d.mechanic m WHERE m.id = :mechanicId")
+    List<DailyLiquidation> findAllByMechanicId(@Param("mechanicId") Long mechanicId);
+
+    @Query("SELECT d FROM DailyLiquidation d JOIN FETCH d.mechanic WHERE d.date = :date")
+    List<DailyLiquidation> findAllByDate(@Param("date") LocalDate date);
+
+    @Query("SELECT d FROM DailyLiquidation d JOIN FETCH d.mechanic m WHERE m.id = :mechanicId AND d.date = :date")
+    List<DailyLiquidation> findAllByMechanicIdAndDate(@Param("mechanicId") Long mechanicId, @Param("date") LocalDate date);
 
     boolean existsByMechanic_IdAndDate(Long mechanicId, LocalDate date);
 }
