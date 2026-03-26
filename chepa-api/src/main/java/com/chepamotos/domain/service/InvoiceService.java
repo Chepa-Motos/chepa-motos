@@ -39,18 +39,22 @@ public class InvoiceService {
 
     @Transactional
     public Invoice create(InvoiceType type, Long mechanicId, String vehiclePlate, String vehicleModel, String buyerName, BigDecimal laborAmount, List<InvoiceItemData> itemData) {
+        if (type == null) {
+            throw new IllegalArgumentException("invoice_type is required");
+        }
+
         List<InvoiceItem> items = itemData.stream()
                 .map(i -> InvoiceItem.createNew(i.description(), i.quantity(), i.unitPrice()))
                 .toList();
 
-        Invoice invoice;
-        if (type == InvoiceType.SERVICE) {
-            var mechanic = mechanicService.getById(mechanicId);
-            var vehicle = vehicleService.resolveForServiceInvoice(vehiclePlate, vehicleModel);
-            invoice = Invoice.createService(mechanic, vehicle, laborAmount, items);
-        } else {
-            invoice = Invoice.createDelivery(buyerName, items);
-        }
+        Invoice invoice = switch (type) {
+            case SERVICE -> {
+                var mechanic = mechanicService.getById(mechanicId);
+                var vehicle = vehicleService.resolveForServiceInvoice(vehiclePlate, vehicleModel);
+                yield Invoice.createService(mechanic, vehicle, laborAmount, items);
+            }
+            case DELIVERY -> Invoice.createDelivery(buyerName, items);
+        };
 
         return invoiceRepository.save(invoice);
     }

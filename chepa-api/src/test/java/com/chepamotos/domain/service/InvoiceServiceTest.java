@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
@@ -126,6 +127,18 @@ class InvoiceServiceTest {
             invoiceService.create(InvoiceType.DELIVERY, null, null, null, "   ", BigDecimal.ZERO, itemData));
 
     }
+
+        @Test
+        void create_whenTypeIsNull_throwsValidationError() {
+        List<InvoiceService.InvoiceItemData> itemData = List.of(
+            new InvoiceService.InvoiceItemData("Item", BigDecimal.ONE, new BigDecimal("1000.00"))
+        );
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+            invoiceService.create(null, null, null, null, "Buyer", BigDecimal.ZERO, itemData));
+
+        assertTrue(ex.getMessage().contains("invoice_type is required"));
+        }
 
     private Invoice sampleServiceInvoice(Long id) {
         Mechanic mechanic = Mechanic.restore(1L, "Jose", true);
