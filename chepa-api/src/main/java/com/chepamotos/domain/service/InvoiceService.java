@@ -43,6 +43,10 @@ public class InvoiceService {
             throw new IllegalArgumentException("invoice_type is required");
         }
 
+        if (itemData == null) {
+            throw new IllegalArgumentException("Invoice items are required");
+        }
+
         List<InvoiceItem> items = itemData.stream()
                 .map(i -> InvoiceItem.createNew(i.description(), i.quantity(), i.unitPrice()))
                 .toList();

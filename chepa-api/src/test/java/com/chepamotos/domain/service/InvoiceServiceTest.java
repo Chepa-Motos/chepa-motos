@@ -128,17 +128,25 @@ class InvoiceServiceTest {
 
     }
 
-        @Test
-        void create_whenTypeIsNull_throwsValidationError() {
+    @Test
+    void create_whenItemDataIsNull_throwsValidationError() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                invoiceService.create(InvoiceType.DELIVERY, null, null, null, "Buyer", BigDecimal.ZERO, null));
+
+        assertTrue(ex.getMessage().contains("Invoice items are required"));
+    }
+
+    @Test
+    void create_whenTypeIsNull_throwsValidationError() {
         List<InvoiceService.InvoiceItemData> itemData = List.of(
-            new InvoiceService.InvoiceItemData("Item", BigDecimal.ONE, new BigDecimal("1000.00"))
+                new InvoiceService.InvoiceItemData("Item", BigDecimal.ONE, new BigDecimal("1000.00"))
         );
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-            invoiceService.create(null, null, null, null, "Buyer", BigDecimal.ZERO, itemData));
+                invoiceService.create(null, null, null, null, "Buyer", BigDecimal.ZERO, itemData));
 
         assertTrue(ex.getMessage().contains("invoice_type is required"));
-        }
+    }
 
     private Invoice sampleServiceInvoice(Long id) {
         Mechanic mechanic = Mechanic.restore(1L, "Jose", true);
