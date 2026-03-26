@@ -82,16 +82,16 @@ class InvoiceControllerTest {
 
     @Test
     void create_serviceInvoice_whenValid_returnsCreatedEnvelope() throws Exception {
-        when(invoiceService.create(any(), anyLong(), anyLong(), any(), any(), any()))
+        when(invoiceService.create(any(), anyLong(), any(), any(), any(), any()))
                 .thenReturn(sampleServiceInvoice());
 
-        mockMvc.perform(post("/api/invoices")
+        mockMvc.perform(post("/api/invoices/service")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "invoice_type": "SERVICE",
                                   "mechanic_id": 1,
                                   "vehicle_plate": "BXR42H",
+                                  "model": "Boxer 150 2021",
                                   "labor_amount": 45000.00,
                                   "items": [
                                     {"description": "Freno delantero", "quantity": 1, "unit_price": 36900.00}
@@ -110,11 +110,10 @@ class InvoiceControllerTest {
         when(invoiceService.create(any(), any(), any(), any(), any(), any()))
                 .thenReturn(sampleDeliveryInvoice());
 
-        mockMvc.perform(post("/api/invoices")
+        mockMvc.perform(post("/api/invoices/delivery")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "invoice_type": "DELIVERY",
                                   "buyer_name": "Talleres La 80",
                                   "items": [
                                     {"description": "Boxer 150 Palanca de freno", "quantity": 2, "unit_price": 18500.00}
@@ -128,14 +127,14 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void create_whenEmptyItems_returns400ValidationError() throws Exception {
-        mockMvc.perform(post("/api/invoices")
+    void create_serviceInvoice_whenEmptyItems_returns400ValidationError() throws Exception {
+        mockMvc.perform(post("/api/invoices/service")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "invoice_type": "SERVICE",
                                   "mechanic_id": 1,
                                   "vehicle_plate": "BXR42H",
+                                  "model": "Boxer 150 2021",
                                   "labor_amount": 45000.00,
                                   "items": []
                                 }
@@ -146,8 +145,46 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void create_whenMissingInvoiceType_returns400ValidationError() throws Exception {
-        mockMvc.perform(post("/api/invoices")
+    void create_serviceInvoice_whenMissingMechanicId_returns400ValidationError() throws Exception {
+        mockMvc.perform(post("/api/invoices/service")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "vehicle_plate": "BXR42H",
+                                  "model": "Boxer 150 2021",
+                                  "labor_amount": 45000.00,
+                                  "items": [
+                                    {"description": "Freno", "quantity": 1, "unit_price": 36900.00}
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void create_serviceInvoice_whenMissingVehiclePlate_returns400ValidationError() throws Exception {
+        mockMvc.perform(post("/api/invoices/service")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "mechanic_id": 1,
+                                  "model": "Boxer 150 2021",
+                                  "labor_amount": 45000.00,
+                                  "items": [
+                                    {"description": "Freno", "quantity": 1, "unit_price": 36900.00}
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void create_deliveryInvoice_whenMissingBuyerName_returns400ValidationError() throws Exception {
+        mockMvc.perform(post("/api/invoices/delivery")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {

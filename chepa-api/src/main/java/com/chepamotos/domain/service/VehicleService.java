@@ -34,6 +34,10 @@ public class VehicleService {
             throw new IllegalArgumentException("Vehicle plate cannot be blank");
         }
 
+        if (normalized.length() > 20) {
+            throw new IllegalArgumentException("Vehicle plate cannot exceed 20 characters");
+        }
+
         return normalized;
     }
 }

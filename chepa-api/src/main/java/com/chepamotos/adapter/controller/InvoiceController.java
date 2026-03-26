@@ -1,8 +1,10 @@
 package com.chepamotos.adapter.controller;
 
 import com.chepamotos.adapter.dto.ApiResponse;
-import com.chepamotos.adapter.dto.CreateInvoiceRequest;
+import com.chepamotos.adapter.dto.CreateServiceInvoiceRequest;
+import com.chepamotos.adapter.dto.CreateDeliveryInvoiceRequest;
 import com.chepamotos.adapter.dto.InvoiceResponse;
+import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.domain.service.InvoiceService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -41,19 +43,40 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.of(data));
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<InvoiceResponse>> create(@Valid @RequestBody CreateInvoiceRequest request) {
+    @PostMapping("/service")
+    public ResponseEntity<ApiResponse<InvoiceResponse>> createService(
+            @Valid @RequestBody CreateServiceInvoiceRequest request) {
         List<InvoiceService.InvoiceItemData> itemData = request.items().stream()
                 .map(i -> new InvoiceService.InvoiceItemData(i.description(), i.quantity(), i.unitPrice()))
                 .toList();
 
         InvoiceResponse data = InvoiceResponse.fromDomain(
                 invoiceService.create(
-                        request.invoiceType(),
+                        InvoiceType.SERVICE,
                         request.mechanicId(),
                         request.vehiclePlate(),
-                        request.buyerName(),
+                        null,  // buyerName is null for SERVICE
                         request.laborAmount(),
+                        itemData
+                )
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data));
+    }
+
+    @PostMapping("/delivery")
+    public ResponseEntity<ApiResponse<InvoiceResponse>> createDelivery(
+            @Valid @RequestBody CreateDeliveryInvoiceRequest request) {
+        List<InvoiceService.InvoiceItemData> itemData = request.items().stream()
+                .map(i -> new InvoiceService.InvoiceItemData(i.description(), i.quantity(), i.unitPrice()))
+                .toList();
+
+        InvoiceResponse data = InvoiceResponse.fromDomain(
+                invoiceService.create(
+                        InvoiceType.DELIVERY,
+                        null,  // mechanicId is null for DELIVERY
+                        null,  // vehiclePlate is null for DELIVERY
+                        request.buyerName(),
+                        null,  // laborAmount is null (will default to 0)
                         itemData
                 )
         );
