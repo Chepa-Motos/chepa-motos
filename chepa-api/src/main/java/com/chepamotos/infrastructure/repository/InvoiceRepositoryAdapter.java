@@ -1,10 +1,13 @@
 package com.chepamotos.infrastructure.repository;
 
 import com.chepamotos.domain.model.Invoice;
+import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.domain.port.InvoiceRepository;
 import com.chepamotos.infrastructure.mapper.InvoiceEntityMapper;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +32,21 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 	public Optional<Invoice> findById(Long id) {
 		return springDataInvoiceRepository.findByIdWithDetails(id)
 				.map(InvoiceEntityMapper::toDomain);
+	}
+
+	@Override
+	public BigDecimal sumActiveServiceLaborByMechanicAndDate(Long mechanicId, LocalDate date) {
+		return springDataInvoiceRepository.sumActiveServiceLaborByMechanicAndDate(InvoiceType.SERVICE, mechanicId, date);
+	}
+
+	@Override
+	public int countActiveServiceInvoicesByMechanicAndDate(Long mechanicId, LocalDate date) {
+		return Math.toIntExact(springDataInvoiceRepository.countActiveServiceInvoicesByMechanicAndDate(InvoiceType.SERVICE, mechanicId, date));
+	}
+
+	@Override
+	public List<Long> findActiveMechanicIdsWithActiveServiceInvoicesByDate(LocalDate date) {
+		return springDataInvoiceRepository.findActiveMechanicIdsWithActiveServiceInvoicesByDate(InvoiceType.SERVICE, date);
 	}
 
 	@Override

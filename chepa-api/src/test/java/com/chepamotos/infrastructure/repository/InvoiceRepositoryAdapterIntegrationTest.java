@@ -12,6 +12,8 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.context.annotation.Import;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -114,4 +116,137 @@ class InvoiceRepositoryAdapterIntegrationTest {
         assertTrue(persisted.cancelled());
         assertEquals(saved.id(), persisted.id());
     }
+
+        @Test
+        void sumAndCountActiveServiceByMechanicAndDate_excludesCancelledAndDeliveryAndOtherDates() {
+        LocalDate date = LocalDate.of(2099, 2, 1);
+        LocalDate otherDate = LocalDate.of(2099, 2, 2);
+
+        Mechanic mechanic = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_agg_main"));
+        Vehicle vehicle = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTAGG1", "Agg Model Main"));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanic,
+            vehicle,
+            null,
+            LocalDateTime.of(2099, 2, 1, 10, 0),
+            new BigDecimal("100.00"),
+            false,
+            List.of(InvoiceItem.createNew("Item 1", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanic,
+            vehicle,
+            null,
+            LocalDateTime.of(2099, 2, 1, 12, 0),
+            new BigDecimal("50.00"),
+            false,
+            List.of(InvoiceItem.createNew("Item 2", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanic,
+            vehicle,
+            null,
+            LocalDateTime.of(2099, 2, 1, 13, 0),
+            new BigDecimal("999.00"),
+            true,
+            List.of(InvoiceItem.createNew("Cancelled", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanic,
+            vehicle,
+            null,
+            LocalDateTime.of(2099, 2, 2, 9, 0),
+            new BigDecimal("777.00"),
+            false,
+            List.of(InvoiceItem.createNew("Other date", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.DELIVERY,
+            null,
+            null,
+            "Buyer Agg",
+            LocalDateTime.of(2099, 2, 1, 15, 0),
+            BigDecimal.ZERO,
+            false,
+            List.of(InvoiceItem.createNew("Delivery", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        BigDecimal total = invoiceRepositoryAdapter.sumActiveServiceLaborByMechanicAndDate(mechanic.id(), date);
+        int count = invoiceRepositoryAdapter.countActiveServiceInvoicesByMechanicAndDate(mechanic.id(), date);
+
+        assertEquals(new BigDecimal("150.00"), total);
+        assertEquals(2, count);
+
+        BigDecimal otherTotal = invoiceRepositoryAdapter.sumActiveServiceLaborByMechanicAndDate(mechanic.id(), otherDate);
+        int otherCount = invoiceRepositoryAdapter.countActiveServiceInvoicesByMechanicAndDate(mechanic.id(), otherDate);
+
+        assertEquals(new BigDecimal("777.00"), otherTotal);
+        assertEquals(1, otherCount);
+        }
+
+        @Test
+        void findActiveMechanicIdsWithActiveServiceInvoicesByDate_returnsOnlyActiveMechanicsWithServiceInvoices() {
+        LocalDate date = LocalDate.of(2099, 3, 1);
+
+        Mechanic activeMechanic = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_agg_active"));
+        Mechanic inactiveMechanic = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_agg_inactive"));
+        inactiveMechanic = mechanicRepositoryAdapter.save(inactiveMechanic.withStatus(false));
+
+        Vehicle vehicle1 = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTAGG2", "Agg Model Active"));
+        Vehicle vehicle2 = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTAGG3", "Agg Model Inactive"));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            activeMechanic,
+            vehicle1,
+            null,
+            LocalDateTime.of(2099, 3, 1, 10, 0),
+            new BigDecimal("80.00"),
+            false,
+            List.of(InvoiceItem.createNew("Active service", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            inactiveMechanic,
+            vehicle2,
+            null,
+            LocalDateTime.of(2099, 3, 1, 11, 0),
+            new BigDecimal("90.00"),
+            false,
+            List.of(InvoiceItem.createNew("Inactive service", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.DELIVERY,
+            null,
+            null,
+            "Buyer",
+            LocalDateTime.of(2099, 3, 1, 12, 0),
+            BigDecimal.ZERO,
+            false,
+            List.of(InvoiceItem.createNew("Delivery", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        List<Long> mechanicIds = invoiceRepositoryAdapter.findActiveMechanicIdsWithActiveServiceInvoicesByDate(date);
+
+        assertEquals(1, mechanicIds.size());
+        assertEquals(activeMechanic.id(), mechanicIds.get(0));
+        }
 }
