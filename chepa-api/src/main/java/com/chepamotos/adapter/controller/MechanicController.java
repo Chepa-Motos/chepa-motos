@@ -4,7 +4,7 @@ import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.CreateMechanicRequest;
 import com.chepamotos.adapter.dto.MechanicResponse;
 import com.chepamotos.adapter.dto.UpdateMechanicStatusRequest;
-import com.chepamotos.domain.service.MechanicService;
+import com.chepamotos.infrastructure.application.MechanicApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,17 +23,17 @@ import java.util.List;
 @RequestMapping("/api/mechanics")
 public class MechanicController {
 
-    private final MechanicService mechanicService;
+    private final MechanicApplicationService mechanicApplicationService;
 
-    public MechanicController(MechanicService mechanicService) {
-        this.mechanicService = mechanicService;
+    public MechanicController(MechanicApplicationService mechanicApplicationService) {
+        this.mechanicApplicationService = mechanicApplicationService;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MechanicResponse>>> list(
             @RequestParam(name = "active", defaultValue = "true") boolean active
     ) {
-        List<MechanicResponse> data = mechanicService.listByActive(active)
+        List<MechanicResponse> data = mechanicApplicationService.listByActive(active)
                 .stream()
                 .map(MechanicResponse::fromDomain)
                 .toList();
@@ -42,7 +42,7 @@ public class MechanicController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MechanicResponse>> getById(@PathVariable("id") Long mechanicId) {
-        MechanicResponse data = MechanicResponse.fromDomain(mechanicService.getById(mechanicId));
+        MechanicResponse data = MechanicResponse.fromDomain(mechanicApplicationService.getById(mechanicId));
         return ResponseEntity.ok(ApiResponse.of(data));
     }
 
@@ -50,7 +50,7 @@ public class MechanicController {
     public ResponseEntity<ApiResponse<MechanicResponse>> create(
             @Valid @RequestBody CreateMechanicRequest request
     ) {
-        MechanicResponse data = MechanicResponse.fromDomain(mechanicService.create(request.name()));
+        MechanicResponse data = MechanicResponse.fromDomain(mechanicApplicationService.create(request.name()));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data));
     }
 
@@ -60,7 +60,7 @@ public class MechanicController {
             @Valid @RequestBody UpdateMechanicStatusRequest request
     ) {
         MechanicResponse data = MechanicResponse.fromDomain(
-                mechanicService.changeStatus(mechanicId, request.isActive())
+            mechanicApplicationService.changeStatus(mechanicId, request.isActive())
         );
         return ResponseEntity.ok(ApiResponse.of(data));
     }
