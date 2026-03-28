@@ -2,7 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.domain.exception.MechanicNotFoundException;
 import com.chepamotos.domain.model.Mechanic;
-import com.chepamotos.domain.service.MechanicService;
+import com.chepamotos.infrastructure.application.MechanicApplicationService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +33,11 @@ class MechanicControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private MechanicService mechanicService;
+        private MechanicApplicationService mechanicApplicationService;
 
     @Test
     void list_returnsOkEnvelope() throws Exception {
-        when(mechanicService.listByActive(anyBoolean()))
+                when(mechanicApplicationService.listByActive(anyBoolean()))
                 .thenReturn(List.of(Mechanic.restore(1L, "Jose", true)));
 
         mockMvc.perform(get("/api/mechanics"))
@@ -50,7 +50,7 @@ class MechanicControllerTest {
 
     @Test
     void getById_whenNotFound_returns404WithStandardError() throws Exception {
-        when(mechanicService.getById(anyLong()))
+                when(mechanicApplicationService.getById(anyLong()))
                 .thenThrow(new MechanicNotFoundException(99L));
 
         mockMvc.perform(get("/api/mechanics/99"))
@@ -62,7 +62,7 @@ class MechanicControllerTest {
 
     @Test
     void create_whenValid_returnsCreatedEnvelope() throws Exception {
-        when(mechanicService.create(anyString()))
+                when(mechanicApplicationService.create(anyString()))
                 .thenReturn(Mechanic.restore(5L, "Carlos", true));
 
         mockMvc.perform(post("/api/mechanics")
@@ -96,7 +96,7 @@ class MechanicControllerTest {
 
     @Test
     void changeStatus_returnsUpdatedMechanic() throws Exception {
-        when(mechanicService.changeStatus(1L, false))
+                when(mechanicApplicationService.changeStatus(1L, false))
                 .thenReturn(Mechanic.restore(1L, "Jose", false));
 
         mockMvc.perform(patch("/api/mechanics/1/status")
@@ -117,8 +117,8 @@ class MechanicControllerTest {
 
         @Bean
         @Primary
-        MechanicService mechanicService() {
-            return Mockito.mock(MechanicService.class);
+                MechanicApplicationService mechanicApplicationService() {
+                        return Mockito.mock(MechanicApplicationService.class);
         }
     }
 }
