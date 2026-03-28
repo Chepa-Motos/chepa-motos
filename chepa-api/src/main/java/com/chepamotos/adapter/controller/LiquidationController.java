@@ -3,7 +3,7 @@ package com.chepamotos.adapter.controller;
 import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.CreateLiquidationRequest;
 import com.chepamotos.adapter.dto.LiquidationResponse;
-import com.chepamotos.domain.service.LiquidationService;
+import com.chepamotos.infrastructure.application.LiquidationApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,34 +21,30 @@ import java.util.List;
 @RequestMapping("/api/liquidations")
 public class LiquidationController {
 
-    private final LiquidationService liquidationService;
+    private final LiquidationApplicationService liquidationApplicationService;
 
-    public LiquidationController(LiquidationService liquidationService) {
-        this.liquidationService = liquidationService;
+    public LiquidationController(LiquidationApplicationService liquidationApplicationService) {
+        this.liquidationApplicationService = liquidationApplicationService;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<LiquidationResponse>>> list(
             @RequestParam(name = "mechanic_id", required = false) Long mechanicId,
-            @RequestParam(name = "date", required = false) LocalDate date
-    ) {
-        List<LiquidationResponse> data = liquidationService.list(mechanicId, date)
+            @RequestParam(name = "date", required = false) LocalDate date) {
+        List<LiquidationResponse> data = liquidationApplicationService.list(mechanicId, date)
                 .stream()
                 .map(LiquidationResponse::fromDomain)
                 .toList();
-
         return ResponseEntity.ok(ApiResponse.of(data));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<List<LiquidationResponse>>> create(
-            @Valid @RequestBody CreateLiquidationRequest request
-    ) {
-        List<LiquidationResponse> data = liquidationService.create(request.date(), request.mechanicId())
+            @Valid @RequestBody CreateLiquidationRequest request) {
+        List<LiquidationResponse> data = liquidationApplicationService.create(request.date(), request.mechanicId())
                 .stream()
                 .map(LiquidationResponse::fromDomain)
                 .toList();
-
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data));
     }
 }
