@@ -19,12 +19,12 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
     @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items WHERE i.id = :id")
     Optional<Invoice> findByIdWithDetails(@Param("id") Long id);
 
-    @Query("SELECT COALESCE(SUM(i.laborAmount), 0) FROM Invoice i WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND i.mechanic.id = :mechanicId AND i.createdAt = :date")
+    @Query("SELECT COALESCE(SUM(i.laborAmount), 0) FROM Invoice i WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND i.mechanic.id = :mechanicId AND FUNCTION('DATE', i.createdAt) = :date")
     BigDecimal sumActiveServiceLaborByMechanicAndDate(@Param("invoiceType") InvoiceType invoiceType, @Param("mechanicId") Long mechanicId, @Param("date") LocalDate date);
 
-    @Query("SELECT COUNT(i) FROM Invoice i WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND i.mechanic.id = :mechanicId AND i.createdAt = :date")
+    @Query("SELECT COUNT(i) FROM Invoice i WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND i.mechanic.id = :mechanicId AND FUNCTION('DATE', i.createdAt) = :date")
     long countActiveServiceInvoicesByMechanicAndDate(@Param("invoiceType") InvoiceType invoiceType, @Param("mechanicId") Long mechanicId, @Param("date") LocalDate date);
 
-    @Query("SELECT DISTINCT i.mechanic.id FROM Invoice i JOIN i.mechanic m WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND m.isActive = true AND i.createdAt = :date")
+    @Query("SELECT DISTINCT i.mechanic.id FROM Invoice i JOIN i.mechanic m WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND m.isActive = true AND FUNCTION('DATE', i.createdAt) = :date")
     List<Long> findActiveMechanicIdsWithActiveServiceInvoicesByDate(@Param("invoiceType") InvoiceType invoiceType, @Param("date") LocalDate date);
 }
