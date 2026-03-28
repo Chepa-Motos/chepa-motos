@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -58,5 +59,33 @@ class VehicleServiceTest {
 
         assertThrows(VehicleNotFoundException.class, () -> vehicleService.getByPlate("noexiste1"));
         verify(vehicleRepository).findByPlate("NOEXISTE1");
+    }
+
+    @Test
+    void resolveForServiceInvoice_whenPlateMissing_createsVehicle() {
+        when(vehicleRepository.findByPlate("NEW123")).thenReturn(Optional.empty());
+        when(vehicleRepository.save(any(Vehicle.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Vehicle result = vehicleService.resolveForServiceInvoice("new123", " Boxer 150 2024 ");
+
+        assertEquals("NEW123", result.plate());
+        assertEquals("Boxer 150 2024", result.model());
+        verify(vehicleRepository).findByPlate("NEW123");
+        verify(vehicleRepository).save(any(Vehicle.class));
+    }
+
+    @Test
+    void resolveForServiceInvoice_whenPlateExists_updatesModel() {
+        Vehicle existing = Vehicle.restore(1L, "BXR42H", "Old Model");
+        when(vehicleRepository.findByPlate("BXR42H")).thenReturn(Optional.of(existing));
+        when(vehicleRepository.save(any(Vehicle.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Vehicle result = vehicleService.resolveForServiceInvoice("bxr42h", "New Model 2025");
+
+        assertEquals(1L, result.id());
+        assertEquals("BXR42H", result.plate());
+        assertEquals("New Model 2025", result.model());
+        verify(vehicleRepository).findByPlate("BXR42H");
+        verify(vehicleRepository).save(any(Vehicle.class));
     }
 }

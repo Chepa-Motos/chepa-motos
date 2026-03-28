@@ -16,6 +16,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -34,7 +36,8 @@ public class Invoice {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "invoice_type", nullable = false, length = 20)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "invoice_type", nullable = false, columnDefinition = "invoice_type")
     private InvoiceType invoiceType;
 
     @ManyToOne(fetch = FetchType.LAZY)
