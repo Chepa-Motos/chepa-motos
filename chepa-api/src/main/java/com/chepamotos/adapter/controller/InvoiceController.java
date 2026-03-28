@@ -1,12 +1,12 @@
 package com.chepamotos.adapter.controller;
 
 import com.chepamotos.adapter.dto.ApiResponse;
-import com.chepamotos.adapter.dto.CreateServiceInvoiceRequest;
 import com.chepamotos.adapter.dto.CreateDeliveryInvoiceRequest;
+import com.chepamotos.adapter.dto.CreateServiceInvoiceRequest;
 import com.chepamotos.adapter.dto.InvoiceCancelResponse;
 import com.chepamotos.adapter.dto.InvoiceResponse;
-import com.chepamotos.domain.model.InvoiceType;
-import com.chepamotos.domain.service.InvoiceService;
+import com.chepamotos.domain.model.InvoiceItemInput;
+import com.chepamotos.infrastructure.application.InvoiceApplicationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,15 +25,15 @@ import java.util.List;
 @RequestMapping("/api/invoices")
 public class InvoiceController {
 
-        private final InvoiceService invoiceService;
+        private final InvoiceApplicationService invoiceApplicationService;
 
-        public InvoiceController(InvoiceService invoiceService) {
-                this.invoiceService = invoiceService;
+        public InvoiceController(InvoiceApplicationService invoiceApplicationService) {
+                this.invoiceApplicationService = invoiceApplicationService;
         }
 
         @GetMapping
         public ResponseEntity<ApiResponse<List<InvoiceResponse>>> list() {
-                List<InvoiceResponse> data = invoiceService.listAll()
+                List<InvoiceResponse> data = invoiceApplicationService.listAll()
                                 .stream()
                                 .map(InvoiceResponse::fromDomain)
                                 .toList();
@@ -42,53 +42,42 @@ public class InvoiceController {
 
         @GetMapping("/{id}")
         public ResponseEntity<ApiResponse<InvoiceResponse>> getById(@PathVariable("id") Long invoiceId) {
-                InvoiceResponse data = InvoiceResponse.fromDomain(invoiceService.getById(invoiceId));
-                return ResponseEntity.ok(ApiResponse.of(data));
+                return ResponseEntity.ok(ApiResponse.of(
+                                InvoiceResponse.fromDomain(invoiceApplicationService.getById(invoiceId))));
         }
 
         @PostMapping("/service")
         public ResponseEntity<ApiResponse<InvoiceResponse>> createService(
                         @Valid @RequestBody CreateServiceInvoiceRequest request) {
-                List<InvoiceService.InvoiceItemData> itemData = request.items().stream()
-                                .map(i -> new InvoiceService.InvoiceItemData(i.description(), i.quantity(),
-                                                i.unitPrice()))
+                List<InvoiceItemInput> itemInputs = request.items().stream()
+                                .map(i -> new InvoiceItemInput(i.description(), i.quantity(), i.unitPrice()))
                                 .toList();
 
-                InvoiceResponse data = InvoiceResponse.fromDomain(
-                                invoiceService.create(
-                                                InvoiceType.SERVICE,
+                return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(
+                                InvoiceResponse.fromDomain(invoiceApplicationService.createService(
                                                 request.mechanicId(),
                                                 request.vehiclePlate(),
                                                 request.model(),
-                                                null, // buyerName is null for SERVICE
                                                 request.laborAmount(),
-                                                itemData));
-                return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data));
+                                                itemInputs))));
         }
 
         @PostMapping("/delivery")
         public ResponseEntity<ApiResponse<InvoiceResponse>> createDelivery(
                         @Valid @RequestBody CreateDeliveryInvoiceRequest request) {
-                List<InvoiceService.InvoiceItemData> itemData = request.items().stream()
-                                .map(i -> new InvoiceService.InvoiceItemData(i.description(), i.quantity(),
-                                                i.unitPrice()))
+                List<InvoiceItemInput> itemInputs = request.items().stream()
+                                .map(i -> new InvoiceItemInput(i.description(), i.quantity(), i.unitPrice()))
                                 .toList();
 
-                InvoiceResponse data = InvoiceResponse.fromDomain(
-                                invoiceService.create(
-                                                InvoiceType.DELIVERY,
-                                                null, // mechanicId is null for DELIVERY
-                                                null, // vehiclePlate is null for DELIVERY
-                                                null, // vehicleModel is null for DELIVERY
+                return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(
+                                InvoiceResponse.fromDomain(invoiceApplicationService.createDelivery(
                                                 request.buyerName(),
-                                                BigDecimal.ZERO,
-                                                itemData));
-                return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data));
+                                                itemInputs))));
         }
 
         @PatchMapping("/{id}/cancel")
         public ResponseEntity<ApiResponse<InvoiceCancelResponse>> cancel(@PathVariable("id") Long invoiceId) {
-                InvoiceCancelResponse data = InvoiceCancelResponse.fromDomain(invoiceService.cancel(invoiceId));
-                return ResponseEntity.ok(ApiResponse.of(data));
+                return ResponseEntity.ok(ApiResponse.of(
+                                InvoiceCancelResponse.fromDomain(invoiceApplicationService.cancel(invoiceId))));
         }
 }
