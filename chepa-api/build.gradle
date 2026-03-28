@@ -8,6 +8,8 @@ plugins {
 group = 'com.chepamotos'
 version = '0.0.1-SNAPSHOT'
 
+def domainCoverageMinimum = (findProperty('domainCoverageMinimum') ?: '0.70') as BigDecimal
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(25)
@@ -35,11 +37,22 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+    include 'com/chepamotos/domain/**'
+}
+
+tasks.register('domainTest', Test) {
+    description = 'Runs only domain-layer unit tests (no Spring context, no DB).'
+    group = 'verification'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include 'com/chepamotos/domain/**'
 }
 
 jacoco {
@@ -73,4 +86,47 @@ jacocoTestCoverageVerification {
             fileTree(dir: it, includes: ['**/domain/**'])
         }))
     }
+}
+
+tasks.register('jacocoDomainTestReport', JacocoReport) {
+    dependsOn tasks.named('domainTest')
+
+    executionData(file("$buildDir/jacoco/domainTest.exec"))
+    sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(sourceSets.main.output).asFileTree.matching {
+        include '**/domain/**'
+    })
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+tasks.register('jacocoDomainCoverageVerification', JacocoCoverageVerification) {
+    dependsOn tasks.named('domainTest')
+
+    executionData(file("$buildDir/jacoco/domainTest.exec"))
+    sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(sourceSets.main.output).asFileTree.matching {
+        include '**/domain/**'
+    })
+
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                minimum = domainCoverageMinimum
+            }
+        }
+    }
+}
+
+tasks.register('ciDomainCoverage') {
+    group = 'verification'
+    description = 'Runs domain tests, generates JaCoCo report, and enforces domain coverage threshold.'
+    dependsOn tasks.named('domainTest')
+    dependsOn tasks.named('jacocoDomainTestReport')
+    dependsOn tasks.named('jacocoDomainCoverageVerification')
 }
