@@ -3,7 +3,7 @@ package com.chepamotos.adapter.controller;
 import com.chepamotos.domain.exception.VehicleNotFoundException;
 import com.chepamotos.domain.model.Vehicle;
 import org.junit.jupiter.api.BeforeEach;
-import com.chepamotos.domain.service.VehicleService;
+import com.chepamotos.infrastructure.application.VehicleApplicationService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,16 +27,16 @@ class VehicleControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private VehicleService vehicleService;
+    private VehicleApplicationService vehicleApplicationService;
 
     @BeforeEach
     void resetMocks() {
-        Mockito.reset(vehicleService);
+        Mockito.reset(vehicleApplicationService);
     }
 
     @Test
     void getByPlate_whenExists_returnsVehicleEnvelope() throws Exception {
-        when(vehicleService.getByPlate("bxr42h"))
+        when(vehicleApplicationService.getByPlate("bxr42h"))
                 .thenReturn(Vehicle.restore(1L, "BXR42H", "Boxer 150 2021"));
 
         mockMvc.perform(get("/api/vehicles/plate/bxr42h"))
@@ -49,7 +49,7 @@ class VehicleControllerTest {
 
     @Test
     void getByPlate_whenMissing_returns404WithStandardError() throws Exception {
-        when(vehicleService.getByPlate(anyString()))
+        when(vehicleApplicationService.getByPlate(anyString()))
                 .thenThrow(new VehicleNotFoundException("NOEXISTE1"));
 
         mockMvc.perform(get("/api/vehicles/plate/noexiste1"))
@@ -63,8 +63,8 @@ class VehicleControllerTest {
 
         @Bean
         @Primary
-        VehicleService vehicleService() {
-            return Mockito.mock(VehicleService.class);
+        VehicleApplicationService vehicleApplicationService() {
+            return Mockito.mock(VehicleApplicationService.class);
         }
     }
 }
