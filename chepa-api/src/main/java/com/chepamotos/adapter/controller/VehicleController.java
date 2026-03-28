@@ -2,7 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.VehicleResponse;
-import com.chepamotos.domain.service.VehicleService;
+import com.chepamotos.infrastructure.application.VehicleApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,10 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/vehicles")
 public class VehicleController {
 
-    private final VehicleService vehicleService;
+    private final VehicleApplicationService vehicleApplicationService;
 
-    public VehicleController(VehicleService vehicleService) {
-        this.vehicleService = vehicleService;
+    public VehicleController(VehicleApplicationService vehicleApplicationService) {
+        this.vehicleApplicationService = vehicleApplicationService;
     }
 
         @Operation(
@@ -86,7 +86,7 @@ public class VehicleController {
             @Parameter(description = "Vehicle plate", example = "bxr42h")
             @PathVariable("plate") String plate
         ) {
-        VehicleResponse data = VehicleResponse.fromDomain(vehicleService.getByPlate(plate));
+        VehicleResponse data = VehicleResponse.fromDomain(vehicleApplicationService.getByPlate(plate));
         return ResponseEntity.ok(ApiResponse.of(data));
     }
 }
