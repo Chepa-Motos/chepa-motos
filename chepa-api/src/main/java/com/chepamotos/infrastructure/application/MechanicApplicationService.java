@@ -1,6 +1,7 @@
 package com.chepamotos.infrastructure.application;
 
 import com.chepamotos.domain.model.Mechanic;
+import com.chepamotos.domain.service.MechanicApplicationUseCase;
 import com.chepamotos.domain.usecase.mechanic.ChangeMechanicStatusUseCase;
 import com.chepamotos.domain.usecase.mechanic.CreateMechanicUseCase;
 import com.chepamotos.domain.usecase.mechanic.GetMechanicByIdUseCase;
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-public class MechanicApplicationService {
+public class MechanicApplicationService implements MechanicApplicationUseCase {
 
     // This class is an outer-layer facade: Spring + transactions live here.
     // Domain use cases remain framework-free under domain/usecase.
@@ -35,22 +36,26 @@ public class MechanicApplicationService {
 
     // Queries
     @Transactional(readOnly = true)
+    @Override
     public List<Mechanic> listByActive(boolean active) {
         return listMechanicsUseCase.execute(active);
     }
 
     @Transactional(readOnly = true)
+    @Override
     public Mechanic getById(Long mechanicId) {
         return getMechanicByIdUseCase.execute(mechanicId);
     }
 
     // Commands
     @Transactional
+    @Override
     public Mechanic create(String name) {
         return createMechanicUseCase.execute(name);
     }
 
     @Transactional
+    @Override
     public Mechanic changeStatus(Long mechanicId, boolean active) {
         return changeMechanicStatusUseCase.execute(mechanicId, active);
     }

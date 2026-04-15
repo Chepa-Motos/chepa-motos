@@ -2,7 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.VehicleResponse;
-import com.chepamotos.infrastructure.application.VehicleApplicationService;
+import com.chepamotos.domain.service.VehicleApplicationUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/vehicles")
 public class VehicleController {
 
-    private final VehicleApplicationService vehicleApplicationService;
+    private final VehicleApplicationUseCase vehicleApplicationService;
 
-    public VehicleController(VehicleApplicationService vehicleApplicationService) {
+    public VehicleController(VehicleApplicationUseCase vehicleApplicationService) {
         this.vehicleApplicationService = vehicleApplicationService;
     }
 

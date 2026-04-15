@@ -2,8 +2,8 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.domain.exception.VehicleNotFoundException;
 import com.chepamotos.domain.model.Vehicle;
+import com.chepamotos.domain.service.VehicleApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
-import com.chepamotos.infrastructure.application.VehicleApplicationService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ class VehicleControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private VehicleApplicationService vehicleApplicationService;
+    private VehicleApplicationUseCase vehicleApplicationService;
 
     @BeforeEach
     void resetMocks() {
@@ -63,8 +63,8 @@ class VehicleControllerTest {
 
         @Bean
         @Primary
-        VehicleApplicationService vehicleApplicationService() {
-            return Mockito.mock(VehicleApplicationService.class);
+        VehicleApplicationUseCase vehicleApplicationService() {
+            return Mockito.mock(VehicleApplicationUseCase.class);
         }
     }
 }
