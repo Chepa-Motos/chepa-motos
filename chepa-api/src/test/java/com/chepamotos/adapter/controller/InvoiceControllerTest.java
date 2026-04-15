@@ -7,7 +7,7 @@ import com.chepamotos.domain.model.InvoiceItem;
 import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.domain.model.Mechanic;
 import com.chepamotos.domain.model.Vehicle;
-import com.chepamotos.infrastructure.application.InvoiceApplicationService;
+import com.chepamotos.domain.service.InvoiceApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -40,7 +40,7 @@ class InvoiceControllerTest {
   private MockMvc mockMvc;
 
   @Autowired
-  private InvoiceApplicationService invoiceApplicationService;
+  private InvoiceApplicationUseCase invoiceApplicationService;
 
   @BeforeEach
   void resetMocks() {
@@ -264,8 +264,8 @@ class InvoiceControllerTest {
 
     @Bean
     @Primary
-    InvoiceApplicationService invoiceApplicationService() {
-      return Mockito.mock(InvoiceApplicationService.class);
+    InvoiceApplicationUseCase invoiceApplicationService() {
+      return Mockito.mock(InvoiceApplicationUseCase.class);
     }
   }
 }
