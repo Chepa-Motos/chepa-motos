@@ -1,6 +1,7 @@
 package com.chepamotos.domain.service;
 
 import com.chepamotos.domain.model.Invoice;
+import com.chepamotos.domain.model.InvoiceItem;
 import com.chepamotos.domain.model.InvoiceItemInput;
 
 import java.math.BigDecimal;
@@ -17,4 +18,6 @@ public interface InvoiceApplicationUseCase {
     Invoice createService(Long mechanicId, String vehiclePlate, String vehicleModel, BigDecimal laborAmount, List<InvoiceItemInput> itemInputs);
 
     Invoice createDelivery(String buyerName, List<InvoiceItemInput> itemInputs);
+
+    List<InvoiceItem> findSuggestions(String model, String q);
 }

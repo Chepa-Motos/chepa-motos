@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -249,4 +250,98 @@ class InvoiceRepositoryAdapterIntegrationTest {
         assertEquals(1, mechanicIds.size());
         assertEquals(activeMechanic.id(), mechanicIds.get(0));
         }
+
+    @Test
+    void findSuggestionsByModelAndDescription_returnsLatestPricePerDescription() {
+        Mechanic mechanic = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_suggest_latest"));
+        Vehicle vehicle = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTSUG1", "ZZTESTMODEL 150"));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanic,
+            vehicle,
+            null,
+            LocalDateTime.of(2099, 4, 20, 10, 0),
+            new BigDecimal("100.00"),
+            false,
+            List.of(InvoiceItem.createNew("Freno delantero", BigDecimal.ONE, new BigDecimal("30000.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanic,
+            vehicle,
+            null,
+            LocalDateTime.of(2099, 4, 21, 10, 0),
+            new BigDecimal("100.00"),
+            false,
+            List.of(
+                InvoiceItem.createNew("Freno delantero", BigDecimal.ONE, new BigDecimal("45000.00")),
+                InvoiceItem.createNew("Filtro de aire", BigDecimal.ONE, new BigDecimal("18900.00"))
+            )
+        ));
+
+        List<InvoiceItem> suggestions = invoiceRepositoryAdapter.findSuggestionsByModelAndDescription("ZZTESTMODEL", "Fr");
+
+        assertFalse(suggestions.isEmpty());
+        assertEquals(1, suggestions.stream().filter(item -> "Freno delantero".equals(item.description())).count());
+
+        InvoiceItem freno = suggestions.stream()
+            .filter(item -> "Freno delantero".equals(item.description()))
+            .findFirst()
+            .orElseThrow();
+
+        assertEquals(new BigDecimal("45000.00"), freno.unitPrice());
+    }
+
+    @Test
+    void findSuggestionsByModelAndDescription_excludesCancelledAndDeliveryInvoices() {
+        Mechanic mechanic = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_suggest_filter"));
+        Vehicle vehicle = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTSUG2", "ZZFILTERMODEL 200"));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanic,
+            vehicle,
+            null,
+            LocalDateTime.of(2099, 4, 21, 8, 0),
+            new BigDecimal("80.00"),
+            false,
+            List.of(InvoiceItem.createNew("Bujia especial", BigDecimal.ONE, new BigDecimal("26000.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanic,
+            vehicle,
+            null,
+            LocalDateTime.of(2099, 4, 21, 9, 0),
+            new BigDecimal("90.00"),
+            true,
+            List.of(InvoiceItem.createNew("Bujia cancelada", BigDecimal.ONE, new BigDecimal("99999.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.DELIVERY,
+            null,
+            null,
+            "Buyer test",
+            LocalDateTime.of(2099, 4, 21, 10, 0),
+            BigDecimal.ZERO,
+            false,
+            List.of(InvoiceItem.createNew("Bujia delivery", BigDecimal.ONE, new BigDecimal("77777.00")))
+        ));
+
+        List<InvoiceItem> suggestions = invoiceRepositoryAdapter.findSuggestionsByModelAndDescription("ZZFILTERMODEL", "Bu");
+
+        assertFalse(suggestions.isEmpty());
+        assertTrue(suggestions.stream().anyMatch(item -> "Bujia especial".equals(item.description())));
+        assertFalse(suggestions.stream().anyMatch(item -> "Bujia cancelada".equals(item.description())));
+        assertFalse(suggestions.stream().anyMatch(item -> "Bujia delivery".equals(item.description())));
+    }
 }

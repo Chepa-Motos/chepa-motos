@@ -2,6 +2,7 @@ package com.chepamotos.infrastructure.repository;
 
 import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.infrastructure.entity.Invoice;
+import com.chepamotos.infrastructure.entity.InvoiceItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,4 +28,40 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
 
     @Query("SELECT DISTINCT i.mechanic.id FROM Invoice i JOIN i.mechanic m WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND m.isActive = true AND FUNCTION('DATE', i.createdAt) = :date")
     List<Long> findActiveMechanicIdsWithActiveServiceInvoicesByDate(@Param("invoiceType") InvoiceType invoiceType, @Param("date") LocalDate date);
+
+    @Query(value = """
+        WITH ranked_items AS (
+            SELECT 
+                ii.invoice_item_id,
+                ii.invoice_id,
+                ii.description,
+                ii.quantity,
+                ii.unit_price,
+                ii.subtotal,
+                ROW_NUMBER() OVER (PARTITION BY ii.description ORDER BY i.created_at DESC) as rn,
+                COUNT(*) OVER (PARTITION BY ii.description) as frequency
+            FROM invoice_item ii
+            JOIN invoice i ON ii.invoice_id = i.invoice_id
+            JOIN vehicle v ON i.vehicle_id = v.vehicle_id
+            WHERE i.invoice_type = 'SERVICE'
+            AND i.is_cancelled = false
+            AND LOWER(v.model) ILIKE LOWER(:model || '%')
+            AND LOWER(ii.description) ILIKE LOWER(:descriptionPrefix || '%')
+        )
+        SELECT 
+            invoice_item_id,
+            invoice_id,
+            description,
+            quantity,
+            unit_price,
+            subtotal
+        FROM ranked_items
+        WHERE rn = 1
+        ORDER BY frequency DESC, description ASC
+        LIMIT 10
+        """, nativeQuery = true)
+    List<InvoiceItem> findSuggestionsByModelAndDescription(
+            @Param("model") String model,
+            @Param("descriptionPrefix") String descriptionPrefix);
 }
+

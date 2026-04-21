@@ -1,11 +1,13 @@
 package com.chepamotos.infrastructure.application;
 
 import com.chepamotos.domain.model.Invoice;
+import com.chepamotos.domain.model.InvoiceItem;
 import com.chepamotos.domain.model.InvoiceItemInput;
 import com.chepamotos.domain.service.InvoiceApplicationUseCase;
 import com.chepamotos.domain.usecase.invoice.CancelInvoiceUseCase;
 import com.chepamotos.domain.usecase.invoice.CreateDeliveryInvoiceUseCase;
 import com.chepamotos.domain.usecase.invoice.CreateServiceInvoiceUseCase;
+import com.chepamotos.domain.usecase.invoice.FindInvoiceItemSuggestionsUseCase;
 import com.chepamotos.domain.usecase.invoice.GetInvoiceByIdUseCase;
 import com.chepamotos.domain.usecase.invoice.ListInvoicesUseCase;
 import org.springframework.stereotype.Service;
@@ -22,18 +24,21 @@ public class InvoiceApplicationService implements InvoiceApplicationUseCase {
     private final CancelInvoiceUseCase cancelInvoiceUseCase;
     private final CreateServiceInvoiceUseCase createServiceInvoiceUseCase;
     private final CreateDeliveryInvoiceUseCase createDeliveryInvoiceUseCase;
+    private final FindInvoiceItemSuggestionsUseCase findInvoiceItemSuggestionsUseCase;
 
     public InvoiceApplicationService(
             ListInvoicesUseCase listInvoicesUseCase,
             GetInvoiceByIdUseCase getInvoiceByIdUseCase,
             CancelInvoiceUseCase cancelInvoiceUseCase,
             CreateServiceInvoiceUseCase createServiceInvoiceUseCase,
-            CreateDeliveryInvoiceUseCase createDeliveryInvoiceUseCase) {
+            CreateDeliveryInvoiceUseCase createDeliveryInvoiceUseCase,
+            FindInvoiceItemSuggestionsUseCase findInvoiceItemSuggestionsUseCase) {
         this.listInvoicesUseCase = listInvoicesUseCase;
         this.getInvoiceByIdUseCase = getInvoiceByIdUseCase;
         this.cancelInvoiceUseCase = cancelInvoiceUseCase;
         this.createServiceInvoiceUseCase = createServiceInvoiceUseCase;
         this.createDeliveryInvoiceUseCase = createDeliveryInvoiceUseCase;
+        this.findInvoiceItemSuggestionsUseCase = findInvoiceItemSuggestionsUseCase;
     }
 
     @Transactional(readOnly = true)
@@ -69,5 +74,11 @@ public class InvoiceApplicationService implements InvoiceApplicationUseCase {
     @Override
     public Invoice createDelivery(String buyerName, List<InvoiceItemInput> itemInputs) {
         return createDeliveryInvoiceUseCase.execute(buyerName, itemInputs);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<InvoiceItem> findSuggestions(String model, String q) {
+        return findInvoiceItemSuggestionsUseCase.execute(model, q);
     }
 }

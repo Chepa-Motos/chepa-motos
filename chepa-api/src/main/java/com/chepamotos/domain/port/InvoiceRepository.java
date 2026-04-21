@@ -1,6 +1,7 @@
 package com.chepamotos.domain.port;
 
 import com.chepamotos.domain.model.Invoice;
+import com.chepamotos.domain.model.InvoiceItem;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,6 +19,8 @@ public interface InvoiceRepository {
     int countActiveServiceInvoicesByMechanicAndDate(Long mechanicId, LocalDate date);
 
     List<Long> findActiveMechanicIdsWithActiveServiceInvoicesByDate(LocalDate date);
+
+    List<InvoiceItem> findSuggestionsByModelAndDescription(String model, String descriptionPrefix);
 
     Invoice save(Invoice invoice);
 }
