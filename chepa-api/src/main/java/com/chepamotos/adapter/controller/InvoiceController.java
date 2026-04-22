@@ -6,7 +6,7 @@ import com.chepamotos.adapter.dto.CreateServiceInvoiceRequest;
 import com.chepamotos.adapter.dto.InvoiceCancelResponse;
 import com.chepamotos.adapter.dto.InvoiceResponse;
 import com.chepamotos.domain.model.InvoiceItemInput;
-import com.chepamotos.domain.service.InvoiceApplicationUseCase;
+import com.chepamotos.domain.port.in.InvoiceApplicationUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,7 +1,7 @@
 package com.chepamotos.adapter.controller;
 
 import com.chepamotos.domain.model.InvoiceItem;
-import com.chepamotos.domain.service.InvoiceApplicationUseCase;
+import com.chepamotos.domain.port.in.InvoiceApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

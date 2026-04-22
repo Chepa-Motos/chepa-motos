@@ -2,7 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.VehicleResponse;
-import com.chepamotos.domain.service.VehicleApplicationUseCase;
+import com.chepamotos.domain.port.in.VehicleApplicationUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

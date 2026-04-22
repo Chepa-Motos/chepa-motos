@@ -2,7 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.domain.exception.VehicleNotFoundException;
 import com.chepamotos.domain.model.Vehicle;
-import com.chepamotos.domain.service.VehicleApplicationUseCase;
+import com.chepamotos.domain.port.in.VehicleApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

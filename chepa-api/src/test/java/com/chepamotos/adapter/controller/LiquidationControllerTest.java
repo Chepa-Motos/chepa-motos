@@ -4,7 +4,7 @@ import com.chepamotos.domain.exception.LiquidationAlreadyExistsException;
 import com.chepamotos.domain.exception.MechanicNotFoundException;
 import com.chepamotos.domain.model.DailyLiquidation;
 import com.chepamotos.domain.model.Mechanic;
-import com.chepamotos.domain.service.LiquidationApplicationUseCase;
+import com.chepamotos.domain.port.in.LiquidationApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

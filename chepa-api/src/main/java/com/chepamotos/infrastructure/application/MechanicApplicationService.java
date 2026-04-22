@@ -1,7 +1,7 @@
 package com.chepamotos.infrastructure.application;
 
 import com.chepamotos.domain.model.Mechanic;
-import com.chepamotos.domain.service.MechanicApplicationUseCase;
+import com.chepamotos.domain.port.in.MechanicApplicationUseCase;
 import com.chepamotos.domain.usecase.mechanic.ChangeMechanicStatusUseCase;
 import com.chepamotos.domain.usecase.mechanic.CreateMechanicUseCase;
 import com.chepamotos.domain.usecase.mechanic.GetMechanicByIdUseCase;

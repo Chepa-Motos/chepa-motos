@@ -4,7 +4,7 @@ import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.CreateMechanicRequest;
 import com.chepamotos.adapter.dto.MechanicResponse;
 import com.chepamotos.adapter.dto.UpdateMechanicStatusRequest;
-import com.chepamotos.domain.service.MechanicApplicationUseCase;
+import com.chepamotos.domain.port.in.MechanicApplicationUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

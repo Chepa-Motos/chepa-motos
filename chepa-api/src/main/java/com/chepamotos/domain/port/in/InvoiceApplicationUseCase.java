@@ -1,4 +1,4 @@
-package com.chepamotos.domain.service;
+package com.chepamotos.domain.port.in;
 
 import com.chepamotos.domain.model.Invoice;
 import com.chepamotos.domain.model.InvoiceItem;

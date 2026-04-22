@@ -3,7 +3,7 @@ package com.chepamotos.adapter.controller;
 import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.CreateLiquidationRequest;
 import com.chepamotos.adapter.dto.LiquidationResponse;
-import com.chepamotos.domain.service.LiquidationApplicationUseCase;
+import com.chepamotos.domain.port.in.LiquidationApplicationUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

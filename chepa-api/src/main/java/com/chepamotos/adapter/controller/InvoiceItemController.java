@@ -2,7 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.InvoiceItemSuggestionDTO;
-import com.chepamotos.domain.service.InvoiceApplicationUseCase;
+import com.chepamotos.domain.port.in.InvoiceApplicationUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

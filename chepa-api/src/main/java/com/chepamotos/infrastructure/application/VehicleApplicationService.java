@@ -1,7 +1,7 @@
 package com.chepamotos.infrastructure.application;
 
 import com.chepamotos.domain.model.Vehicle;
-import com.chepamotos.domain.service.VehicleApplicationUseCase;
+import com.chepamotos.domain.port.in.VehicleApplicationUseCase;
 import com.chepamotos.domain.usecase.vehicle.GetVehicleByPlateUseCase;
 import com.chepamotos.domain.usecase.vehicle.ResolveVehicleForServiceInvoiceUseCase;
 import org.springframework.stereotype.Service;

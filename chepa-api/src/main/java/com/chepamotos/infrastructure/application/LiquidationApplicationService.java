@@ -1,7 +1,7 @@
 package com.chepamotos.infrastructure.application;
 
 import com.chepamotos.domain.model.DailyLiquidation;
-import com.chepamotos.domain.service.LiquidationApplicationUseCase;
+import com.chepamotos.domain.port.in.LiquidationApplicationUseCase;
 import com.chepamotos.domain.usecase.liquidation.CreateLiquidationUseCase;
 import com.chepamotos.domain.usecase.liquidation.ListLiquidationsUseCase;
 import org.springframework.stereotype.Service;

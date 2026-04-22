@@ -2,7 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.domain.exception.MechanicNotFoundException;
 import com.chepamotos.domain.model.Mechanic;
-import com.chepamotos.domain.service.MechanicApplicationUseCase;
+import com.chepamotos.domain.port.in.MechanicApplicationUseCase;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

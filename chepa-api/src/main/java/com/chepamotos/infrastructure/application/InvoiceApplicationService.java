@@ -3,7 +3,7 @@ package com.chepamotos.infrastructure.application;
 import com.chepamotos.domain.model.Invoice;
 import com.chepamotos.domain.model.InvoiceItem;
 import com.chepamotos.domain.model.InvoiceItemInput;
-import com.chepamotos.domain.service.InvoiceApplicationUseCase;
+import com.chepamotos.domain.port.in.InvoiceApplicationUseCase;
 import com.chepamotos.domain.usecase.invoice.CancelInvoiceUseCase;
 import com.chepamotos.domain.usecase.invoice.CreateDeliveryInvoiceUseCase;
 import com.chepamotos.domain.usecase.invoice.CreateServiceInvoiceUseCase;
