@@ -70,7 +70,7 @@ public class InvoiceItemController {
                         value = """
                             {
                               "code": "VALIDATION_ERROR",
-                                                            "message": "suggestions.q: Search query must be at least 2 characters",
+                              "message": "suggestions.q: Search query must be at least 2 characters",
                               "timestamp": "2026-04-21T14:30:00"
                             }
                             """
