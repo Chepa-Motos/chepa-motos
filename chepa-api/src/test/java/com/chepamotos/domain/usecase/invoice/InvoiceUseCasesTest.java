@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,15 +45,28 @@ class InvoiceUseCasesTest {
     private ResolveVehicleForServiceInvoiceUseCase resolveVehicleUseCase;
 
     @Test
-    void listUseCase_execute_returnsRepositoryResults() {
+    void listUseCase_execute_returnsRepositoryResultsWithProvidedFilters() {
         List<Invoice> expected = List.of(deliveryInvoice(1L, false), serviceInvoice(2L, false));
-        when(invoiceRepository.findAll()).thenReturn(expected);
+        LocalDate date = LocalDate.of(2026, 1, 28);
+        when(invoiceRepository.findAllByFilters(date, InvoiceType.SERVICE, 1L, false)).thenReturn(expected);
 
         ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository);
-        List<Invoice> result = useCase.execute();
+        List<Invoice> result = useCase.execute(date, InvoiceType.SERVICE, 1L, false);
 
         assertEquals(expected, result);
-        verify(invoiceRepository).findAll();
+        verify(invoiceRepository).findAllByFilters(date, InvoiceType.SERVICE, 1L, false);
+    }
+
+    @Test
+    void listUseCase_execute_whenDateMissing_usesTodayAsDefault() {
+        List<Invoice> expected = List.of(serviceInvoice(2L, false));
+        when(invoiceRepository.findAllByFilters(any(LocalDate.class), eq(null), eq(null), eq(false))).thenReturn(expected);
+
+        ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository);
+        List<Invoice> result = useCase.execute(null, null, null, false);
+
+        assertEquals(expected, result);
+        verify(invoiceRepository).findAllByFilters(any(LocalDate.class), eq(null), eq(null), eq(false));
     }
 
     @Test

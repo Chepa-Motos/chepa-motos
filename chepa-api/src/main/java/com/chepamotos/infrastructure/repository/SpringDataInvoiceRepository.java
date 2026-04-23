@@ -17,6 +17,20 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
     @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items")
     List<Invoice> findAllWithDetails();
 
+        @Query("""
+            SELECT DISTINCT i
+            FROM Invoice i
+            LEFT JOIN FETCH i.mechanic
+            LEFT JOIN FETCH i.vehicle
+            LEFT JOIN FETCH i.items
+            WHERE FUNCTION('DATE', i.createdAt) = :date
+              AND i.isCancelled = :cancelled
+            ORDER BY i.createdAt DESC
+            """)
+            List<Invoice> findAllByDateAndCancelledWithDetails(
+            @Param("date") LocalDate date,
+            @Param("cancelled") boolean cancelled);
+
     @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items WHERE i.id = :id")
     Optional<Invoice> findByIdWithDetails(@Param("id") Long id);
 
@@ -43,7 +57,7 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
             FROM invoice_item ii
             JOIN invoice i ON ii.invoice_id = i.invoice_id
             JOIN vehicle v ON i.vehicle_id = v.vehicle_id
-            WHERE i.invoice_type = 'SERVICE'
+            WHERE i.invoice_type = CAST(:invoiceType AS invoice_type)
             AND i.is_cancelled = false
             AND LOWER(v.model) ILIKE LOWER(:model || '%')
             AND LOWER(ii.description) ILIKE LOWER(:descriptionPrefix || '%')
@@ -61,6 +75,7 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
         LIMIT 10
         """, nativeQuery = true)
     List<InvoiceItem> findSuggestionsByModelAndDescription(
+            @Param("invoiceType") String invoiceType,
             @Param("model") String model,
             @Param("descriptionPrefix") String descriptionPrefix);
 }

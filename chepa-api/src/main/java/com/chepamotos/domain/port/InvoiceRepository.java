@@ -2,6 +2,7 @@ package com.chepamotos.domain.port;
 
 import com.chepamotos.domain.model.Invoice;
 import com.chepamotos.domain.model.InvoiceItem;
+import com.chepamotos.domain.model.InvoiceType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,6 +12,8 @@ import java.util.Optional;
 public interface InvoiceRepository {
 
     List<Invoice> findAll();
+
+    List<Invoice> findAllByFilters(LocalDate date, InvoiceType type, Long mechanicId, boolean cancelled);
 
     Optional<Invoice> findById(Long id);
 

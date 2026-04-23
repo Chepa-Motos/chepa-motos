@@ -20,10 +20,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,7 +51,7 @@ class InvoiceControllerTest {
 
   @Test
   void list_returnsOkEnvelope() throws Exception {
-    when(invoiceApplicationService.listAll()).thenReturn(List.of(sampleServiceInvoice()));
+    when(invoiceApplicationService.list(any(), any(), any(), anyBoolean())).thenReturn(List.of(sampleServiceInvoice()));
 
     mockMvc.perform(get("/api/invoices"))
         .andExpect(status().isOk())
@@ -57,6 +59,22 @@ class InvoiceControllerTest {
         .andExpect(jsonPath("$.data[0].invoice_type").value("SERVICE"))
         .andExpect(jsonPath("$.data[0].mechanic.id").value(1))
         .andExpect(jsonPath("$.data[0].items[0].description").value("Freno delantero"))
+        .andExpect(jsonPath("$.timestamp").exists());
+  }
+
+  @Test
+  void list_withFilters_returnsOkEnvelope() throws Exception {
+    when(invoiceApplicationService.list(LocalDate.of(2026, 1, 28), InvoiceType.SERVICE, 1L, false))
+        .thenReturn(List.of(sampleServiceInvoice()));
+
+    mockMvc.perform(get("/api/invoices")
+        .param("date", "2026-01-28")
+        .param("type", "SERVICE")
+        .param("mechanic_id", "1")
+        .param("cancelled", "false"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].invoice_type").value("SERVICE"))
+        .andExpect(jsonPath("$.data[0].mechanic.id").value(1))
         .andExpect(jsonPath("$.timestamp").exists());
   }
 
