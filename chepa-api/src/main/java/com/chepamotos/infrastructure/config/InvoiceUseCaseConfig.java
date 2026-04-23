@@ -12,12 +12,19 @@ import com.chepamotos.domain.usecase.vehicle.ResolveVehicleForServiceInvoiceUseC
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Clock;
+
 @Configuration
 public class InvoiceUseCaseConfig {
 
     @Bean
-    public ListInvoicesUseCase listInvoicesUseCase(InvoiceRepository invoiceRepository) {
-        return new ListInvoicesUseCase(invoiceRepository);
+    public Clock systemClock() {
+        return Clock.systemDefaultZone();
+    }
+
+    @Bean
+    public ListInvoicesUseCase listInvoicesUseCase(InvoiceRepository invoiceRepository, Clock systemClock) {
+        return new ListInvoicesUseCase(invoiceRepository, systemClock);
     }
 
     @Bean

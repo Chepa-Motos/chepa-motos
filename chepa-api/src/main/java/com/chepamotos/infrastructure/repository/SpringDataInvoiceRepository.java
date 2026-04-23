@@ -17,19 +17,19 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
     @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items")
     List<Invoice> findAllWithDetails();
 
-        @Query("""
-            SELECT DISTINCT i
-            FROM Invoice i
-            LEFT JOIN FETCH i.mechanic
-            LEFT JOIN FETCH i.vehicle
-            LEFT JOIN FETCH i.items
-            WHERE FUNCTION('DATE', i.createdAt) = :date
-              AND i.isCancelled = :cancelled
-            ORDER BY i.createdAt DESC
-            """)
+            @Query("""
+                SELECT DISTINCT i
+                FROM Invoice i
+                LEFT JOIN FETCH i.mechanic
+                LEFT JOIN FETCH i.vehicle
+                LEFT JOIN FETCH i.items
+                WHERE FUNCTION('DATE', i.createdAt) = :date
+                AND i.isCancelled = :cancelled
+                ORDER BY i.createdAt DESC
+                """)
             List<Invoice> findAllByDateAndCancelledWithDetails(
-            @Param("date") LocalDate date,
-            @Param("cancelled") boolean cancelled);
+                @Param("date") LocalDate date,
+                @Param("cancelled") boolean cancelled);
 
             @Query("""
                 SELECT DISTINCT i
