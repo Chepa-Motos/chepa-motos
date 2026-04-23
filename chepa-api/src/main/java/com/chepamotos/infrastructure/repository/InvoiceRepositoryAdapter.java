@@ -32,11 +32,30 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 
 	@Override
 	public List<Invoice> findAllByFilters(LocalDate date, InvoiceType type, Long mechanicId, boolean cancelled) {
+		if (type != null && mechanicId != null) {
+			return springDataInvoiceRepository.findAllByDateCancelledTypeAndMechanicWithDetails(date, cancelled, type, mechanicId)
+					.stream()
+					.map(InvoiceEntityMapper::toDomain)
+					.toList();
+		}
+
+		if (type != null) {
+			return springDataInvoiceRepository.findAllByDateCancelledAndTypeWithDetails(date, cancelled, type)
+					.stream()
+					.map(InvoiceEntityMapper::toDomain)
+					.toList();
+		}
+
+		if (mechanicId != null) {
+			return springDataInvoiceRepository.findAllByDateCancelledAndMechanicWithDetails(date, cancelled, mechanicId)
+					.stream()
+					.map(InvoiceEntityMapper::toDomain)
+					.toList();
+		}
+
 		return springDataInvoiceRepository.findAllByDateAndCancelledWithDetails(date, cancelled)
 				.stream()
 				.map(InvoiceEntityMapper::toDomain)
-				.filter(invoice -> type == null || invoice.type() == type)
-				.filter(invoice -> mechanicId == null || (invoice.mechanic() != null && mechanicId.equals(invoice.mechanic().id())))
 				.toList();
 	}
 
