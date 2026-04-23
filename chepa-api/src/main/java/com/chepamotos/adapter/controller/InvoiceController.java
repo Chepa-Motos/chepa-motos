@@ -6,7 +6,7 @@ import com.chepamotos.adapter.dto.CreateServiceInvoiceRequest;
 import com.chepamotos.adapter.dto.InvoiceCancelResponse;
 import com.chepamotos.adapter.dto.InvoiceResponse;
 import com.chepamotos.domain.model.InvoiceItemInput;
-import com.chepamotos.infrastructure.application.InvoiceApplicationService;
+import com.chepamotos.domain.port.in.InvoiceApplicationUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,16 +18,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/invoices")
 public class InvoiceController {
 
-        private final InvoiceApplicationService invoiceApplicationService;
+        private final InvoiceApplicationUseCase invoiceApplicationService;
 
-        public InvoiceController(InvoiceApplicationService invoiceApplicationService) {
+        public InvoiceController(InvoiceApplicationUseCase invoiceApplicationService) {
                 this.invoiceApplicationService = invoiceApplicationService;
         }
 

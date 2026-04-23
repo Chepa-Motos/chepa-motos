@@ -3,7 +3,7 @@ package com.chepamotos.adapter.controller;
 import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.CreateLiquidationRequest;
 import com.chepamotos.adapter.dto.LiquidationResponse;
-import com.chepamotos.infrastructure.application.LiquidationApplicationService;
+import com.chepamotos.domain.port.in.LiquidationApplicationUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +21,9 @@ import java.util.List;
 @RequestMapping("/api/liquidations")
 public class LiquidationController {
 
-    private final LiquidationApplicationService liquidationApplicationService;
+    private final LiquidationApplicationUseCase liquidationApplicationService;
 
-    public LiquidationController(LiquidationApplicationService liquidationApplicationService) {
+    public LiquidationController(LiquidationApplicationUseCase liquidationApplicationService) {
         this.liquidationApplicationService = liquidationApplicationService;
     }
 

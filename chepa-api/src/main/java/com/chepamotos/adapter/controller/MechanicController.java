@@ -4,7 +4,7 @@ import com.chepamotos.adapter.dto.ApiResponse;
 import com.chepamotos.adapter.dto.CreateMechanicRequest;
 import com.chepamotos.adapter.dto.MechanicResponse;
 import com.chepamotos.adapter.dto.UpdateMechanicStatusRequest;
-import com.chepamotos.infrastructure.application.MechanicApplicationService;
+import com.chepamotos.domain.port.in.MechanicApplicationUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +23,9 @@ import java.util.List;
 @RequestMapping("/api/mechanics")
 public class MechanicController {
 
-    private final MechanicApplicationService mechanicApplicationService;
+    private final MechanicApplicationUseCase mechanicApplicationService;
 
-    public MechanicController(MechanicApplicationService mechanicApplicationService) {
+    public MechanicController(MechanicApplicationUseCase mechanicApplicationService) {
         this.mechanicApplicationService = mechanicApplicationService;
     }
 

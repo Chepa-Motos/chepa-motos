@@ -2,7 +2,7 @@ package com.chepamotos.adapter.controller;
 
 import com.chepamotos.domain.exception.MechanicNotFoundException;
 import com.chepamotos.domain.model.Mechanic;
-import com.chepamotos.infrastructure.application.MechanicApplicationService;
+import com.chepamotos.domain.port.in.MechanicApplicationUseCase;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ class MechanicControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-        private MechanicApplicationService mechanicApplicationService;
+                private MechanicApplicationUseCase mechanicApplicationService;
 
     @Test
     void list_returnsOkEnvelope() throws Exception {
@@ -117,8 +117,8 @@ class MechanicControllerTest {
 
         @Bean
         @Primary
-                MechanicApplicationService mechanicApplicationService() {
-                        return Mockito.mock(MechanicApplicationService.class);
+                MechanicApplicationUseCase mechanicApplicationService() {
+                        return Mockito.mock(MechanicApplicationUseCase.class);
         }
     }
 }

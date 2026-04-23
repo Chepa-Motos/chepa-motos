@@ -4,7 +4,7 @@ import com.chepamotos.domain.exception.LiquidationAlreadyExistsException;
 import com.chepamotos.domain.exception.MechanicNotFoundException;
 import com.chepamotos.domain.model.DailyLiquidation;
 import com.chepamotos.domain.model.Mechanic;
-import com.chepamotos.infrastructure.application.LiquidationApplicationService;
+import com.chepamotos.domain.port.in.LiquidationApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -36,7 +36,7 @@ class LiquidationControllerTest {
   private MockMvc mockMvc;
 
   @Autowired
-  private LiquidationApplicationService liquidationApplicationService;
+  private LiquidationApplicationUseCase liquidationApplicationService;
 
   @BeforeEach
   void resetMocks() {
@@ -180,8 +180,8 @@ class LiquidationControllerTest {
 
     @Bean
     @Primary
-    LiquidationApplicationService liquidationApplicationService() {
-      return Mockito.mock(LiquidationApplicationService.class);
+    LiquidationApplicationUseCase liquidationApplicationService() {
+      return Mockito.mock(LiquidationApplicationUseCase.class);
     }
   }
 }

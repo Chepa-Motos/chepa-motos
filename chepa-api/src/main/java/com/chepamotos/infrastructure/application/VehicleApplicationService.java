@@ -1,13 +1,14 @@
 package com.chepamotos.infrastructure.application;
 
 import com.chepamotos.domain.model.Vehicle;
+import com.chepamotos.domain.port.in.VehicleApplicationUseCase;
 import com.chepamotos.domain.usecase.vehicle.GetVehicleByPlateUseCase;
 import com.chepamotos.domain.usecase.vehicle.ResolveVehicleForServiceInvoiceUseCase;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class VehicleApplicationService {
+public class VehicleApplicationService implements VehicleApplicationUseCase {
 
     // This class is an outer-layer facade: Spring + transactions live here.
     // Domain use cases remain framework-free under domain/usecase.
@@ -25,12 +26,14 @@ public class VehicleApplicationService {
 
     // Queries
     @Transactional(readOnly = true)
+    @Override
     public Vehicle getByPlate(String rawPlate) {
         return getVehicleByPlateUseCase.execute(rawPlate);
     }
 
     // Commands
     @Transactional
+    @Override
     public Vehicle resolveForServiceInvoice(String rawPlate, String rawModel) {
         return resolveVehicleForServiceInvoiceUseCase.execute(rawPlate, rawModel);
     }

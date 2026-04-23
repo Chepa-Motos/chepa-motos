@@ -4,6 +4,7 @@ import com.chepamotos.domain.model.Invoice;
 import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.domain.port.InvoiceRepository;
 import com.chepamotos.infrastructure.mapper.InvoiceEntityMapper;
+import com.chepamotos.infrastructure.mapper.InvoiceItemEntityMapper;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -47,6 +48,14 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 	@Override
 	public List<Long> findActiveMechanicIdsWithActiveServiceInvoicesByDate(LocalDate date) {
 		return springDataInvoiceRepository.findActiveMechanicIdsWithActiveServiceInvoicesByDate(InvoiceType.SERVICE, date);
+	}
+
+	@Override
+	public List<com.chepamotos.domain.model.InvoiceItem> findSuggestionsByModelAndDescription(String model, String descriptionPrefix) {
+		return springDataInvoiceRepository.findSuggestionsByModelAndDescription(model, descriptionPrefix)
+				.stream()
+				.map(InvoiceItemEntityMapper::toDomain)
+				.toList();
 	}
 
 	@Override
