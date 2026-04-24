@@ -48,7 +48,7 @@ class InvoiceUseCasesTest {
 
     @Test
     void listUseCase_execute_returnsRepositoryResultsWithProvidedFilters() {
-        List<Invoice> expected = List.of(deliveryInvoice(1L, false), serviceInvoice(2L, false));
+        List<Invoice> expected = List.of(serviceInvoice(2L, false), serviceInvoice(3L, false));
         LocalDate date = LocalDate.of(2026, 1, 28);
         when(invoiceRepository.findAllByFilters(date, InvoiceType.SERVICE, 1L, false)).thenReturn(expected);
 
