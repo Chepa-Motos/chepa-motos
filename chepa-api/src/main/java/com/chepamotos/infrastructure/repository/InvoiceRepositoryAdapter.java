@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,28 +33,10 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 
 	@Override
 	public List<Invoice> findAllByFilters(LocalDate date, InvoiceType type, Long mechanicId, boolean cancelled) {
-		if (type != null && mechanicId != null) {
-			return springDataInvoiceRepository.findAllByDateCancelledTypeAndMechanicWithDetails(date, cancelled, type, mechanicId)
-					.stream()
-					.map(InvoiceEntityMapper::toDomain)
-					.toList();
-		}
+		LocalDateTime startDateTime = date.atStartOfDay();
+		LocalDateTime endDateTime = date.plusDays(1).atStartOfDay();
 
-		if (type != null) {
-			return springDataInvoiceRepository.findAllByDateCancelledAndTypeWithDetails(date, cancelled, type)
-					.stream()
-					.map(InvoiceEntityMapper::toDomain)
-					.toList();
-		}
-
-		if (mechanicId != null) {
-			return springDataInvoiceRepository.findAllByDateCancelledAndMechanicWithDetails(date, cancelled, mechanicId)
-					.stream()
-					.map(InvoiceEntityMapper::toDomain)
-					.toList();
-		}
-
-		return springDataInvoiceRepository.findAllByDateAndCancelledWithDetails(date, cancelled)
+		return springDataInvoiceRepository.findAllByDateRangeAndFiltersWithDetails(startDateTime, endDateTime, cancelled, type, mechanicId)
 				.stream()
 				.map(InvoiceEntityMapper::toDomain)
 				.toList();

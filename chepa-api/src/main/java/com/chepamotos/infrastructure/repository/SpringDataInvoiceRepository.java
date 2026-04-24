@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,69 +18,25 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
     @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items")
     List<Invoice> findAllWithDetails();
 
-            @Query("""
-                SELECT DISTINCT i
-                FROM Invoice i
-                LEFT JOIN FETCH i.mechanic
-                LEFT JOIN FETCH i.vehicle
-                LEFT JOIN FETCH i.items
-                WHERE FUNCTION('DATE', i.createdAt) = :date
-                AND i.isCancelled = :cancelled
-                ORDER BY i.createdAt DESC
-                """)
-            List<Invoice> findAllByDateAndCancelledWithDetails(
-                @Param("date") LocalDate date,
-                @Param("cancelled") boolean cancelled);
-
-            @Query("""
-                SELECT DISTINCT i
-                FROM Invoice i
-                LEFT JOIN FETCH i.mechanic
-                LEFT JOIN FETCH i.vehicle
-                LEFT JOIN FETCH i.items
-                WHERE FUNCTION('DATE', i.createdAt) = :date
-                  AND i.isCancelled = :cancelled
-                  AND i.invoiceType = :invoiceType
-                ORDER BY i.createdAt DESC
-                """)
-            List<Invoice> findAllByDateCancelledAndTypeWithDetails(
-                @Param("date") LocalDate date,
-                @Param("cancelled") boolean cancelled,
-                @Param("invoiceType") InvoiceType invoiceType);
-
-            @Query("""
-                SELECT DISTINCT i
-                FROM Invoice i
-                LEFT JOIN FETCH i.mechanic
-                LEFT JOIN FETCH i.vehicle
-                LEFT JOIN FETCH i.items
-                WHERE FUNCTION('DATE', i.createdAt) = :date
-                  AND i.isCancelled = :cancelled
-                  AND i.mechanic.id = :mechanicId
-                ORDER BY i.createdAt DESC
-                """)
-            List<Invoice> findAllByDateCancelledAndMechanicWithDetails(
-                @Param("date") LocalDate date,
-                @Param("cancelled") boolean cancelled,
-                @Param("mechanicId") Long mechanicId);
-
-            @Query("""
-                SELECT DISTINCT i
-                FROM Invoice i
-                LEFT JOIN FETCH i.mechanic
-                LEFT JOIN FETCH i.vehicle
-                LEFT JOIN FETCH i.items
-                WHERE FUNCTION('DATE', i.createdAt) = :date
-                  AND i.isCancelled = :cancelled
-                  AND i.invoiceType = :invoiceType
-                  AND i.mechanic.id = :mechanicId
-                ORDER BY i.createdAt DESC
-                """)
-            List<Invoice> findAllByDateCancelledTypeAndMechanicWithDetails(
-                @Param("date") LocalDate date,
-                @Param("cancelled") boolean cancelled,
-                @Param("invoiceType") InvoiceType invoiceType,
-                @Param("mechanicId") Long mechanicId);
+    @Query("""
+            SELECT DISTINCT i
+            FROM Invoice i
+            LEFT JOIN FETCH i.mechanic
+            LEFT JOIN FETCH i.vehicle
+            LEFT JOIN FETCH i.items
+            WHERE i.createdAt >= :startDateTime
+              AND i.createdAt < :endDateTime
+              AND i.isCancelled = :cancelled
+              AND (:invoiceType IS NULL OR i.invoiceType = :invoiceType)
+              AND (:mechanicId IS NULL OR i.mechanic.id = :mechanicId)
+            ORDER BY i.createdAt DESC
+            """)
+    List<Invoice> findAllByDateRangeAndFiltersWithDetails(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime,
+            @Param("cancelled") boolean cancelled,
+            @Param("invoiceType") InvoiceType invoiceType,
+            @Param("mechanicId") Long mechanicId);
 
     @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items WHERE i.id = :id")
     Optional<Invoice> findByIdWithDetails(@Param("id") Long id);
