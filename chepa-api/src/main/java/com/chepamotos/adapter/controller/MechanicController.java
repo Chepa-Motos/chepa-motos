@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
 import java.util.List;
 
 @RestController
@@ -24,9 +25,11 @@ import java.util.List;
 public class MechanicController {
 
     private final MechanicApplicationUseCase mechanicApplicationService;
+    private final Clock clock;
 
-    public MechanicController(MechanicApplicationUseCase mechanicApplicationService) {
+    public MechanicController(MechanicApplicationUseCase mechanicApplicationService, Clock clock) {
         this.mechanicApplicationService = mechanicApplicationService;
+        this.clock = clock;
     }
 
     @GetMapping
@@ -37,13 +40,13 @@ public class MechanicController {
                 .stream()
                 .map(MechanicResponse::fromDomain)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.of(data));
+        return ResponseEntity.ok(ApiResponse.of(data, clock));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MechanicResponse>> getById(@PathVariable("id") Long mechanicId) {
         MechanicResponse data = MechanicResponse.fromDomain(mechanicApplicationService.getById(mechanicId));
-        return ResponseEntity.ok(ApiResponse.of(data));
+        return ResponseEntity.ok(ApiResponse.of(data, clock));
     }
 
     @PostMapping
@@ -51,7 +54,7 @@ public class MechanicController {
             @Valid @RequestBody CreateMechanicRequest request
     ) {
         MechanicResponse data = MechanicResponse.fromDomain(mechanicApplicationService.create(request.name()));
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data, clock));
     }
 
     @PatchMapping("/{id}/status")
@@ -62,6 +65,6 @@ public class MechanicController {
         MechanicResponse data = MechanicResponse.fromDomain(
             mechanicApplicationService.changeStatus(mechanicId, request.isActive())
         );
-        return ResponseEntity.ok(ApiResponse.of(data));
+        return ResponseEntity.ok(ApiResponse.of(data, clock));
     }
 }

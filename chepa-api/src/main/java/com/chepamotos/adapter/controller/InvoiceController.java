@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -28,9 +29,11 @@ import java.util.List;
 public class InvoiceController {
 
         private final InvoiceApplicationUseCase invoiceApplicationService;
+        private final Clock clock;
 
-        public InvoiceController(InvoiceApplicationUseCase invoiceApplicationService) {
+        public InvoiceController(InvoiceApplicationUseCase invoiceApplicationService, Clock clock) {
                 this.invoiceApplicationService = invoiceApplicationService;
+                this.clock = clock;
         }
 
         @GetMapping
@@ -43,13 +46,13 @@ public class InvoiceController {
                                 .stream()
                                 .map(InvoiceResponse::fromDomain)
                                 .toList();
-                return ResponseEntity.ok(ApiResponse.of(data));
+                return ResponseEntity.ok(ApiResponse.of(data, clock));
         }
 
         @GetMapping("/{id}")
         public ResponseEntity<ApiResponse<InvoiceResponse>> getById(@PathVariable("id") Long invoiceId) {
                 return ResponseEntity.ok(ApiResponse.of(
-                                InvoiceResponse.fromDomain(invoiceApplicationService.getById(invoiceId))));
+                                InvoiceResponse.fromDomain(invoiceApplicationService.getById(invoiceId)), clock));
         }
 
         @PostMapping("/service")
@@ -65,7 +68,7 @@ public class InvoiceController {
                                                 request.vehiclePlate(),
                                                 request.model(),
                                                 request.laborAmount(),
-                                                itemInputs))));
+                                                itemInputs)), clock));
         }
 
         @PostMapping("/delivery")
@@ -78,12 +81,12 @@ public class InvoiceController {
                 return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(
                                 InvoiceResponse.fromDomain(invoiceApplicationService.createDelivery(
                                                 request.buyerName(),
-                                                itemInputs))));
+                                                itemInputs)), clock));
         }
 
         @PatchMapping("/{id}/cancel")
         public ResponseEntity<ApiResponse<InvoiceCancelResponse>> cancel(@PathVariable("id") Long invoiceId) {
                 return ResponseEntity.ok(ApiResponse.of(
-                                InvoiceCancelResponse.fromDomain(invoiceApplicationService.cancel(invoiceId))));
+                                InvoiceCancelResponse.fromDomain(invoiceApplicationService.cancel(invoiceId)), clock));
         }
 }

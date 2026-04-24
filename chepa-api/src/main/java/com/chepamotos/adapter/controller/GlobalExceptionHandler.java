@@ -13,8 +13,16 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.Clock;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final Clock clock;
+
+    public GlobalExceptionHandler(Clock clock) {
+        this.clock = clock;
+    }
 
     @ExceptionHandler(MechanicNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleMechanicNotFound(MechanicNotFoundException exception) {
@@ -75,6 +83,6 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ApiErrorResponse> buildError(HttpStatus status, String code, String message) {
-        return ResponseEntity.status(status).body(ApiErrorResponse.of(code, message));
+        return ResponseEntity.status(status).body(ApiErrorResponse.of(code, message, clock));
     }
 }

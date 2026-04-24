@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
 import java.util.List;
 
 @RestController
@@ -25,9 +26,11 @@ import java.util.List;
 public class InvoiceItemController {
 
     private final InvoiceApplicationUseCase invoiceApplicationService;
+    private final Clock clock;
 
-    public InvoiceItemController(InvoiceApplicationUseCase invoiceApplicationService) {
+    public InvoiceItemController(InvoiceApplicationUseCase invoiceApplicationService, Clock clock) {
         this.invoiceApplicationService = invoiceApplicationService;
+        this.clock = clock;
     }
 
     @Operation(
@@ -117,6 +120,6 @@ public class InvoiceItemController {
                 .stream()
                 .map(InvoiceItemSuggestionDTO::fromDomain)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.of(data));
+        return ResponseEntity.ok(ApiResponse.of(data, clock));
     }
 }

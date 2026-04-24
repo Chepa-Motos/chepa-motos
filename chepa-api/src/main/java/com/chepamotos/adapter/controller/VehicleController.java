@@ -14,14 +14,18 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
+
 @RestController
 @RequestMapping("/api/vehicles")
 public class VehicleController {
 
     private final VehicleApplicationUseCase vehicleApplicationService;
+    private final Clock clock;
 
-    public VehicleController(VehicleApplicationUseCase vehicleApplicationService) {
+    public VehicleController(VehicleApplicationUseCase vehicleApplicationService, Clock clock) {
         this.vehicleApplicationService = vehicleApplicationService;
+        this.clock = clock;
     }
 
         @Operation(
@@ -87,6 +91,6 @@ public class VehicleController {
             @PathVariable("plate") String plate
         ) {
         VehicleResponse data = VehicleResponse.fromDomain(vehicleApplicationService.getByPlate(plate));
-        return ResponseEntity.ok(ApiResponse.of(data));
+        return ResponseEntity.ok(ApiResponse.of(data, clock));
     }
 }
