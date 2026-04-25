@@ -1,6 +1,7 @@
 package com.chepamotos.infrastructure.repository;
 
 import com.chepamotos.domain.model.Invoice;
+import com.chepamotos.domain.model.InvoiceItem;
 import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.domain.port.InvoiceRepository;
 import com.chepamotos.infrastructure.mapper.InvoiceEntityMapper;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +26,17 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 	@Override
 	public List<Invoice> findAll() {
 		return springDataInvoiceRepository.findAllWithDetails()
+				.stream()
+				.map(InvoiceEntityMapper::toDomain)
+				.toList();
+	}
+
+	@Override
+	public List<Invoice> findAllByFilters(LocalDate date, InvoiceType type, Long mechanicId, boolean cancelled) {
+		LocalDateTime startDateTime = date == null ? null : date.atStartOfDay();
+		LocalDateTime endDateTime = date == null ? null : date.plusDays(1).atStartOfDay();
+
+		return springDataInvoiceRepository.findAllByDateRangeAndFiltersWithDetails(startDateTime, endDateTime, cancelled, type, mechanicId)
 				.stream()
 				.map(InvoiceEntityMapper::toDomain)
 				.toList();
@@ -51,8 +64,8 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 	}
 
 	@Override
-	public List<com.chepamotos.domain.model.InvoiceItem> findSuggestionsByModelAndDescription(String model, String descriptionPrefix) {
-		return springDataInvoiceRepository.findSuggestionsByModelAndDescription(model, descriptionPrefix)
+	public List<InvoiceItem> findSuggestionsByModelAndDescription(String model, String descriptionPrefix) {
+		return springDataInvoiceRepository.findSuggestionsByModelAndDescription(InvoiceType.SERVICE.name(), model, descriptionPrefix)
 				.stream()
 				.map(InvoiceItemEntityMapper::toDomain)
 				.toList();

@@ -6,6 +6,7 @@ import com.chepamotos.adapter.dto.CreateServiceInvoiceRequest;
 import com.chepamotos.adapter.dto.InvoiceCancelResponse;
 import com.chepamotos.adapter.dto.InvoiceResponse;
 import com.chepamotos.domain.model.InvoiceItemInput;
+import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.domain.port.in.InvoiceApplicationUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -16,8 +17,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -25,24 +29,30 @@ import java.util.List;
 public class InvoiceController {
 
         private final InvoiceApplicationUseCase invoiceApplicationService;
+        private final Clock clock;
 
-        public InvoiceController(InvoiceApplicationUseCase invoiceApplicationService) {
+        public InvoiceController(InvoiceApplicationUseCase invoiceApplicationService, Clock clock) {
                 this.invoiceApplicationService = invoiceApplicationService;
+                this.clock = clock;
         }
 
         @GetMapping
-        public ResponseEntity<ApiResponse<List<InvoiceResponse>>> list() {
-                List<InvoiceResponse> data = invoiceApplicationService.listAll()
+        public ResponseEntity<ApiResponse<List<InvoiceResponse>>> list(
+                        @RequestParam(name = "date", required = false) LocalDate date,
+                        @RequestParam(name = "type", required = false) InvoiceType type,
+                        @RequestParam(name = "mechanic_id", required = false) Long mechanicId,
+                        @RequestParam(name = "cancelled", defaultValue = "false") boolean cancelled) {
+                List<InvoiceResponse> data = invoiceApplicationService.list(date, type, mechanicId, cancelled)
                                 .stream()
                                 .map(InvoiceResponse::fromDomain)
                                 .toList();
-                return ResponseEntity.ok(ApiResponse.of(data));
+                return ResponseEntity.ok(ApiResponse.of(data, clock));
         }
 
         @GetMapping("/{id}")
         public ResponseEntity<ApiResponse<InvoiceResponse>> getById(@PathVariable("id") Long invoiceId) {
                 return ResponseEntity.ok(ApiResponse.of(
-                                InvoiceResponse.fromDomain(invoiceApplicationService.getById(invoiceId))));
+                                InvoiceResponse.fromDomain(invoiceApplicationService.getById(invoiceId)), clock));
         }
 
         @PostMapping("/service")
@@ -58,7 +68,7 @@ public class InvoiceController {
                                                 request.vehiclePlate(),
                                                 request.model(),
                                                 request.laborAmount(),
-                                                itemInputs))));
+                                                itemInputs)), clock));
         }
 
         @PostMapping("/delivery")
@@ -71,12 +81,12 @@ public class InvoiceController {
                 return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(
                                 InvoiceResponse.fromDomain(invoiceApplicationService.createDelivery(
                                                 request.buyerName(),
-                                                itemInputs))));
+                                                itemInputs)), clock));
         }
 
         @PatchMapping("/{id}/cancel")
         public ResponseEntity<ApiResponse<InvoiceCancelResponse>> cancel(@PathVariable("id") Long invoiceId) {
                 return ResponseEntity.ok(ApiResponse.of(
-                                InvoiceCancelResponse.fromDomain(invoiceApplicationService.cancel(invoiceId))));
+                                InvoiceCancelResponse.fromDomain(invoiceApplicationService.cancel(invoiceId)), clock));
         }
 }

@@ -344,4 +344,81 @@ class InvoiceRepositoryAdapterIntegrationTest {
         assertFalse(suggestions.stream().anyMatch(item -> "Bujia cancelada".equals(item.description())));
         assertFalse(suggestions.stream().anyMatch(item -> "Bujia delivery".equals(item.description())));
     }
+
+    @Test
+    void findAllByFilters_appliesDateTypeMechanicAndCancelled() {
+        LocalDate targetDate = LocalDate.of(2099, 5, 1);
+
+        Mechanic mechanicA = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_filter_a"));
+        Mechanic mechanicB = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_filter_b"));
+        Vehicle vehicleA = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTFLT1", "Filter Model A"));
+        Vehicle vehicleB = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTFLT2", "Filter Model B"));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanicA,
+            vehicleA,
+            null,
+            LocalDateTime.of(2099, 5, 1, 10, 0),
+            new BigDecimal("100.00"),
+            false,
+            List.of(InvoiceItem.createNew("Filter item A", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanicB,
+            vehicleB,
+            null,
+            LocalDateTime.of(2099, 5, 1, 11, 0),
+            new BigDecimal("200.00"),
+            false,
+            List.of(InvoiceItem.createNew("Filter item B", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanicA,
+            vehicleA,
+            null,
+            LocalDateTime.of(2099, 5, 2, 9, 0),
+            new BigDecimal("300.00"),
+            false,
+            List.of(InvoiceItem.createNew("Other date", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.DELIVERY,
+            null,
+            null,
+            "Buyer Filter",
+            LocalDateTime.of(2099, 5, 1, 12, 0),
+            BigDecimal.ZERO,
+            false,
+            List.of(InvoiceItem.createNew("Delivery filter", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        invoiceRepositoryAdapter.save(Invoice.restore(
+            null,
+            InvoiceType.SERVICE,
+            mechanicA,
+            vehicleA,
+            null,
+            LocalDateTime.of(2099, 5, 1, 13, 0),
+            new BigDecimal("400.00"),
+            true,
+            List.of(InvoiceItem.createNew("Cancelled filter", BigDecimal.ONE, new BigDecimal("10.00")))
+        ));
+
+        List<Invoice> filtered = invoiceRepositoryAdapter.findAllByFilters(targetDate, InvoiceType.SERVICE, mechanicA.id(), false);
+
+        assertEquals(1, filtered.size());
+        assertEquals(InvoiceType.SERVICE, filtered.get(0).type());
+        assertEquals(mechanicA.id(), filtered.get(0).mechanic().id());
+        assertEquals(false, filtered.get(0).cancelled());
+    }
 }

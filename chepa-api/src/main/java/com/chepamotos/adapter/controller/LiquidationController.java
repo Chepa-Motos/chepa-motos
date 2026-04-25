@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -22,9 +23,11 @@ import java.util.List;
 public class LiquidationController {
 
     private final LiquidationApplicationUseCase liquidationApplicationService;
+    private final Clock clock;
 
-    public LiquidationController(LiquidationApplicationUseCase liquidationApplicationService) {
+    public LiquidationController(LiquidationApplicationUseCase liquidationApplicationService, Clock clock) {
         this.liquidationApplicationService = liquidationApplicationService;
+        this.clock = clock;
     }
 
     @GetMapping
@@ -35,7 +38,7 @@ public class LiquidationController {
                 .stream()
                 .map(LiquidationResponse::fromDomain)
                 .toList();
-        return ResponseEntity.ok(ApiResponse.of(data));
+        return ResponseEntity.ok(ApiResponse.of(data, clock));
     }
 
     @PostMapping
@@ -45,6 +48,6 @@ public class LiquidationController {
                 .stream()
                 .map(LiquidationResponse::fromDomain)
                 .toList();
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(data, clock));
     }
 }

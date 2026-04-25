@@ -3,6 +3,7 @@ package com.chepamotos.infrastructure.application;
 import com.chepamotos.domain.model.Invoice;
 import com.chepamotos.domain.model.InvoiceItem;
 import com.chepamotos.domain.model.InvoiceItemInput;
+import com.chepamotos.domain.model.InvoiceType;
 import com.chepamotos.domain.port.in.InvoiceApplicationUseCase;
 import com.chepamotos.domain.usecase.invoice.CancelInvoiceUseCase;
 import com.chepamotos.domain.usecase.invoice.CreateDeliveryInvoiceUseCase;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -43,8 +45,8 @@ public class InvoiceApplicationService implements InvoiceApplicationUseCase {
 
     @Transactional(readOnly = true)
     @Override
-    public List<Invoice> listAll() {
-        return listInvoicesUseCase.execute();
+    public List<Invoice> list(LocalDate date, InvoiceType type, Long mechanicId, boolean cancelled) {
+        return listInvoicesUseCase.execute(date, type, mechanicId, cancelled);
     }
 
     @Transactional(readOnly = true)

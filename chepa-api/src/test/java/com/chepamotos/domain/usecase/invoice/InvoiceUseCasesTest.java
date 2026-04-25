@@ -18,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -43,15 +45,28 @@ class InvoiceUseCasesTest {
     private ResolveVehicleForServiceInvoiceUseCase resolveVehicleUseCase;
 
     @Test
-    void listUseCase_execute_returnsRepositoryResults() {
-        List<Invoice> expected = List.of(deliveryInvoice(1L, false), serviceInvoice(2L, false));
-        when(invoiceRepository.findAll()).thenReturn(expected);
+    void listUseCase_execute_returnsRepositoryResultsWithProvidedFilters() {
+        List<Invoice> expected = List.of(serviceInvoice(2L, false), serviceInvoice(3L, false));
+        LocalDate date = LocalDate.of(2026, 1, 28);
+        when(invoiceRepository.findAllByFilters(date, InvoiceType.SERVICE, 1L, false)).thenReturn(expected);
 
-        ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository);
-        List<Invoice> result = useCase.execute();
+        ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository, Clock.systemUTC());
+        List<Invoice> result = useCase.execute(date, InvoiceType.SERVICE, 1L, false);
 
         assertEquals(expected, result);
-        verify(invoiceRepository).findAll();
+        verify(invoiceRepository).findAllByFilters(date, InvoiceType.SERVICE, 1L, false);
+    }
+
+    @Test
+    void listUseCase_execute_whenDateMissing_doesNotApplyDateFilter() {
+        List<Invoice> expected = List.of(serviceInvoice(2L, false));
+        when(invoiceRepository.findAllByFilters(null, null, null, false)).thenReturn(expected);
+
+        ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository, Clock.systemUTC());
+        List<Invoice> result = useCase.execute(null, null, null, false);
+
+        assertEquals(expected, result);
+        verify(invoiceRepository).findAllByFilters(null, null, null, false);
     }
 
     @Test
