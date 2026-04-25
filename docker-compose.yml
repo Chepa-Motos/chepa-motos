@@ -14,7 +14,8 @@ services:
     restart: unless-stopped
 
   metabase:
-    image: metabase/metabase:latest
+    image: metabase/metabase:v0.49.4
+    platform: linux/amd64
     container_name: chepa_metabase
     ports:
       - "3000:3000"
