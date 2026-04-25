@@ -19,10 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,17 +58,15 @@ class InvoiceUseCasesTest {
     }
 
     @Test
-    void listUseCase_execute_whenDateMissing_usesTodayAsDefault() {
+    void listUseCase_execute_whenDateMissing_doesNotApplyDateFilter() {
         List<Invoice> expected = List.of(serviceInvoice(2L, false));
-        Clock fixedClock = Clock.fixed(Instant.parse("2026-01-28T10:00:00Z"), ZoneOffset.UTC);
-        LocalDate expectedDate = LocalDate.of(2026, 1, 28);
-        when(invoiceRepository.findAllByFilters(expectedDate, null, null, false)).thenReturn(expected);
+        when(invoiceRepository.findAllByFilters(null, null, null, false)).thenReturn(expected);
 
-        ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository, fixedClock);
+        ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository, Clock.systemUTC());
         List<Invoice> result = useCase.execute(null, null, null, false);
 
         assertEquals(expected, result);
-        verify(invoiceRepository).findAllByFilters(expectedDate, null, null, false);
+        verify(invoiceRepository).findAllByFilters(null, null, null, false);
     }
 
     @Test

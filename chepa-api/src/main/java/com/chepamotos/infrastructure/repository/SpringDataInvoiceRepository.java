@@ -24,9 +24,8 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
             LEFT JOIN FETCH i.mechanic
             LEFT JOIN FETCH i.vehicle
             LEFT JOIN FETCH i.items
-            WHERE i.createdAt >= :startDateTime
-              AND i.createdAt < :endDateTime
-              AND i.isCancelled = :cancelled
+                        WHERE (:startDateTime IS NULL OR (i.createdAt >= :startDateTime AND i.createdAt < :endDateTime))
+                            AND i.isCancelled = :cancelled
               AND (:invoiceType IS NULL OR i.invoiceType = :invoiceType)
               AND (:mechanicId IS NULL OR i.mechanic.id = :mechanicId)
             ORDER BY i.createdAt DESC

@@ -33,8 +33,8 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 
 	@Override
 	public List<Invoice> findAllByFilters(LocalDate date, InvoiceType type, Long mechanicId, boolean cancelled) {
-		LocalDateTime startDateTime = date.atStartOfDay();
-		LocalDateTime endDateTime = date.plusDays(1).atStartOfDay();
+		LocalDateTime startDateTime = date == null ? null : date.atStartOfDay();
+		LocalDateTime endDateTime = date == null ? null : date.plusDays(1).atStartOfDay();
 
 		return springDataInvoiceRepository.findAllByDateRangeAndFiltersWithDetails(startDateTime, endDateTime, cancelled, type, mechanicId)
 				.stream()
