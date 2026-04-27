@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,30 +23,44 @@ public interface SpringDataInvoiceRepository extends JpaRepository<Invoice, Long
             LEFT JOIN FETCH i.mechanic
             LEFT JOIN FETCH i.vehicle
             LEFT JOIN FETCH i.items
-                        WHERE (:startDateTime IS NULL OR (i.createdAt >= :startDateTime AND i.createdAt < :endDateTime))
-                            AND i.isCancelled = :cancelled
-              AND (:invoiceType IS NULL OR i.invoiceType = :invoiceType)
-              AND (:mechanicId IS NULL OR i.mechanic.id = :mechanicId)
+            WHERE (:useDateFilter = false OR (i.createdAt >= :startDateTime AND i.createdAt < :endDateTime))
+              AND i.isCancelled = :cancelled
+                            AND (:useTypeFilter = false OR i.invoiceType = :invoiceType)
+                            AND (:useMechanicFilter = false OR i.mechanic.id = :mechanicId)
             ORDER BY i.createdAt DESC
             """)
     List<Invoice> findAllByDateRangeAndFiltersWithDetails(
+            @Param("useDateFilter") boolean useDateFilter,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime,
             @Param("cancelled") boolean cancelled,
+                        @Param("useTypeFilter") boolean useTypeFilter,
             @Param("invoiceType") InvoiceType invoiceType,
+                        @Param("useMechanicFilter") boolean useMechanicFilter,
             @Param("mechanicId") Long mechanicId);
 
     @Query("SELECT DISTINCT i FROM Invoice i LEFT JOIN FETCH i.mechanic LEFT JOIN FETCH i.vehicle LEFT JOIN FETCH i.items WHERE i.id = :id")
     Optional<Invoice> findByIdWithDetails(@Param("id") Long id);
 
-    @Query("SELECT COALESCE(SUM(i.laborAmount), 0) FROM Invoice i WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND i.mechanic.id = :mechanicId AND FUNCTION('DATE', i.createdAt) = :date")
-    BigDecimal sumActiveServiceLaborByMechanicAndDate(@Param("invoiceType") InvoiceType invoiceType, @Param("mechanicId") Long mechanicId, @Param("date") LocalDate date);
+        @Query("SELECT COALESCE(SUM(i.laborAmount), 0) FROM Invoice i WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND i.mechanic.id = :mechanicId AND i.createdAt >= :startDateTime AND i.createdAt < :endDateTime")
+        BigDecimal sumActiveServiceLaborByMechanicAndDate(
+            @Param("invoiceType") InvoiceType invoiceType,
+            @Param("mechanicId") Long mechanicId,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
 
-    @Query("SELECT COUNT(i) FROM Invoice i WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND i.mechanic.id = :mechanicId AND FUNCTION('DATE', i.createdAt) = :date")
-    long countActiveServiceInvoicesByMechanicAndDate(@Param("invoiceType") InvoiceType invoiceType, @Param("mechanicId") Long mechanicId, @Param("date") LocalDate date);
+        @Query("SELECT COUNT(i) FROM Invoice i WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND i.mechanic.id = :mechanicId AND i.createdAt >= :startDateTime AND i.createdAt < :endDateTime")
+        long countActiveServiceInvoicesByMechanicAndDate(
+            @Param("invoiceType") InvoiceType invoiceType,
+            @Param("mechanicId") Long mechanicId,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
 
-    @Query("SELECT DISTINCT i.mechanic.id FROM Invoice i JOIN i.mechanic m WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND m.isActive = true AND FUNCTION('DATE', i.createdAt) = :date")
-    List<Long> findActiveMechanicIdsWithActiveServiceInvoicesByDate(@Param("invoiceType") InvoiceType invoiceType, @Param("date") LocalDate date);
+        @Query("SELECT DISTINCT i.mechanic.id FROM Invoice i JOIN i.mechanic m WHERE i.invoiceType = :invoiceType AND i.isCancelled = false AND m.isActive = true AND i.createdAt >= :startDateTime AND i.createdAt < :endDateTime")
+        List<Long> findActiveMechanicIdsWithActiveServiceInvoicesByDate(
+            @Param("invoiceType") InvoiceType invoiceType,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime);
 
     @Query(value = """
         WITH ranked_items AS (

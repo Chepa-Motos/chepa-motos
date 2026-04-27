@@ -37,6 +37,10 @@ public class CreateServiceInvoiceUseCase {
         Mechanic mechanic = mechanicRepository.findById(mechanicId)
                 .orElseThrow(() -> new MechanicNotFoundException(mechanicId));
 
+        if (!mechanic.active()) {
+            throw new IllegalArgumentException("Mechanic must be active to create service invoices");
+        }
+
         Vehicle vehicle = resolveVehicleUseCase.execute(vehiclePlate, vehicleModel);
 
         List<InvoiceItem> items = itemInputs.stream()

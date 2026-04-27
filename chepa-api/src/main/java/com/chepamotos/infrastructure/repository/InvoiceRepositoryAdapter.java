@@ -33,10 +33,21 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 
 	@Override
 	public List<Invoice> findAllByFilters(LocalDate date, InvoiceType type, Long mechanicId, boolean cancelled) {
+		boolean useDateFilter = date != null;
+		boolean useTypeFilter = type != null;
+		boolean useMechanicFilter = mechanicId != null;
 		LocalDateTime startDateTime = date == null ? null : date.atStartOfDay();
 		LocalDateTime endDateTime = date == null ? null : date.plusDays(1).atStartOfDay();
 
-		return springDataInvoiceRepository.findAllByDateRangeAndFiltersWithDetails(startDateTime, endDateTime, cancelled, type, mechanicId)
+		return springDataInvoiceRepository.findAllByDateRangeAndFiltersWithDetails(
+				useDateFilter,
+				startDateTime,
+				endDateTime,
+				cancelled,
+				useTypeFilter,
+				type,
+				useMechanicFilter,
+				mechanicId)
 				.stream()
 				.map(InvoiceEntityMapper::toDomain)
 				.toList();
@@ -50,17 +61,34 @@ public class InvoiceRepositoryAdapter implements InvoiceRepository {
 
 	@Override
 	public BigDecimal sumActiveServiceLaborByMechanicAndDate(Long mechanicId, LocalDate date) {
-		return springDataInvoiceRepository.sumActiveServiceLaborByMechanicAndDate(InvoiceType.SERVICE, mechanicId, date);
+		LocalDateTime startDateTime = date.atStartOfDay();
+		LocalDateTime endDateTime = date.plusDays(1).atStartOfDay();
+		return springDataInvoiceRepository.sumActiveServiceLaborByMechanicAndDate(
+				InvoiceType.SERVICE,
+				mechanicId,
+				startDateTime,
+				endDateTime);
 	}
 
 	@Override
 	public int countActiveServiceInvoicesByMechanicAndDate(Long mechanicId, LocalDate date) {
-		return Math.toIntExact(springDataInvoiceRepository.countActiveServiceInvoicesByMechanicAndDate(InvoiceType.SERVICE, mechanicId, date));
+		LocalDateTime startDateTime = date.atStartOfDay();
+		LocalDateTime endDateTime = date.plusDays(1).atStartOfDay();
+		return Math.toIntExact(springDataInvoiceRepository.countActiveServiceInvoicesByMechanicAndDate(
+				InvoiceType.SERVICE,
+				mechanicId,
+				startDateTime,
+				endDateTime));
 	}
 
 	@Override
 	public List<Long> findActiveMechanicIdsWithActiveServiceInvoicesByDate(LocalDate date) {
-		return springDataInvoiceRepository.findActiveMechanicIdsWithActiveServiceInvoicesByDate(InvoiceType.SERVICE, date);
+		LocalDateTime startDateTime = date.atStartOfDay();
+		LocalDateTime endDateTime = date.plusDays(1).atStartOfDay();
+		return springDataInvoiceRepository.findActiveMechanicIdsWithActiveServiceInvoicesByDate(
+				InvoiceType.SERVICE,
+				startDateTime,
+				endDateTime);
 	}
 
 	@Override
