@@ -449,12 +449,10 @@ Response 409: LIQUIDATION_ALREADY_EXISTS
 
 ## What NOT to do
 
-- Do not add Spring Security, JWT, or any authentication layer
 - Do not use `ddl-auto=create` or `ddl-auto=update` — schema is managed exclusively by `schema.sql`
 - Do not expose JPA entities in controller responses — always use DTOs
 - Do not add Flyway or Liquibase unless explicitly asked
 - Do not add MapStruct or ModelMapper — map manually with simple methods
-- Do not add Swagger/OpenAPI unless explicitly asked
 - Do not add caching (Redis, Caffeine, etc.)
 - Do not add `@DeleteMapping` endpoints for invoices — cancellation only, never deletion
 - Do not trust `subtotal` or `total_amount` from the request body — always recalculate

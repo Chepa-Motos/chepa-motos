@@ -30,11 +30,15 @@ chepa-motos/
 
 1. Clonar el repositorio
 2. Copiar `.env.example` a `.env` y completar las variables
+3. (Opcional recomendado en primer arranque) Definir `ADMIN_USERNAME` y `ADMIN_PASSWORD` para crear el primer gerente automáticamente
 3. Ejecutar `docker compose up --build -d`
 4. Esperar a que PostgreSQL, la API y Metabase queden en estado healthy/ready
 5. API disponible en `http://localhost:8080/api`
 6. PostgreSQL disponible en `localhost:5432`
 7. Metabase disponible en `localhost:3000`
+
+Nota de seguridad:
+Si usas bootstrap de gerente en `.env`, elimina `ADMIN_PASSWORD` del archivo una vez creado el usuario inicial.
 
 ## Flujo de arranque
 
