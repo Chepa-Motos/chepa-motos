@@ -19,8 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,15 +60,17 @@ class InvoiceUseCasesTest {
     }
 
     @Test
-    void listUseCase_execute_whenDateMissing_doesNotApplyDateFilter() {
+    void listUseCase_execute_whenDateMissing_usesTodayAsDefault() {
         List<Invoice> expected = List.of(serviceInvoice(2L, false));
-        when(invoiceRepository.findAllByFilters(null, null, null, false)).thenReturn(expected);
+        Clock fixedClock = Clock.fixed(Instant.parse("2026-01-28T10:00:00Z"), ZoneOffset.UTC);
+        LocalDate expectedDate = LocalDate.of(2026, 1, 28);
+        when(invoiceRepository.findAllByFilters(expectedDate, null, null, false)).thenReturn(expected);
 
-        ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository, Clock.systemUTC());
+        ListInvoicesUseCase useCase = new ListInvoicesUseCase(invoiceRepository, fixedClock);
         List<Invoice> result = useCase.execute(null, null, null, false);
 
         assertEquals(expected, result);
-        verify(invoiceRepository).findAllByFilters(null, null, null, false);
+        verify(invoiceRepository).findAllByFilters(expectedDate, null, null, false);
     }
 
     @Test
@@ -197,6 +201,32 @@ class InvoiceUseCasesTest {
         );
 
         verify(mechanicRepository).findById(404L);
+        verify(resolveVehicleUseCase, never()).execute(any(String.class), any(String.class));
+        verify(invoiceRepository, never()).save(any(Invoice.class));
+    }
+
+    @Test
+    void createServiceUseCase_whenMechanicInactive_throwsValidationError() {
+        Mechanic inactiveMechanic = Mechanic.restore(5L, "Memo", false);
+        when(mechanicRepository.findById(5L)).thenReturn(Optional.of(inactiveMechanic));
+
+        CreateServiceInvoiceUseCase useCase = new CreateServiceInvoiceUseCase(
+                invoiceRepository,
+                mechanicRepository,
+                resolveVehicleUseCase
+        );
+
+        List<InvoiceItemInput> itemInputs = List.of(
+                new InvoiceItemInput("Tornillo Leva", new BigDecimal("1"), new BigDecimal("3900"))
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> useCase.execute(5L, "ABC123", "Boxer", new BigDecimal("10000"), itemInputs)
+        );
+
+        assertEquals("Mechanic must be active to create service invoices", exception.getMessage());
+        verify(mechanicRepository).findById(5L);
         verify(resolveVehicleUseCase, never()).execute(any(String.class), any(String.class));
         verify(invoiceRepository, never()).save(any(Invoice.class));
     }

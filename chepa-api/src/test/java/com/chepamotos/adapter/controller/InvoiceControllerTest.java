@@ -20,8 +20,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -284,6 +287,11 @@ class InvoiceControllerTest {
     @Primary
     InvoiceApplicationUseCase invoiceApplicationService() {
       return Mockito.mock(InvoiceApplicationUseCase.class);
+    }
+
+    @Bean
+    Clock testClock() {
+      return Clock.fixed(Instant.parse("2026-01-28T10:00:00Z"), ZoneOffset.UTC);
     }
   }
 }

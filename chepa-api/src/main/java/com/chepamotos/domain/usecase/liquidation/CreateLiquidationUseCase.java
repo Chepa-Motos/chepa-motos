@@ -61,10 +61,14 @@ public class CreateLiquidationUseCase {
             throw new LiquidationAlreadyExistsException(mechanic.id(), date);
         }
 
-        BigDecimal totalRevenue = invoiceRepository
-                .sumActiveServiceLaborByMechanicAndDate(mechanic.id(), date);
         int invoiceCount = invoiceRepository
                 .countActiveServiceInvoicesByMechanicAndDate(mechanic.id(), date);
+        if (invoiceCount <= 0) {
+            throw new IllegalArgumentException("Mechanic must have active service invoices on the liquidation date");
+        }
+
+        BigDecimal totalRevenue = invoiceRepository
+                .sumActiveServiceLaborByMechanicAndDate(mechanic.id(), date);
 
         DailyLiquidation liquidation = DailyLiquidation.create(mechanic, date, totalRevenue, invoiceCount);
         return dailyLiquidationRepository.save(liquidation);

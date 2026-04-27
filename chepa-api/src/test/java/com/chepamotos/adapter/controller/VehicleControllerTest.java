@@ -13,6 +13,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -65,6 +69,11 @@ class VehicleControllerTest {
         @Primary
         VehicleApplicationUseCase vehicleApplicationService() {
             return Mockito.mock(VehicleApplicationUseCase.class);
+        }
+
+        @Bean
+        Clock testClock() {
+            return Clock.fixed(Instant.parse("2026-01-28T10:00:00Z"), ZoneOffset.UTC);
         }
     }
 }

@@ -19,6 +19,7 @@ public class ListInvoicesUseCase {
     }
 
     public List<Invoice> execute(LocalDate date, InvoiceType type, Long mechanicId, boolean cancelled) {
-        return invoiceRepository.findAllByFilters(date, type, mechanicId, cancelled);
+        LocalDate effectiveDate = date == null ? LocalDate.now(clock) : date;
+        return invoiceRepository.findAllByFilters(effectiveDate, type, mechanicId, cancelled);
     }
 }

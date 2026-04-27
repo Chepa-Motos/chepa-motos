@@ -1,0 +1,2 @@
+DROP TYPE IF EXISTS invoice_type CASCADE;
+CREATE TYPE invoice_type AS ENUM ('SERVICE', 'DELIVERY');

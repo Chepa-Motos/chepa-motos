@@ -147,6 +147,34 @@ class LiquidationUseCasesTest {
     }
 
     @Test
+    void createUseCase_singleMechanic_whenNoInvoicesThatDay_throwsValidationError() {
+        LocalDate date = LocalDate.of(2026, 1, 28);
+        Mechanic mechanic = Mechanic.restore(1L, "Jose", true);
+
+        when(mechanicRepository.findById(1L)).thenReturn(Optional.of(mechanic));
+        when(dailyLiquidationRepository.existsByMechanicAndDate(1L, date)).thenReturn(false);
+        when(invoiceRepository.countActiveServiceInvoicesByMechanicAndDate(1L, date)).thenReturn(0);
+
+        CreateLiquidationUseCase useCase = new CreateLiquidationUseCase(
+                dailyLiquidationRepository,
+                invoiceRepository,
+                mechanicRepository
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> useCase.execute(date, 1L)
+        );
+
+        assertEquals("Mechanic must have active service invoices on the liquidation date", exception.getMessage());
+        verify(mechanicRepository).findById(1L);
+        verify(dailyLiquidationRepository).existsByMechanicAndDate(1L, date);
+        verify(invoiceRepository).countActiveServiceInvoicesByMechanicAndDate(1L, date);
+        verify(invoiceRepository, never()).sumActiveServiceLaborByMechanicAndDate(anyLong(), any(LocalDate.class));
+        verify(dailyLiquidationRepository, never()).save(any(DailyLiquidation.class));
+    }
+
+    @Test
     void createUseCase_allMechanics_whenEligibleMechanicsWithoutLiquidations_createsForEach() {
         LocalDate date = LocalDate.of(2026, 1, 28);
         Mechanic mechanic1 = Mechanic.restore(1L, "Jose", true);
