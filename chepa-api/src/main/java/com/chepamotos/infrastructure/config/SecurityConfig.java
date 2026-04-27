@@ -49,10 +49,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mechanics", "/api/mechanics/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/invoice-items/**").permitAll()
+                        .requestMatchers("/api/invoices/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/liquidations").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/mechanics").hasRole("GERENTE")
                         .requestMatchers(HttpMethod.PATCH, "/api/mechanics/*/status").hasRole("GERENTE")
                         .requestMatchers(HttpMethod.POST, "/api/liquidations").hasRole("GERENTE")
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

@@ -1,7 +1,6 @@
 package com.chepamotos.domain.usecase.auth;
 
 import com.chepamotos.domain.exception.InvalidRefreshTokenException;
-import com.chepamotos.domain.exception.RefreshTokenExpiredException;
 import com.chepamotos.domain.port.RefreshTokenRepository;
 import com.chepamotos.domain.port.TokenHashService;
 
@@ -29,12 +28,8 @@ public final class LogoutUseCase {
         var storedToken = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(InvalidRefreshTokenException::new);
 
-        if (storedToken.revokedAt() != null) {
+        if (storedToken.revokedAt() != null || !storedToken.expiresAt().isAfter(now)) {
             return;
-        }
-
-        if (!storedToken.expiresAt().isAfter(now)) {
-            throw new RefreshTokenExpiredException();
         }
 
         refreshTokenRepository.save(storedToken.revoke(now, null));
