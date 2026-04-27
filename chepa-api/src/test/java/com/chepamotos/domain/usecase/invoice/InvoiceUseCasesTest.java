@@ -205,31 +205,31 @@ class InvoiceUseCasesTest {
         verify(invoiceRepository, never()).save(any(Invoice.class));
     }
 
-        @Test
-        void createServiceUseCase_whenMechanicInactive_throwsValidationError() {
+    @Test
+    void createServiceUseCase_whenMechanicInactive_throwsValidationError() {
         Mechanic inactiveMechanic = Mechanic.restore(5L, "Memo", false);
         when(mechanicRepository.findById(5L)).thenReturn(Optional.of(inactiveMechanic));
 
         CreateServiceInvoiceUseCase useCase = new CreateServiceInvoiceUseCase(
-            invoiceRepository,
-            mechanicRepository,
-            resolveVehicleUseCase
+                invoiceRepository,
+                mechanicRepository,
+                resolveVehicleUseCase
         );
 
         List<InvoiceItemInput> itemInputs = List.of(
-            new InvoiceItemInput("Tornillo Leva", new BigDecimal("1"), new BigDecimal("3900"))
+                new InvoiceItemInput("Tornillo Leva", new BigDecimal("1"), new BigDecimal("3900"))
         );
 
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> useCase.execute(5L, "ABC123", "Boxer", new BigDecimal("10000"), itemInputs)
+                IllegalArgumentException.class,
+                () -> useCase.execute(5L, "ABC123", "Boxer", new BigDecimal("10000"), itemInputs)
         );
 
         assertEquals("Mechanic must be active to create service invoices", exception.getMessage());
         verify(mechanicRepository).findById(5L);
         verify(resolveVehicleUseCase, never()).execute(any(String.class), any(String.class));
         verify(invoiceRepository, never()).save(any(Invoice.class));
-        }
+    }
 
     private static Invoice serviceInvoice(Long id, boolean cancelled) {
         Mechanic mechanic = Mechanic.restore(1L, "Jose", true);
