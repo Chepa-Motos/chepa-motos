@@ -9,6 +9,8 @@ group = 'com.chepamotos'
 version = '0.0.1-SNAPSHOT'
 
 def domainCoverageMinimum = (findProperty('domainCoverageMinimum') ?: '0.70') as BigDecimal
+def adapterCoverageMinimum = (findProperty('adapterCoverageMinimum') ?: '0.70') as BigDecimal
+def infrastructureCoverageMinimum = (findProperty('infrastructureCoverageMinimum') ?: '0.70') as BigDecimal
 
 java {
 	toolchain {
@@ -56,6 +58,24 @@ tasks.register('domainTest', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     include 'com/chepamotos/domain/**'
+}
+
+tasks.register('adapterTest', Test) {
+    description = 'Runs only adapter-layer tests.'
+    group = 'verification'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include 'com/chepamotos/adapter/**'
+}
+
+tasks.register('infrastructureTest', Test) {
+    description = 'Runs only infrastructure-layer tests.'
+    group = 'verification'
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include 'com/chepamotos/infrastructure/**'
 }
 
 jacoco {
@@ -126,10 +146,96 @@ tasks.register('jacocoDomainCoverageVerification', JacocoCoverageVerification) {
     }
 }
 
+tasks.register('jacocoAdapterTestReport', JacocoReport) {
+    dependsOn tasks.named('adapterTest')
+
+    executionData(file("$buildDir/jacoco/adapterTest.exec"))
+    sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(sourceSets.main.output).asFileTree.matching {
+        include '**/adapter/**'
+    })
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+tasks.register('jacocoAdapterCoverageVerification', JacocoCoverageVerification) {
+    dependsOn tasks.named('adapterTest')
+
+    executionData(file("$buildDir/jacoco/adapterTest.exec"))
+    sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(sourceSets.main.output).asFileTree.matching {
+        include '**/adapter/**'
+    })
+
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                minimum = adapterCoverageMinimum
+            }
+        }
+    }
+}
+
+tasks.register('jacocoInfrastructureTestReport', JacocoReport) {
+    dependsOn tasks.named('infrastructureTest')
+
+    executionData(file("$buildDir/jacoco/infrastructureTest.exec"))
+    sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(sourceSets.main.output).asFileTree.matching {
+        include '**/infrastructure/**'
+    })
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+}
+
+tasks.register('jacocoInfrastructureCoverageVerification', JacocoCoverageVerification) {
+    dependsOn tasks.named('infrastructureTest')
+
+    executionData(file("$buildDir/jacoco/infrastructureTest.exec"))
+    sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(sourceSets.main.output).asFileTree.matching {
+        include '**/infrastructure/**'
+    })
+
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                minimum = infrastructureCoverageMinimum
+            }
+        }
+    }
+}
+
 tasks.register('ciDomainCoverage') {
     group = 'verification'
     description = 'Runs domain tests, generates JaCoCo report, and enforces domain coverage threshold.'
     dependsOn tasks.named('domainTest')
     dependsOn tasks.named('jacocoDomainTestReport')
     dependsOn tasks.named('jacocoDomainCoverageVerification')
+}
+
+tasks.register('ciAdapterCoverage') {
+    group = 'verification'
+    description = 'Runs adapter tests, generates JaCoCo report, and enforces adapter coverage threshold.'
+    dependsOn tasks.named('adapterTest')
+    dependsOn tasks.named('jacocoAdapterTestReport')
+    dependsOn tasks.named('jacocoAdapterCoverageVerification')
+}
+
+tasks.register('ciInfrastructureCoverage') {
+    group = 'verification'
+    description = 'Runs infrastructure tests, generates JaCoCo report, and enforces infrastructure coverage threshold.'
+    dependsOn tasks.named('infrastructureTest')
+    dependsOn tasks.named('jacocoInfrastructureTestReport')
+    dependsOn tasks.named('jacocoInfrastructureCoverageVerification')
 }
