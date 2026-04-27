@@ -24,6 +24,15 @@ CREATE TABLE mechanic (
     is_active       BOOLEAN         NOT NULL DEFAULT true
 );
 
+CREATE TABLE app_user (
+    user_id         BIGINT          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    username        VARCHAR(100)    NOT NULL UNIQUE,
+    password_hash   VARCHAR(255)    NOT NULL,
+    role            VARCHAR(20)     NOT NULL,
+    is_active       BOOLEAN         NOT NULL DEFAULT true,
+    created_at      TIMESTAMP       NOT NULL DEFAULT now()
+);
+
 CREATE TABLE vehicle (
     vehicle_id      BIGINT          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     plate           VARCHAR(20)     NOT NULL UNIQUE,
@@ -81,6 +90,16 @@ CREATE TABLE daily_liquidation (
         UNIQUE (mechanic_id, date)
 );
 
+CREATE TABLE refresh_token (
+    refresh_token_id        BIGINT          GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id                 BIGINT          NOT NULL REFERENCES app_user (user_id),
+    token_hash              VARCHAR(255)    NOT NULL UNIQUE,
+    issued_at               TIMESTAMP       NOT NULL,
+    expires_at              TIMESTAMP       NOT NULL,
+    revoked_at              TIMESTAMP,
+    replaced_by_token_id    BIGINT          REFERENCES refresh_token (refresh_token_id)
+);
+
 -- -------------------------------------------------------------
 -- ÍNDICES
 -- -------------------------------------------------------------
@@ -90,6 +109,11 @@ CREATE INDEX idx_invoice_mechanic_id   ON invoice (mechanic_id);
 CREATE INDEX idx_invoice_vehicle_id    ON invoice (vehicle_id);
 CREATE INDEX idx_invoice_created_at    ON invoice (created_at);
 CREATE INDEX idx_invoice_is_cancelled  ON invoice (is_cancelled);
+
+-- auth
+CREATE INDEX idx_refresh_token_user_id      ON refresh_token (user_id);
+CREATE INDEX idx_refresh_token_expires_at   ON refresh_token (expires_at);
+CREATE INDEX idx_refresh_token_revoked_at   ON refresh_token (revoked_at);
 
 -- invoice_item — trigrama para autocomplete case-insensitive
 CREATE INDEX idx_invoice_item_description_trgm

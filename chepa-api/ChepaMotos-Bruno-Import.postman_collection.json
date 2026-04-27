@@ -1,0 +1,501 @@
+{
+  "info": {
+    "name": "ChepaMotos API",
+    "description": "Collection generated from current Spring controllers. Import this file in Bruno using Import > Postman Collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mechanics",
+      "item": [
+        {
+          "name": "List Mechanics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/mechanics?active=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mechanics"
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Mechanic By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/mechanics/{{mechanicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mechanics",
+                "{{mechanicId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Mechanic (GERENTE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Carlos\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mechanics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mechanics"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Change Mechanic Status (GERENTE)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mechanics/{{mechanicId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mechanics",
+                "{{mechanicId}}",
+                "status"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "Get Vehicle By Plate",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/vehicles/plate/{{plate}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vehicles",
+                "plate",
+                "{{plate}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices?cancelled=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoices"
+              ],
+              "query": [
+                {
+                  "key": "cancelled",
+                  "value": "false"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Invoices (Filtered Example)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices?date=2026-01-28&type=SERVICE&mechanic_id={{mechanicId}}&cancelled=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoices"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-01-28"
+                },
+                {
+                  "key": "type",
+                  "value": "SERVICE"
+                },
+                {
+                  "key": "mechanic_id",
+                  "value": "{{mechanicId}}"
+                },
+                {
+                  "key": "cancelled",
+                  "value": "false"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Invoice By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/{{invoiceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoices",
+                "{{invoiceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Service Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mechanic_id\": {{mechanicId}},\n  \"vehicle_plate\": \"BXR42H\",\n  \"model\": \"Boxer 150 2021\",\n  \"labor_amount\": 45000.00,\n  \"items\": [\n    {\n      \"description\": \"Freno delantero\",\n      \"quantity\": 1,\n      \"unit_price\": 36900.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/service",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoices",
+                "service"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Delivery Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"buyer_name\": \"Talleres La 80\",\n  \"items\": [\n    {\n      \"description\": \"Boxer 150 Palanca de freno\",\n      \"quantity\": 2,\n      \"unit_price\": 18500.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/delivery",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoices",
+                "delivery"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Invoice",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoices",
+                "{{invoiceId}}",
+                "cancel"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invoice Items",
+      "item": [
+        {
+          "name": "Suggestions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/invoice-items/suggestions?model=Boxer%20150&q=Fre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoice-items",
+                "suggestions"
+              ],
+              "query": [
+                {
+                  "key": "model",
+                  "value": "Boxer 150"
+                },
+                {
+                  "key": "q",
+                  "value": "Fre"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Liquidations",
+      "item": [
+        {
+          "name": "List Liquidations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/liquidations?date=2026-01-28&mechanic_id={{mechanicId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "liquidations"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2026-01-28"
+                },
+                {
+                  "key": "mechanic_id",
+                  "value": "{{mechanicId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Liquidation (GERENTE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-01-28\",\n  \"mechanic_id\": {{mechanicId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/liquidations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "liquidations"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "authToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "adminUsername",
+      "value": "gerente"
+    },
+    {
+      "key": "adminPassword",
+      "value": "password"
+    },
+    {
+      "key": "mechanicId",
+      "value": "1"
+    },
+    {
+      "key": "invoiceId",
+      "value": "1"
+    },
+    {
+      "key": "plate",
+      "value": "BXR42H"
+    }
+  ]
+}
