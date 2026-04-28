@@ -1,0 +1,9 @@
+meta {
+  name: ChepaMotos API
+  type: collection
+  version: 1.0.0
+}
+
+script:pre-request {
+  bru.setVar('liquidationDate', new Date().toISOString().slice(0, 10));
+}

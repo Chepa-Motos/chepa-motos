@@ -1,0 +1,15 @@
+meta {
+  name: Lookup Vehicle By Plate
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{host}}/api/vehicles/plate/{{vehiclePlate}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

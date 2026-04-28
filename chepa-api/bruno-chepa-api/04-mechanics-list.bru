@@ -1,0 +1,15 @@
+meta {
+  name: List Mechanics
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{host}}/api/mechanics?active=true
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

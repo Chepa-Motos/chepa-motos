@@ -1,0 +1,15 @@
+meta {
+  name: List Invoices
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{host}}/api/invoices?mechanic_id={{mechanicId}}&cancelled=false
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

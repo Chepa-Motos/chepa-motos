@@ -1,0 +1,30 @@
+meta {
+  name: Create Liquidation
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{host}}/api/liquidations
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "date": "{{liquidationDate}}",
+    "mechanic_id": {{mechanicId}}
+  }
+}
+
+assert {
+  res.status: eq 201
+}

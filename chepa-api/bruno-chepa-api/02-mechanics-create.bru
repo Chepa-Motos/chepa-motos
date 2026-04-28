@@ -1,0 +1,33 @@
+meta {
+  name: Create Mechanic
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/api/mechanics
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "name": "{{mechanicName}}"
+  }
+}
+
+assert {
+  res.status: eq 201
+}
+
+script:post-response {
+  bru.setEnvVar('mechanicId', String(res.body.data.id));
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Get Invoice By Id
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{host}}/api/invoices/{{invoiceId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

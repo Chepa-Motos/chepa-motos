@@ -1,0 +1,15 @@
+meta {
+  name: Cancel Invoice
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{host}}/api/invoices/{{invoiceId}}/cancel
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

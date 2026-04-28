@@ -1,0 +1,25 @@
+meta {
+  name: Auth Refresh
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{host}}/api/auth/refresh
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

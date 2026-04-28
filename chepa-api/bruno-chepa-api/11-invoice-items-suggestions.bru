@@ -1,0 +1,15 @@
+meta {
+  name: Invoice Item Suggestions
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{host}}/api/invoice-items/suggestions?model={{vehicleModel}}&q=Fre
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}
