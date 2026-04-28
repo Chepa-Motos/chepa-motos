@@ -57,6 +57,50 @@ jobs:
             chepa-api/build/reports/jacoco/jacocoDomainTestReport/jacocoDomainTestReport.xml
           if-no-files-found: warn
 
+      - name: Adapter quality gate (tests + coverage)
+        working-directory: chepa-api
+        run: ./gradlew ciAdapterCoverage -PadapterCoverageMinimum=0.70
+
+      - name: Upload adapter test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-test-reports
+          path: chepa-api/build/reports/tests/adapterTest
+          if-no-files-found: warn
+
+      - name: Upload adapter coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-coverage-reports
+          path: |
+            chepa-api/build/reports/jacoco/jacocoAdapterTestReport/html
+            chepa-api/build/reports/jacoco/jacocoAdapterTestReport/jacocoAdapterTestReport.xml
+          if-no-files-found: warn
+
+      - name: Infrastructure quality gate (tests + coverage)
+        working-directory: chepa-api
+        run: ./gradlew ciInfrastructureCoverage -PinfrastructureCoverageMinimum=0.70
+
+      - name: Upload infrastructure test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infrastructure-test-reports
+          path: chepa-api/build/reports/tests/infrastructureTest
+          if-no-files-found: warn
+
+      - name: Upload infrastructure coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infrastructure-coverage-reports
+          path: |
+            chepa-api/build/reports/jacoco/jacocoInfrastructureTestReport/html
+            chepa-api/build/reports/jacoco/jacocoInfrastructureTestReport/jacocoInfrastructureTestReport.xml
+          if-no-files-found: warn
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
