@@ -2,15 +2,17 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
-             x:Class="ChepaMotos.Views.LiquidationsView">
+             x:Class="ChepaMotos.Views.LiquidationsView"
+             x:DataType="vm:LiquidationsViewModel">
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <!-- Header row with title + date picker -->
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+            <!-- Header row with title + date picker + liquidate button (GERENTE only) -->
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                 <Label Text="Liquidaciones"
-                       Style="{StaticResource PageHeading}" />
+                       Style="{StaticResource PageHeading}"
+                       VerticalOptions="Center" />
                 <Border Grid.Column="1"
                         StrokeShape="RoundRectangle 6"
                         Stroke="{StaticResource Border}"
@@ -30,7 +32,67 @@
                                 MaximumDate="2030-12-31"
                                 DateSelected="OnDateSelected" />
                 </Border>
+                <Button Grid.Column="2"
+                        Text="{Binding LiquidateButtonText}"
+                        Command="{Binding LiquidateDayCommand}"
+                        IsVisible="{Binding IsManager}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        BackgroundColor="{StaticResource Amber}"
+                        TextColor="{StaticResource White}"
+                        FontFamily="IBMPlexSansSemiBold"
+                        FontSize="13"
+                        CornerRadius="6"
+                        Padding="14,8"
+                        MinimumHeightRequest="36"
+                        VerticalOptions="Center" />
             </Grid>
+
+            <!-- Error banner -->
+            <Border IsVisible="{Binding HasLoadError}"
+                    BackgroundColor="{StaticResource AnuladaBg}"
+                    Stroke="{StaticResource AnuladaText}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="14,12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Text="No se pudo cargar las liquidaciones"
+                               FontFamily="IBMPlexSansSemiBold"
+                               FontSize="13"
+                               TextColor="{StaticResource AnuladaText}" />
+                        <Label Text="{Binding LoadError}"
+                               FontFamily="IBMPlexSans"
+                               FontSize="12"
+                               TextColor="{StaticResource AnuladaText}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Reintentar"
+                            Command="{Binding ReloadCommand}"
+                            BackgroundColor="{StaticResource AnuladaText}"
+                            TextColor="{StaticResource White}"
+                            FontFamily="IBMPlexSansSemiBold"
+                            FontSize="12"
+                            CornerRadius="6"
+                            Padding="12,6"
+                            VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Loading indicator (primera carga) -->
+            <HorizontalStackLayout IsVisible="{Binding ShowSkeleton}"
+                                   Spacing="10"
+                                   HorizontalOptions="Center"
+                                   Padding="0,8">
+                <ActivityIndicator IsRunning="{Binding ShowSkeleton}"
+                                   Color="{StaticResource Accent}"
+                                   WidthRequest="18"
+                                   HeightRequest="18" />
+                <Label Text="Cargando liquidaciones…"
+                       FontFamily="IBMPlexSansMedium"
+                       FontSize="13"
+                       TextColor="{StaticResource TextSecondary}"
+                       VerticalTextAlignment="Center" />
+            </HorizontalStackLayout>
 
             <!-- Summary cards -->
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="14">
