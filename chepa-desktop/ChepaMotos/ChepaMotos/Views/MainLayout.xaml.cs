@@ -48,14 +48,14 @@ public partial class MainLayout : ContentPage
                 selectedLabel.Style = Application.Current!.Resources["SidebarNavLabelSelected"] as Style;
         }
 
-        // Swap content. HomeView, InvoicesView y LiquidationsView ya en DI.
+        // Swap content. Inicio/Facturas/Liquidaciones/Mecanicos ya migradas a DI.
         ContentArea.Content = target switch
         {
             "Inicio" => _services.GetRequiredService<HomeView>(),
             "Facturas" => _services.GetRequiredService<InvoicesView>(),
             "Liquidaciones" => _services.GetRequiredService<LiquidationsView>(),
             "Dashboards" => new DashboardsView(),
-            "Mecanicos" => new MechanicsView(),
+            "Mecanicos" => _services.GetRequiredService<MechanicsView>(),
             _ => _services.GetRequiredService<HomeView>(),
         };
 
@@ -114,7 +114,7 @@ public partial class MainLayout : ContentPage
             {
                 "Facturas" => _services.GetRequiredService<InvoicesView>(),
                 "Liquidaciones" => _services.GetRequiredService<LiquidationsView>(),
-                "Mecanicos" => new MechanicsView(),
+                "Mecanicos" => _services.GetRequiredService<MechanicsView>(),
                 "Inicio" => _services.GetRequiredService<HomeView>(),
                 _ => ContentArea.Content,
             };
