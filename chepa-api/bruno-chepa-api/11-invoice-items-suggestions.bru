@@ -5,9 +5,14 @@ meta {
 }
 
 get {
-  url: {{host}}/api/invoice-items/suggestions?model={{vehicleModel}}&q=Fre
+  url: {{host}}/api/invoice-items/suggestions?model={{vehicleModel}}&q=FRE
   body: none
   auth: none
+}
+
+params:query {
+  model: {{vehicleModel}}
+  q: FRE
 }
 
 assert {

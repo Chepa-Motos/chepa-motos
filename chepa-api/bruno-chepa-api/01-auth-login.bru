@@ -26,6 +26,15 @@ assert {
 }
 
 script:post-response {
-  bru.setEnvVar('authToken', res.body.data.accessToken);
-  bru.setEnvVar('refreshToken', res.body.data.refreshToken);
+  const payload = res.body?.data ?? res.body;
+  if (!payload?.accessToken || !payload?.refreshToken) {
+    const responseBody = typeof res.body === 'string'
+      ? res.body
+      : JSON.stringify(res.body, null, 2);
+
+    throw new Error(`Login did not return tokens. Status ${res.status}. Body: ${responseBody}`);
+  }
+
+  bru.setEnvVar('authToken', payload.accessToken);
+  bru.setEnvVar('refreshToken', payload.refreshToken);
 }

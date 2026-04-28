@@ -1,0 +1,89 @@
+{
+  "name": "Local",
+  "variables": [
+    {
+      "name": "host",
+      "value": "http://localhost:8080",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "adminUsername",
+      "value": "gerente",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "adminPassword",
+      "value": "password",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "mechanicName",
+      "value": "Jose",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "mechanicId",
+      "value": "",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "invoiceId",
+      "value": "",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "vehiclePlate",
+      "value": "BXR74F",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "vehicleModel",
+      "value": "Boxer 150 2021",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "buyerName",
+      "value": "Talleres La 80",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "serviceLaborAmount",
+      "value": "65000.00",
+      "type": "text",
+      "enabled": true,
+      "secret": false
+    },
+    {
+      "name": "authToken",
+      "value": "",
+      "type": "text",
+      "enabled": true,
+      "secret": true
+    },
+    {
+      "name": "refreshToken",
+      "value": "",
+      "type": "text",
+      "enabled": true,
+      "secret": true
+    }
+  ]
+}
