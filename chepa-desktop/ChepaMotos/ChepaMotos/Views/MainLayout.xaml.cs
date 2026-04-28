@@ -1,17 +1,22 @@
 namespace ChepaMotos.Views;
 
 using ChepaMotos.Services;
+using ChepaMotos.Services.Auth;
 using Microsoft.Extensions.DependencyInjection;
 
 public partial class MainLayout : ContentPage
 {
     private readonly Dictionary<string, Border> _navItems;
     private readonly IServiceProvider _services;
+    private readonly IAuthState _authState;
+    private readonly IAuthService _authService;
     private string _currentNav = "Inicio";
 
-    public MainLayout(IServiceProvider services)
+    public MainLayout(IServiceProvider services, IAuthState authState, IAuthService authService)
     {
         _services = services;
+        _authState = authState;
+        _authService = authService;
         InitializeComponent();
 
         _navItems = new Dictionary<string, Border>
@@ -25,6 +30,54 @@ public partial class MainLayout : ContentPage
 
         // Carga inicial de la vista Inicio.
         ContentArea.Content = _services.GetRequiredService<HomeView>();
+
+        UpdateSessionFooter();
+    }
+
+    private void UpdateSessionFooter()
+    {
+        if (_authState.IsAuthenticated)
+        {
+            SessionUserLabel.Text = _authState.Username ?? "—";
+            SessionRoleLabel.Text = _authState.IsManager ? "GERENTE" : string.Join(", ", _authState.Roles);
+            SessionActionButton.Text = "Salir";
+        }
+        else
+        {
+            SessionUserLabel.Text = "Modo invitado";
+            SessionRoleLabel.Text = "Sin sesión";
+            SessionActionButton.Text = "Iniciar sesión";
+        }
+    }
+
+    private async void OnSessionActionClicked(object? sender, EventArgs e)
+    {
+        if (!_authState.IsAuthenticated)
+        {
+            // Modo invitado → llevar al LoginPage. Reusamos el flujo de logout
+            // para que App.xaml.cs haga swap a Login.
+            _authState.RaiseLoggedOut();
+            return;
+        }
+
+        bool confirm = await DisplayAlertAsync(
+            "Cerrar sesión",
+            $"¿Cerrar la sesión de {_authState.Username}?",
+            "Sí, cerrar",
+            "Cancelar");
+
+        if (!confirm) return;
+
+        SessionActionButton.IsEnabled = false;
+        try
+        {
+            await _authService.LogoutAsync();
+            // App.xaml.cs escucha LoggedOut y hace el swap a LoginPage.
+        }
+        finally
+        {
+            SessionActionButton.IsEnabled = true;
+        }
     }
 
     private void OnNavTapped(object? sender, TappedEventArgs e)

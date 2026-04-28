@@ -48,7 +48,7 @@ public sealed class ApiClient : IApiClient
     {
         var client = _httpClientFactory.CreateClient(MauiProgram.ApiHttpClientName);
 
-        var attempt = await ExecuteAsync(client, method, url, bodyJson, ct);
+        var attempt = await ExecuteWithTransientRetryAsync(client, method, url, bodyJson, ct);
 
         if (attempt.IsSuccess)
             return Deserialize<T>(attempt.Body, attempt.StatusCode);
@@ -59,7 +59,7 @@ public sealed class ApiClient : IApiClient
             && string.Equals(attempt.ErrorCode, ApiErrorCodes.AuthRequired, StringComparison.Ordinal)
             && await TryRefreshAsync(ct))
         {
-            attempt = await ExecuteAsync(client, method, url, bodyJson, ct);
+            attempt = await ExecuteWithTransientRetryAsync(client, method, url, bodyJson, ct);
             if (attempt.IsSuccess)
                 return Deserialize<T>(attempt.Body, attempt.StatusCode);
         }
@@ -68,6 +68,35 @@ public sealed class ApiClient : IApiClient
             attempt.ErrorCode ?? ApiErrorCodes.InternalError,
             attempt.ErrorMessage ?? $"Error HTTP {(int)attempt.StatusCode}",
             (int)attempt.StatusCode);
+    }
+
+    /// <summary>
+    /// Ejecuta la request y, si falla por red transitoria (<see cref="HttpRequestException"/>
+    /// o <see cref="TaskCanceledException"/> de timeout), espera 500ms y reintenta una vez.
+    /// Errores HTTP 4xx/5xx no se reintentan — esos viajan en <see cref="HttpAttempt"/>.
+    /// </summary>
+    private async Task<HttpAttempt> ExecuteWithTransientRetryAsync(
+        HttpClient client,
+        HttpMethod method,
+        string url,
+        string? bodyJson,
+        CancellationToken ct)
+    {
+        try
+        {
+            return await ExecuteAsync(client, method, url, bodyJson, ct);
+        }
+        catch (HttpRequestException) when (!ct.IsCancellationRequested)
+        {
+            await Task.Delay(500, ct);
+            return await ExecuteAsync(client, method, url, bodyJson, ct);
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            // Timeout del HttpClient (no cancelación del usuario).
+            await Task.Delay(500, ct);
+            return await ExecuteAsync(client, method, url, bodyJson, ct);
+        }
     }
 
     private async Task<HttpAttempt> ExecuteAsync(

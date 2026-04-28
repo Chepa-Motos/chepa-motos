@@ -69,7 +69,7 @@ public sealed class AuthService : IAuthService
         }
 
         await _tokenStore.ClearAsync();
-        _authState.ClearSession();
+        _authState.RaiseLoggedOut();
     }
 
     public async Task TryRestoreSessionAsync(CancellationToken ct = default)

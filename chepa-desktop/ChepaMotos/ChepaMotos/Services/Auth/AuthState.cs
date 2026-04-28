@@ -11,6 +11,7 @@ public sealed class AuthState : IAuthState
 
     public event EventHandler? SessionExpired;
     public event EventHandler? AuthChanged;
+    public event EventHandler? LoggedOut;
 
     public void SetSession(string username, IEnumerable<string> roles)
     {
@@ -30,5 +31,11 @@ public sealed class AuthState : IAuthState
     {
         ClearSession();
         SessionExpired?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void RaiseLoggedOut()
+    {
+        ClearSession();
+        LoggedOut?.Invoke(this, EventArgs.Empty);
     }
 }

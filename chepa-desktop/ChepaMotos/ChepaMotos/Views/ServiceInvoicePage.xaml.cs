@@ -852,7 +852,7 @@ public partial class ServiceInvoicePage : ContentPage
 
             var priceLabel = new Label
             {
-                Text = MockDataService.FormatCurrency(suggestion.UnitPrice),
+                Text = $"${suggestion.UnitPrice:N0}".Replace(",", "."),
                 FontFamily = "IBMPlexMono",
                 FontSize = 12,
                 TextColor = (Color)Application.Current!.Resources["TextMuted"],

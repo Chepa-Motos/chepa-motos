@@ -19,7 +19,11 @@ public interface IAuthState
     /// <summary>Disparado cuando cambia la sesión (login, logout, expiración).</summary>
     event EventHandler? AuthChanged;
 
+    /// <summary>Disparado cuando el usuario cierra sesión voluntariamente (no por expiración).</summary>
+    event EventHandler? LoggedOut;
+
     void SetSession(string username, IEnumerable<string> roles);
     void ClearSession();
     void RaiseSessionExpired();
+    void RaiseLoggedOut();
 }

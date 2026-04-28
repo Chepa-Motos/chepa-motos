@@ -22,6 +22,7 @@ namespace ChepaMotos
                 ?? throw new InvalidOperationException("MAUI service provider no disponible");
             _authState = _services.GetRequiredService<IAuthState>();
             _authState.SessionExpired += OnSessionExpired;
+            _authState.LoggedOut += OnLoggedOut;
 
             var window = new Window
             {
@@ -113,6 +114,15 @@ namespace ChepaMotos
                 var login = CreateLoginPage();
                 login.ShowSessionExpiredMessage();
                 _mainWindow.Page = login;
+            });
+        }
+
+        private void OnLoggedOut(object? sender, EventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_mainWindow is null) return;
+                _mainWindow.Page = CreateLoginPage();
             });
         }
     }
