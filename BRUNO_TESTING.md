@@ -12,11 +12,11 @@ Guía para importar la API en Bruno y ejecutar tests contra el entorno local.
 
 ## 1. Importar la colección
 
-1. Con la API corriendo, descargá el spec OpenAPI:
+1. Con la API corriendo, descarga el spec OpenAPI:
    ```
    http://localhost:8080/v3/api-docs.yaml
    ```
-2. En Bruno: **Import Collection → OpenAPI v3** → seleccioná el archivo descargado.
+2. En Bruno: **Import Collection → OpenAPI v3** → selecciona el archivo descargado.
 
 Bruno crea una carpeta por tag (Autenticación, Mecánicos, Facturas, etc.) con un request por endpoint.
 
@@ -26,7 +26,7 @@ Bruno crea una carpeta por tag (Autenticación, Mecánicos, Facturas, etc.) con 
 
 En la colección → **Environments → + Create Environment** → nombre: `local`.
 
-Agregá estas variables:
+Agrega estas variables:
 
 | Variable | Valor | Secreto |
 |---|---|---|
@@ -34,7 +34,7 @@ Agregá estas variables:
 | `access_token` | *(vacío)* | Sí |
 | `refresh_token` | *(vacío)* | Sí |
 
-Activá el environment `local` en la esquina superior derecha.
+Activa el environment `local` en la esquina superior derecha.
 
 ---
 
@@ -52,7 +52,7 @@ Todos los requests heredan esta configuración automáticamente.
 
 ## 4. Configurar el script de login
 
-Abrí el request `POST /api/auth/login` → pestaña **Tests** → pegá:
+Abre el request `POST /api/auth/login` → pestaña **Tests** → pega:
 
 ```js
 if (res.status === 200) {
@@ -65,7 +65,7 @@ if (res.status === 200) {
 
 ## 5. Configurar el script de refresh
 
-Abrí el request `POST /api/auth/refresh` → pestaña **Tests** → pegá:
+Abre el request `POST /api/auth/refresh` → pestaña **Tests** → pega:
 
 ```js
 if (res.status === 200) {
@@ -80,7 +80,7 @@ if (res.status === 200) {
 
 ### Inicio de sesión
 
-Ejecutá primero el request de login con las credenciales del gerente:
+Ejecuta primero el request de login con las credenciales del gerente:
 
 ```json
 {
@@ -118,11 +118,11 @@ Requieren haber ejecutado el login previamente. El token se envía automáticame
 | `PATCH /api/mechanics/{id}/status` | Activar/desactivar mecánico |
 | `POST /api/liquidations` | Ejecutar liquidación diaria |
 
-Si el token expiró (~15 min), ejecutá `POST /api/auth/refresh` para renovarlo.
+Si el token expiró (~15 min), ejecuta `POST /api/auth/refresh` para renovarlo.
 
 ### Logout
 
-Ejecutá `POST /api/auth/logout` con el body:
+Ejecuta `POST /api/auth/logout` con el body:
 
 ```json
 {
