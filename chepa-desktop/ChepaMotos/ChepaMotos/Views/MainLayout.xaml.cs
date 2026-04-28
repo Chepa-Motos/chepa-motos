@@ -1,14 +1,17 @@
 namespace ChepaMotos.Views;
 
 using ChepaMotos.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 public partial class MainLayout : ContentPage
 {
     private readonly Dictionary<string, Border> _navItems;
+    private readonly IServiceProvider _services;
     private string _currentNav = "Inicio";
 
-    public MainLayout()
+    public MainLayout(IServiceProvider services)
     {
+        _services = services;
         InitializeComponent();
 
         _navItems = new Dictionary<string, Border>
@@ -19,6 +22,9 @@ public partial class MainLayout : ContentPage
             ["Dashboards"] = NavDashboards,
             ["Mecanicos"] = NavMecanicos,
         };
+
+        // Carga inicial de la vista Inicio.
+        ContentArea.Content = _services.GetRequiredService<HomeView>();
     }
 
     private void OnNavTapped(object? sender, TappedEventArgs e)
@@ -42,15 +48,15 @@ public partial class MainLayout : ContentPage
                 selectedLabel.Style = Application.Current!.Resources["SidebarNavLabelSelected"] as Style;
         }
 
-        // Swap content
+        // Swap content. HomeView e InvoicesView ya migradas a DI; las demás aún no.
         ContentArea.Content = target switch
         {
-            "Inicio" => new HomeView(),
-            "Facturas" => new InvoicesView(),
+            "Inicio" => _services.GetRequiredService<HomeView>(),
+            "Facturas" => _services.GetRequiredService<InvoicesView>(),
             "Liquidaciones" => new LiquidationsView(),
             "Dashboards" => new DashboardsView(),
             "Mecanicos" => new MechanicsView(),
-            _ => new HomeView(),
+            _ => _services.GetRequiredService<HomeView>(),
         };
 
         _currentNav = target;
@@ -106,9 +112,10 @@ public partial class MainLayout : ContentPage
             // Rebuild the current view to pick up changes
             ContentArea.Content = _currentNav switch
             {
-                "Facturas" => new InvoicesView(),
+                "Facturas" => _services.GetRequiredService<InvoicesView>(),
                 "Liquidaciones" => new LiquidationsView(),
                 "Mecanicos" => new MechanicsView(),
+                "Inicio" => _services.GetRequiredService<HomeView>(),
                 _ => ContentArea.Content,
             };
         }

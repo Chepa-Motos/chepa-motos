@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
+             x:Class="ChepaMotos.Views.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             Title="Iniciar sesión"
+             BackgroundColor="{StaticResource Background}"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False">
+
+    <Grid x:Name="RootGrid">
+        <ScrollView VerticalOptions="Fill">
+            <Grid Padding="24" RowSpacing="0" VerticalOptions="Center">
+                <Border WidthRequest="420"
+                        HorizontalOptions="Center"
+                        BackgroundColor="{StaticResource Surface}"
+                        Stroke="{StaticResource Border}"
+                        StrokeThickness="1"
+                        Padding="32,36"
+                        StrokeShape="RoundRectangle 14">
+                    <VerticalStackLayout Spacing="20">
+
+                        <!-- Header -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Chepa Motos"
+                                   FontFamily="IBMPlexSansSemiBold"
+                                   FontSize="22"
+                                   TextColor="{StaticResource TextPrimary}" />
+                            <Label Text="Inicia sesión para continuar"
+                                   FontFamily="IBMPlexSans"
+                                   FontSize="14"
+                                   TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+
+                        <!-- Username -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Usuario"
+                                   FontFamily="IBMPlexSansMedium"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Border BackgroundColor="{StaticResource Surface}"
+                                    Stroke="{StaticResource Border}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="UsernameEntry"
+                                       Text="{Binding Username}"
+                                       Placeholder="usuario"
+                                       IsEnabled="{Binding IsNotBusy}"
+                                       ReturnType="Next"
+                                       BackgroundColor="Transparent"
+                                       Margin="10,0" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- Password -->
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Contraseña"
+                                   FontFamily="IBMPlexSansMedium"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}" />
+                            <Border BackgroundColor="{StaticResource Surface}"
+                                    Stroke="{StaticResource Border}"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="0">
+                                <Entry x:Name="PasswordEntry"
+                                       Text="{Binding Password}"
+                                       IsPassword="True"
+                                       Placeholder="••••••••"
+                                       IsEnabled="{Binding IsNotBusy}"
+                                       ReturnType="Done"
+                                       Completed="OnPasswordCompleted"
+                                       BackgroundColor="Transparent"
+                                       Margin="10,0" />
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <!-- Inline error -->
+                        <Border IsVisible="{Binding HasError}"
+                                BackgroundColor="{StaticResource AnuladaBg}"
+                                Stroke="{StaticResource AnuladaText}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="12,10">
+                            <Label Text="{Binding ErrorMessage}"
+                                   FontFamily="IBMPlexSansMedium"
+                                   FontSize="13"
+                                   TextColor="{StaticResource AnuladaText}" />
+                        </Border>
+
+                        <!-- Login button -->
+                        <Button Text="{Binding LoginButtonText}"
+                                Command="{Binding LoginCommand}"
+                                IsEnabled="{Binding IsNotBusy}"
+                                BackgroundColor="{StaticResource Accent}"
+                                TextColor="{StaticResource White}"
+                                FontFamily="IBMPlexSansSemiBold"
+                                FontSize="14"
+                                CornerRadius="8"
+                                HeightRequest="44" />
+
+                        <!-- Continue without session -->
+                        <Border BackgroundColor="Transparent"
+                                StrokeThickness="0"
+                                Padding="0,4">
+                            <Label Text="Continuar sin iniciar sesión"
+                                   FontFamily="IBMPlexSansMedium"
+                                   FontSize="13"
+                                   TextColor="{StaticResource TextSecondary}"
+                                   HorizontalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnContinueWithoutSessionTapped" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Border>
+
+                        <Label Text="Solo el rol GERENTE puede crear mecánicos y ejecutar liquidaciones"
+                               FontFamily="IBMPlexSans"
+                               FontSize="11"
+                               TextColor="{StaticResource TextMuted}"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"
+                               LineBreakMode="WordWrap" />
+
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+        </ScrollView>
+    </Grid>
+</ContentPage>

@@ -2,7 +2,8 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
-             x:Class="ChepaMotos.Views.InvoicesView">
+             x:Class="ChepaMotos.Views.InvoicesView"
+             x:DataType="vm:InvoicesViewModel">
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
@@ -31,6 +32,53 @@
                                 DateSelected="OnDateSelected" />
                 </Border>
             </Grid>
+
+            <!-- Error banner -->
+            <Border IsVisible="{Binding HasLoadError}"
+                    BackgroundColor="{StaticResource AnuladaBg}"
+                    Stroke="{StaticResource AnuladaText}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="14,12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Text="No se pudo cargar las facturas"
+                               FontFamily="IBMPlexSansSemiBold"
+                               FontSize="13"
+                               TextColor="{StaticResource AnuladaText}" />
+                        <Label Text="{Binding LoadError}"
+                               FontFamily="IBMPlexSans"
+                               FontSize="12"
+                               TextColor="{StaticResource AnuladaText}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Reintentar"
+                            Command="{Binding ReloadCommand}"
+                            BackgroundColor="{StaticResource AnuladaText}"
+                            TextColor="{StaticResource White}"
+                            FontFamily="IBMPlexSansSemiBold"
+                            FontSize="12"
+                            CornerRadius="6"
+                            Padding="12,6"
+                            VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Loading indicator (primera carga) -->
+            <HorizontalStackLayout IsVisible="{Binding ShowSkeleton}"
+                                   Spacing="10"
+                                   HorizontalOptions="Center"
+                                   Padding="0,8">
+                <ActivityIndicator IsRunning="{Binding ShowSkeleton}"
+                                   Color="{StaticResource Accent}"
+                                   WidthRequest="18"
+                                   HeightRequest="18" />
+                <Label Text="Cargando facturas…"
+                       FontFamily="IBMPlexSansMedium"
+                       FontSize="13"
+                       TextColor="{StaticResource TextSecondary}"
+                       VerticalTextAlignment="Center" />
+            </HorizontalStackLayout>
 
             <!-- Filter buttons row -->
             <HorizontalStackLayout Spacing="8">

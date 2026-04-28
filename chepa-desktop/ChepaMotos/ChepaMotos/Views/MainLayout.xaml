@@ -124,11 +124,10 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- MAIN CONTENT AREA                           -->
         <!-- ═══════════════════════════════════════════ -->
+        <!-- ContentArea se llena en el constructor de MainLayout (HomeView via DI). -->
         <ContentView x:Name="ContentArea"
                      Grid.Column="1"
-                     BackgroundColor="{StaticResource Background}">
-            <views:HomeView />
-        </ContentView>
+                     BackgroundColor="{StaticResource Background}" />
 
     </Grid>
 

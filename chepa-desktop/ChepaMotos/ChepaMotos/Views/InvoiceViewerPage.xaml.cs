@@ -1,22 +1,26 @@
 using ChepaMotos.Models;
 using ChepaMotos.Services;
+using ChepaMotos.Services.Domain;
 using System.Diagnostics;
 
 namespace ChepaMotos.Views;
 
 public partial class InvoiceViewerPage : ContentPage
 {
-    private Invoice _invoice;
+    private readonly Invoice _invoice;
+    private readonly IInvoiceService _invoiceService;
+    private bool _isCancelling;
 
     /// <summary>
     /// Fired after an invoice is successfully cancelled, so parent views can refresh.
     /// </summary>
     public event Action? InvoiceCancelled;
 
-    public InvoiceViewerPage(Invoice invoice)
+    public InvoiceViewerPage(Invoice invoice, IInvoiceService invoiceService)
     {
         InitializeComponent();
         _invoice = invoice;
+        _invoiceService = invoiceService;
         LoadInvoice(invoice);
     }
 
@@ -163,6 +167,8 @@ public partial class InvoiceViewerPage : ContentPage
 
     private async void OnCancelInvoiceClicked(object? sender, EventArgs e)
     {
+        if (_isCancelling) return;
+
         bool confirm = await DisplayAlertAsync(
             "Anular factura",
             $"¿Está seguro de que desea anular la Factura #{_invoice.Id:D3}?\n\nEsta acción no se puede deshacer.",
@@ -171,16 +177,61 @@ public partial class InvoiceViewerPage : ContentPage
 
         if (!confirm) return;
 
-        // TODO: [API] Replace with: await InvoiceService.CancelInvoice(_invoice.Id)
-        // Maps to: PATCH /invoices/{id}/cancel
-        MockDataService.CancelInvoice(_invoice.Id);
+        _isCancelling = true;
+        CancelInvoiceButton.IsEnabled = false;
 
-        _invoice.IsCancelled = true;
-        ShowCancelledState();
-        CancelInvoiceButton.IsVisible = false;
+        try
+        {
+            var result = await _invoiceService.CancelAsync(_invoice.Id);
+            _invoice.IsCancelled = result.IsCancelled;
 
-        ToastService.ShowSuccess(this, $"Factura #{_invoice.Id:D3} anulada");
-        InvoiceCancelled?.Invoke();
+            ShowCancelledState();
+            CancelInvoiceButton.IsVisible = false;
+
+            ToastService.ShowSuccess(this, $"Factura #{_invoice.Id:D3} anulada");
+            InvoiceCancelled?.Invoke();
+        }
+        catch (ApiException ex) when (ex.Code == ApiErrorCodes.InvoiceAlreadyCancelled)
+        {
+            // El backend dice que ya estaba cancelada — sincronizamos el estado local.
+            _invoice.IsCancelled = true;
+            ShowCancelledState();
+            CancelInvoiceButton.IsVisible = false;
+            ToastService.ShowInfo(this, "Esta factura ya estaba anulada");
+            InvoiceCancelled?.Invoke();
+        }
+        catch (ApiException ex) when (ex.Code == ApiErrorCodes.InvoiceNotFound)
+        {
+            await DisplayAlertAsync(
+                "Factura no encontrada",
+                "Esta factura ya no existe en el servidor.",
+                "Aceptar");
+        }
+        catch (ApiException ex)
+        {
+            await DisplayAlertAsync("No se pudo anular", ex.Message, "Aceptar");
+            CancelInvoiceButton.IsEnabled = true;
+        }
+        catch (HttpRequestException)
+        {
+            await DisplayAlertAsync(
+                "Sin conexión",
+                "No se pudo conectar al servidor. Inténtalo de nuevo.",
+                "Aceptar");
+            CancelInvoiceButton.IsEnabled = true;
+        }
+        catch (TaskCanceledException)
+        {
+            await DisplayAlertAsync(
+                "Tiempo agotado",
+                "El servidor tardó demasiado en responder. Inténtalo de nuevo.",
+                "Aceptar");
+            CancelInvoiceButton.IsEnabled = true;
+        }
+        finally
+        {
+            _isCancelling = false;
+        }
     }
 
     private void ShowCancelledState()

@@ -1,4 +1,6 @@
-﻿using ChepaMotos.Views;
+using ChepaMotos.Services.Auth;
+using ChepaMotos.Views;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ChepaMotos
 {
@@ -6,6 +8,8 @@ namespace ChepaMotos
     {
         private Window? _mainWindow;
         private bool _isClosing;
+        private IServiceProvider? _services;
+        private IAuthState? _authState;
 
         public App()
         {
@@ -14,12 +18,20 @@ namespace ChepaMotos
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            var window = new Window(new MainLayout());
-            window.Title = "Chepa Motos";
-            window.Width = 1280;
-            window.Height = 800;
-            window.MinimumWidth = 1024;
-            window.MinimumHeight = 600;
+            _services = IPlatformApplication.Current?.Services
+                ?? throw new InvalidOperationException("MAUI service provider no disponible");
+            _authState = _services.GetRequiredService<IAuthState>();
+            _authState.SessionExpired += OnSessionExpired;
+
+            var window = new Window
+            {
+                Title = "Chepa Motos",
+                Width = 1280,
+                Height = 800,
+                MinimumWidth = 1024,
+                MinimumHeight = 600,
+                Page = CreateLoginPage(),
+            };
             _mainWindow = window;
 
 #if WINDOWS
@@ -74,6 +86,34 @@ namespace ChepaMotos
 #endif
 
             return window;
+        }
+
+        private LoginPage CreateLoginPage()
+        {
+            var page = _services!.GetRequiredService<LoginPage>();
+            page.LoginSucceeded += OnSessionAcquired;
+            page.ContinueRequested += OnSessionAcquired;
+            return page;
+        }
+
+        private void OnSessionAcquired(object? sender, EventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_mainWindow is null || _services is null) return;
+                _mainWindow.Page = _services.GetRequiredService<MainLayout>();
+            });
+        }
+
+        private void OnSessionExpired(object? sender, EventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_mainWindow is null) return;
+                var login = CreateLoginPage();
+                login.ShowSessionExpiredMessage();
+                _mainWindow.Page = login;
+            });
         }
     }
 }

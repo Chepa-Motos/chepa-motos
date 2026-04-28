@@ -1,86 +1,124 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using ChepaMotos.Models;
-using ChepaMotos.Services;
+using ChepaMotos.Services.Domain;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace ChepaMotos.ViewModels;
 
-public class InvoicesViewModel : INotifyPropertyChanged
+public partial class InvoicesViewModel : ObservableObject
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
+    private readonly IInvoiceService _invoiceService;
 
+    [ObservableProperty]
     private DateTime _selectedDate = DateTime.Today;
-    public DateTime SelectedDate
-    {
-        get => _selectedDate;
-        private set => SetProperty(ref _selectedDate, value);
-    }
 
+    [ObservableProperty]
     private string _activeFilter = "Todas";
-    public string ActiveFilter
-    {
-        get => _activeFilter;
-        private set => SetProperty(ref _activeFilter, value);
-    }
 
+    [ObservableProperty]
     private string _resultCountText = "0 resultados";
-    public string ResultCountText
-    {
-        get => _resultCountText;
-        private set => SetProperty(ref _resultCountText, value);
-    }
 
+    [ObservableProperty]
     private bool _emptyVisible;
-    public bool EmptyVisible
-    {
-        get => _emptyVisible;
-        private set => SetProperty(ref _emptyVisible, value);
-    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNotBusy))]
+    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
+    private bool _isBusy;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLoadError))]
+    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
+    private string? _loadError;
+
+    private bool _hasLoadedOnce;
+
+    public bool IsNotBusy => !IsBusy;
+    public bool HasLoadError => !string.IsNullOrEmpty(LoadError);
+    public bool ShowSkeleton => IsBusy && !_hasLoadedOnce && !HasLoadError;
 
     public ObservableCollection<InvoiceRowViewModel> Invoices { get; } = [];
+
+    public InvoicesViewModel(IInvoiceService invoiceService)
+    {
+        _invoiceService = invoiceService;
+    }
 
     public void SetDate(DateTime date)
     {
         SelectedDate = date;
-        LoadInvoices();
+        _ = ReloadAsync();
     }
 
     public void SetFilter(string filter)
     {
         ActiveFilter = filter;
-        LoadInvoices();
+        _ = ReloadAsync();
     }
 
-    public void LoadInvoices()
+    [RelayCommand]
+    public async Task ReloadAsync(CancellationToken ct = default)
     {
-        List<Invoice> invoices;
-        if (ActiveFilter == "Anuladas")
+        if (IsBusy) return;
+        IsBusy = true;
+        LoadError = null;
+
+        try
         {
-            // TODO: [API] Replace with: var invoices = await InvoiceService.GetInvoices(date, cancelled: true)
-            // Maps to: GET /invoices?date=YYYY-MM-DD&cancelled=true
-            invoices = MockDataService.GetInvoices(date: SelectedDate, cancelled: true);
-        }
-        else
-        {
-            string? type = ActiveFilter switch
+            // Mapeo filtro UI → params del backend
+            string? type;
+            bool cancelled;
+            switch (ActiveFilter)
             {
-                "Servicio" => "SERVICE",
-                "Venta" => "DELIVERY",
-                _ => null,
-            };
-            // TODO: [API] Replace with: var invoices = await InvoiceService.GetInvoices(date, type)
-            // Maps to: GET /invoices?date=YYYY-MM-DD&type=SERVICE|DELIVERY
-            invoices = MockDataService.GetInvoices(date: SelectedDate, type: type, cancelled: false);
+                case "Servicio":
+                    type = "SERVICE"; cancelled = false; break;
+                case "Venta":
+                    type = "DELIVERY"; cancelled = false; break;
+                case "Anuladas":
+                    type = null; cancelled = true; break;
+                default: // "Todas"
+                    type = null; cancelled = false; break;
+            }
+
+            var invoices = await _invoiceService.ListAsync(
+                date: SelectedDate,
+                type: type,
+                mechanicId: null,
+                cancelled: cancelled,
+                ct: ct);
+
+            UpdateRows(invoices);
+            _hasLoadedOnce = true;
         }
+        catch (ApiException ex)
+        {
+            LoadError = ex.Message;
+        }
+        catch (HttpRequestException)
+        {
+            LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            LoadError = "El servidor tardó demasiado en responder";
+        }
+        finally
+        {
+            IsBusy = false;
+            OnPropertyChanged(nameof(ShowSkeleton));
+        }
+    }
 
-        invoices = invoices.OrderByDescending(i => i.CreatedAt).ToList();
+    private void UpdateRows(IReadOnlyList<Invoice> invoices)
+    {
+        var ordered = invoices.OrderByDescending(i => i.CreatedAt).ToList();
 
-        ResultCountText = $"{invoices.Count} resultado{(invoices.Count != 1 ? "s" : "")}";
-        EmptyVisible = invoices.Count == 0;
+        ResultCountText = $"{ordered.Count} resultado{(ordered.Count != 1 ? "s" : "")}";
+        EmptyVisible = ordered.Count == 0;
 
         Invoices.Clear();
-        foreach (var invoice in invoices)
+        foreach (var invoice in ordered)
         {
             var isService = invoice.InvoiceType == "SERVICE";
             var isCancelled = invoice.IsCancelled;
@@ -100,7 +138,7 @@ public class InvoicesViewModel : INotifyPropertyChanged
                 BuyerTextColor = invoice.BuyerName is not null ? Color.FromArgb("#18170F") : Color.FromArgb("#9A9790"),
                 MechanicText = invoice.Mechanic?.Name?.Split(' ')[0] ?? "—",
                 MechanicTextColor = invoice.Mechanic is not null ? Color.FromArgb("#18170F") : Color.FromArgb("#9A9790"),
-                TotalText = MockDataService.FormatCurrency(invoice.TotalAmount),
+                TotalText = FormatCurrency(invoice.TotalAmount),
                 StatusText = isCancelled ? "Anulada" : "Activa",
                 StatusBackgroundColor = isCancelled ? Color.FromArgb("#FCE8E8") : Color.FromArgb("#DFF0E8"),
                 StatusTextColor = isCancelled ? Color.FromArgb("#C0392B") : Color.FromArgb("#2A6E44"),
@@ -110,14 +148,8 @@ public class InvoicesViewModel : INotifyPropertyChanged
         }
     }
 
-    private void SetProperty<T>(ref T backingField, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(backingField, value))
-            return;
-
-        backingField = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
+    private static string FormatCurrency(decimal value)
+        => $"${value:N0}".Replace(",", ".");
 }
 
 public class InvoiceRowViewModel
