@@ -326,7 +326,8 @@
 
             <!-- Action buttons -->
             <HorizontalStackLayout HorizontalOptions="End" Spacing="10" Padding="24,10">
-                <Button Text="Cancelar"
+                <Button x:Name="CancelButton"
+                        Text="Cancelar"
                         FontFamily="IBMPlexSansMedium" FontSize="13"
                         TextColor="{StaticResource TextSecondary}"
                         BackgroundColor="{StaticResource Surface}"
@@ -335,7 +336,8 @@
                         CornerRadius="8"
                         Padding="18,10"
                         Clicked="OnCancelClicked" />
-                <Button Text="Confirmar factura"
+                <Button x:Name="ConfirmButton"
+                        Text="Confirmar factura"
                         FontFamily="IBMPlexSansSemiBold" FontSize="13"
                         TextColor="{StaticResource White}"
                         BackgroundColor="{StaticResource Accent}"

@@ -1,17 +1,22 @@
 using System.Collections.ObjectModel;
 using ChepaMotos.Behaviors;
 using ChepaMotos.Helpers;
-using ChepaMotos.Services;
+using ChepaMotos.Models;
+using ChepaMotos.Models.Requests;
+using ChepaMotos.Services.Domain;
 using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
 
 public partial class DeliveryInvoicePage : ContentPage
 {
+    private readonly IInvoiceService _invoiceService;
     private readonly ObservableCollection<InvoiceItemRow> _items = [];
+    private bool _isConfirming;
 
-    public DeliveryInvoicePage()
+    public DeliveryInvoicePage(IInvoiceService invoiceService)
     {
+        _invoiceService = invoiceService;
         InitializeComponent();
 
         // Start with one empty row
@@ -27,6 +32,8 @@ public partial class DeliveryInvoicePage : ContentPage
 
     private async void OnCancelClicked(object? sender, EventArgs e)
     {
+        if (_isConfirming) return;
+
         bool confirm = await DisplayAlertAsync(
             "Cancelar factura",
             "¿Estás seguro de que deseas cancelar? Se perderán los datos ingresados.",
@@ -40,27 +47,88 @@ public partial class DeliveryInvoicePage : ContentPage
     /// <summary>Fired after a delivery invoice is successfully confirmed.</summary>
     public event Action? InvoiceConfirmed;
 
-    private void OnConfirmClicked(object? sender, EventArgs e)
+    private async void OnConfirmClicked(object? sender, EventArgs e)
     {
-        if (!ValidateForm())
-            return;
+        if (_isConfirming) return;
+        if (!ValidateForm()) return;
 
-        // TODO: [API] Replace with: await InvoiceService.CreateDeliveryInvoice(request)
-        // Maps to: POST /invoices/delivery
-        var buyerName = BuyerEntry.Text?.Trim() ?? "";
-        var invoiceDate = DeliveryDatePicker.Date ?? DateTime.Today;
+        // POST /invoices/delivery. El backend marca created_at con la hora del servidor;
+        // DeliveryDatePicker es solo informativo y se ignora aquí.
+        var request = new CreateDeliveryInvoiceRequest
+        {
+            BuyerName = BuyerEntry.Text?.Trim() ?? string.Empty,
+            Items = _items
+                .Where(i => !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0)
+                .Select(i => new CreateInvoiceItemRequest
+                {
+                    Description = i.Description.Trim(),
+                    Quantity = ParseItemQuantity(i.Quantity),
+                    UnitPrice = CurrencyInputBehavior.GetValue(i.UnitPrice),
+                })
+                .ToList(),
+        };
 
-        var items = _items
-            .Where(i => !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0)
-            .Select(i => (i.Description.Trim(), ParseItemQuantity(i.Quantity), CurrencyInputBehavior.GetValue(i.UnitPrice)))
-            .ToList();
+        _isConfirming = true;
+        ConfirmButton.IsEnabled = false;
+        ConfirmButton.Text = "Guardando…";
+        CancelButton.IsEnabled = false;
 
-        MockDataService.AddDeliveryInvoice(buyerName, invoiceDate, items);
+        try
+        {
+            await _invoiceService.CreateDeliveryAsync(request);
+            InvoiceConfirmed?.Invoke();
+            if (Window is Window window)
+                Application.Current?.CloseWindow(window);
+        }
+        catch (ApiException ex) when (ex.Code == ApiErrorCodes.ValidationError)
+        {
+            if (!TryApplyValidationError(ex.Message))
+                await DisplayAlertAsync("Validación", ex.Message, "Aceptar");
+        }
+        catch (ApiException ex)
+        {
+            await DisplayAlertAsync("No se pudo crear la factura", ex.Message, "Aceptar");
+        }
+        catch (HttpRequestException)
+        {
+            await DisplayAlertAsync(
+                "Sin conexión",
+                "No se pudo conectar al servidor. Inténtalo de nuevo.",
+                "Aceptar");
+        }
+        catch (TaskCanceledException)
+        {
+            await DisplayAlertAsync("Tiempo agotado", "El servidor tardó demasiado en responder.", "Aceptar");
+        }
+        finally
+        {
+            _isConfirming = false;
+            ConfirmButton.IsEnabled = true;
+            ConfirmButton.Text = "Confirmar factura";
+            CancelButton.IsEnabled = true;
+        }
+    }
 
-        InvoiceConfirmed?.Invoke();
+    private bool TryApplyValidationError(string message)
+    {
+        var colon = message.IndexOf(':');
+        if (colon <= 0) return false;
 
-        if (Window is Window window)
-            Application.Current?.CloseWindow(window);
+        var field = message[..colon].Trim();
+        var rest = message[(colon + 1)..].Trim();
+
+        switch (field)
+        {
+            case "buyer_name":
+                SetFieldError(BuyerBorder, BuyerError, rest);
+                return true;
+            case "items":
+                ItemsError.Text = rest;
+                ItemsError.IsVisible = true;
+                return true;
+            default:
+                return false;
+        }
     }
 
     private static decimal ParseItemQuantity(string? text)

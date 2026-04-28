@@ -64,7 +64,7 @@ public partial class MainLayout : ContentPage
 
     private void OnServiceInvoiceClicked(object? sender, EventArgs e)
     {
-        var page = new ServiceInvoicePage();
+        var page = _services.GetRequiredService<ServiceInvoicePage>();
         page.InvoiceConfirmed += () => MainThread.BeginInvokeOnMainThread(() =>
         {
             ToastService.ShowSuccess(this, "Factura de servicio registrada");
@@ -84,7 +84,7 @@ public partial class MainLayout : ContentPage
 
     private void OnDeliveryInvoiceClicked(object? sender, EventArgs e)
     {
-        var page = new DeliveryInvoicePage();
+        var page = _services.GetRequiredService<DeliveryInvoicePage>();
         page.InvoiceConfirmed += () => MainThread.BeginInvokeOnMainThread(() =>
         {
             ToastService.ShowSuccess(this, "Factura de venta registrada");

@@ -66,6 +66,8 @@ namespace ChepaMotos
             builder.Services.AddTransient<InvoicesView>();
             builder.Services.AddTransient<LiquidationsView>();
             builder.Services.AddTransient<MechanicsView>();
+            builder.Services.AddTransient<ServiceInvoicePage>();
+            builder.Services.AddTransient<DeliveryInvoicePage>();
 
             // El visor recibe la Invoice como parámetro de construcción + servicios via DI.
             // Registramos un delegado factory para que cualquier view pueda crearlo.

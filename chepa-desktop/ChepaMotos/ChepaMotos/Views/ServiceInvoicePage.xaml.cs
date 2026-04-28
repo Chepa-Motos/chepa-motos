@@ -3,16 +3,26 @@ using System.Text.RegularExpressions;
 using ChepaMotos.Behaviors;
 using ChepaMotos.Helpers;
 using ChepaMotos.Models;
+using ChepaMotos.Models.Requests;
 using ChepaMotos.Services;
+using ChepaMotos.Services.Domain;
 using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
 
 public partial class ServiceInvoicePage : ContentPage
 {
+    private readonly IMechanicService _mechanicService;
+    private readonly IInvoiceService _invoiceService;
+    private readonly IInvoiceItemService _itemSuggestionService;
+    private readonly IVehicleService _vehicleService;
+
     private readonly ObservableCollection<InvoiceItemRow> _items = [];
     private static readonly Regex PlateRegex = new(@"^[A-Z]{3}[0-9]{2}[A-Z]$", RegexOptions.Compiled);
     private List<Mechanic> _mechanics = [];
+    private bool _isConfirming;
+    private bool _hasLoadedMechanics;
+    private string? _lastLookedUpPlate;
 
     // Autocomplete state
     private CancellationTokenSource? _debounceCts;
@@ -30,13 +40,18 @@ public partial class ServiceInvoicePage : ContentPage
     private readonly HashSet<object> _hookedNativeViews = [];
     private readonly Dictionary<InvoiceItemRow, object> _rowNativeTextBoxes = [];
 
-    public ServiceInvoicePage()
+    public ServiceInvoicePage(
+        IMechanicService mechanicService,
+        IInvoiceService invoiceService,
+        IInvoiceItemService itemSuggestionService,
+        IVehicleService vehicleService)
     {
-        InitializeComponent();
+        _mechanicService = mechanicService;
+        _invoiceService = invoiceService;
+        _itemSuggestionService = itemSuggestionService;
+        _vehicleService = vehicleService;
 
-        // Load active mechanics into picker
-        _mechanics = MockDataService.GetMechanics(activeOnly: true);
-        MechanicPicker.ItemsSource = _mechanics.Select(m => m.Name).ToList();
+        InitializeComponent();
 
         // Start with one empty row
         AddItem(new InvoiceItemRow());
@@ -50,14 +65,67 @@ public partial class ServiceInvoicePage : ContentPage
         MechanicPicker.SelectedIndexChanged += (_, _) => ClearFieldError(MechanicBorder, MechanicError);
         ModelEntry.TextChanged += (_, _) => ClearFieldError(ModelFieldBorder, ModelError);
 
+        // Lookup de placa al perder foco. El backend normaliza (trim + uppercase) y
+        // devuelve 404 si la placa no existe (que IVehicleService traga y devuelve null).
+        PlateEntry.Unfocused += OnPlateUnfocused;
+
         RecalculateTotal();
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
         if (Window is Window window)
             window.Destroying += OnWindowClosing;
+
+        if (!_hasLoadedMechanics)
+        {
+            _hasLoadedMechanics = true;
+            await LoadActiveMechanicsAsync();
+        }
+    }
+
+    private async Task LoadActiveMechanicsAsync()
+    {
+        try
+        {
+            _mechanics = (await _mechanicService.ListAsync(active: true)).ToList();
+            MechanicPicker.ItemsSource = _mechanics.Select(m => m.Name).ToList();
+        }
+        catch (ApiException ex)
+        {
+            await DisplayAlertAsync("No se pudo cargar mecánicos", ex.Message, "Aceptar");
+        }
+        catch (HttpRequestException)
+        {
+            await DisplayAlertAsync(
+                "Sin conexión",
+                "No se pudo conectar al servidor. Cierra esta ventana y vuelve a abrirla cuando recuperes la conexión.",
+                "Aceptar");
+        }
+        catch (TaskCanceledException)
+        {
+            await DisplayAlertAsync("Tiempo agotado", "El servidor tardó demasiado en responder.", "Aceptar");
+        }
+    }
+
+    private async void OnPlateUnfocused(object? sender, FocusEventArgs e)
+    {
+        var plate = PlateEntry.Text?.Trim().ToUpperInvariant() ?? string.Empty;
+        if (plate.Length < 4) return;
+        if (ModelEntry.IsReadOnly) return;        // ya viene auto-fillado por un lookup previo
+        if (plate == _lastLookedUpPlate) return;  // no repetir si la placa no cambió
+
+        _lastLookedUpPlate = plate;
+        try
+        {
+            var vehicle = await _vehicleService.GetByPlateAsync(plate);
+            if (vehicle is not null && !ModelEntry.IsReadOnly)
+                SetModelAutoFilled(vehicle.Model);
+        }
+        catch (ApiException) { /* swallow: no interrumpir el formulario por un lookup */ }
+        catch (HttpRequestException) { /* swallow */ }
+        catch (TaskCanceledException) { /* swallow */ }
     }
 
     protected override void OnDisappearing()
@@ -97,33 +165,115 @@ public partial class ServiceInvoicePage : ContentPage
     /// <summary>Fired after a service invoice is successfully confirmed.</summary>
     public event Action? InvoiceConfirmed;
 
-    private void OnConfirmClicked(object? sender, EventArgs e)
+    private async void OnConfirmClicked(object? sender, EventArgs e)
     {
-        if (!ValidateForm())
-            return;
+        if (_isConfirming) return;
+        if (!ValidateForm()) return;
 
-        // TODO: [API] Replace with: await InvoiceService.CreateServiceInvoice(request)
-        // Maps to: POST /invoices/service
-        var mechanicId = _mechanics[MechanicPicker.SelectedIndex].Id;
-        var plate = PlateEntry.Text?.Trim().ToUpperInvariant() ?? "";
-        var model = ModelEntry.Text?.Trim() ?? "";
-        var labor = CurrencyInputBehavior.GetValue(LaborEntry.Text);
-        var invoiceDate = ServiceDatePicker.Date ?? DateTime.Today;
-
-        var items = _items
-            .Where(i => !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0)
-            .Select(i => (i.Description.Trim(), ParseItemQuantity(i.Quantity), CurrencyInputBehavior.GetValue(i.UnitPrice)))
-            .ToList();
-
-        MockDataService.AddServiceInvoice(mechanicId, plate, model, labor, invoiceDate, items);
-
-        InvoiceConfirmed?.Invoke();
-
-        if (Window is Window window)
+        // POST /invoices/service. Nota: el backend marca created_at con la hora del
+        // servidor, así que ServiceDatePicker es solo informativo y se ignora aquí.
+        var request = new CreateServiceInvoiceRequest
         {
-            CancelPendingAutocomplete();
-            CancelPendingModelAutocomplete();
-            Application.Current?.CloseWindow(window);
+            MechanicId = _mechanics[MechanicPicker.SelectedIndex].Id,
+            VehiclePlate = PlateEntry.Text?.Trim().ToUpperInvariant() ?? string.Empty,
+            Model = ModelEntry.Text?.Trim() ?? string.Empty,
+            LaborAmount = CurrencyInputBehavior.GetValue(LaborEntry.Text),
+            Items = _items
+                .Where(i => !string.IsNullOrWhiteSpace(i.Description) && i.Subtotal > 0)
+                .Select(i => new CreateInvoiceItemRequest
+                {
+                    Description = i.Description.Trim(),
+                    Quantity = ParseItemQuantity(i.Quantity),
+                    UnitPrice = CurrencyInputBehavior.GetValue(i.UnitPrice),
+                })
+                .ToList(),
+        };
+
+        _isConfirming = true;
+        ConfirmButton.IsEnabled = false;
+        ConfirmButton.Text = "Guardando…";
+        CancelButton.IsEnabled = false;
+
+        try
+        {
+            await _invoiceService.CreateServiceAsync(request);
+            InvoiceConfirmed?.Invoke();
+            if (Window is Window window)
+            {
+                CancelPendingAutocomplete();
+                CancelPendingModelAutocomplete();
+                Application.Current?.CloseWindow(window);
+            }
+        }
+        catch (ApiException ex) when (ex.Code == ApiErrorCodes.ValidationError)
+        {
+            if (!TryApplyValidationError(ex.Message))
+                await DisplayAlertAsync("Validación", ex.Message, "Aceptar");
+        }
+        catch (ApiException ex) when (ex.Code == ApiErrorCodes.MechanicNotFound)
+        {
+            await DisplayAlertAsync(
+                "Mecánico no encontrado",
+                "El mecánico seleccionado ya no existe en el servidor. Refresca la lista y vuelve a intentarlo.",
+                "Aceptar");
+        }
+        catch (ApiException ex)
+        {
+            await DisplayAlertAsync("No se pudo crear la factura", ex.Message, "Aceptar");
+        }
+        catch (HttpRequestException)
+        {
+            await DisplayAlertAsync(
+                "Sin conexión",
+                "No se pudo conectar al servidor. Inténtalo de nuevo.",
+                "Aceptar");
+        }
+        catch (TaskCanceledException)
+        {
+            await DisplayAlertAsync("Tiempo agotado", "El servidor tardó demasiado en responder.", "Aceptar");
+        }
+        finally
+        {
+            _isConfirming = false;
+            ConfirmButton.IsEnabled = true;
+            ConfirmButton.Text = "Confirmar factura";
+            CancelButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>
+    /// Parsea mensajes del backend con formato <c>"campo: mensaje"</c> y los
+    /// pinta en el campo correspondiente. Devuelve <c>true</c> si reconoce el
+    /// campo; en caso contrario el caller muestra el mensaje en un alert.
+    /// </summary>
+    private bool TryApplyValidationError(string message)
+    {
+        var colon = message.IndexOf(':');
+        if (colon <= 0) return false;
+
+        var field = message[..colon].Trim();
+        var rest = message[(colon + 1)..].Trim();
+
+        switch (field)
+        {
+            case "mechanic_id":
+                SetFieldError(MechanicBorder, MechanicError, rest);
+                return true;
+            case "vehicle_plate":
+                SetFieldError(PlateBorder, PlateError, rest);
+                return true;
+            case "model":
+                SetFieldError(ModelFieldBorder, ModelError, rest);
+                return true;
+            case "labor_amount":
+                _ = DisplayAlertAsync("Mano de obra", rest, "Aceptar");
+                return true;
+            case "items":
+                ItemsError.Text = rest;
+                ItemsError.IsVisible = true;
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -152,7 +302,7 @@ public partial class ServiceInvoicePage : ContentPage
     private void RunDebouncedSuggestions<T>(
         ref CancellationTokenSource? cts,
         Func<bool> shouldSkip,
-        Func<List<T>> fetch,
+        Func<CancellationToken, Task<List<T>>> fetchAsync,
         Action<List<T>> show)
     {
         CancelPendingAutocomplete(ref cts);
@@ -161,16 +311,25 @@ public partial class ServiceInvoicePage : ContentPage
 
         _ = Task.Run(async () =>
         {
-            await Task.Delay(300, token);
-            if (token.IsCancellationRequested || shouldSkip()) return;
-
-            var suggestions = fetch();
-
-            MainThread.BeginInvokeOnMainThread(() =>
+            try
             {
+                await Task.Delay(300, token);
                 if (token.IsCancellationRequested || shouldSkip()) return;
-                show(suggestions);
-            });
+
+                var suggestions = await fetchAsync(token);
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    if (token.IsCancellationRequested || shouldSkip()) return;
+                    show(suggestions);
+                });
+            }
+            catch (TaskCanceledException) { /* esperado al re-tipear */ }
+            catch (OperationCanceledException) { /* idem */ }
+            catch (Exception)
+            {
+                // Sugerencias son opcionales: si falla la red, no estorbamos al usuario.
+            }
         }, token);
     }
 
@@ -399,11 +558,12 @@ public partial class ServiceInvoicePage : ContentPage
         RunDebouncedSuggestions(
             ref _modelDebounceCts,
             shouldSkip: () => _isSelectingModelSuggestion || ModelEntry.IsReadOnly,
-            fetch: () =>
+            fetchAsync: _ =>
             {
-                // TODO: [API] Replace with: var suggestions = await VehicleService.GetModelSuggestions(query)
-                // Proposed endpoint: GET /vehicles/models/suggestions?q={query}
-                return MockDataService.GetModelSuggestions(query);
+                // El backend no expone aún un endpoint de sugerencias de modelo.
+                // Devolvemos lista vacía (no-op) — el popup nunca se mostrará.
+                // Cuando exista, reemplazar por: await _vehicleService.GetModelSuggestionsAsync(query, ct);
+                return Task.FromResult(new List<string>());
             },
             show: ShowModelSuggestions);
     }
@@ -438,11 +598,10 @@ public partial class ServiceInvoicePage : ContentPage
         RunDebouncedSuggestions(
             ref _debounceCts,
             shouldSkip: () => _isSelectingSuggestion,
-            fetch: () =>
+            fetchAsync: async ct =>
             {
-                // TODO: [API] Replace with: var suggestions = await InvoiceItemService.GetSuggestions(model, query)
-                // Maps to: GET /invoice-items/suggestions?model={model}&q={query}
-                return MockDataService.GetItemSuggestions(model, query);
+                var results = await _itemSuggestionService.GetSuggestionsAsync(model, query, ct);
+                return results.ToList();
             },
             show: ShowSuggestions);
     }
