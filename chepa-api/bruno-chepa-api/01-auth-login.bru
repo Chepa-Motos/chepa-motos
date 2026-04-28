@@ -1,0 +1,40 @@
+meta {
+  name: Auth Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "username": "{{adminUsername}}",
+    "password": "{{adminPassword}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  const payload = res.body?.data ?? res.body;
+  if (!payload?.accessToken || !payload?.refreshToken) {
+    const responseBody = typeof res.body === 'string'
+      ? res.body
+      : JSON.stringify(res.body, null, 2);
+
+    throw new Error(`Login did not return tokens. Status ${res.status}. Body: ${responseBody}`);
+  }
+
+  bru.setEnvVar('authToken', payload.accessToken);
+  bru.setEnvVar('refreshToken', payload.refreshToken);
+}

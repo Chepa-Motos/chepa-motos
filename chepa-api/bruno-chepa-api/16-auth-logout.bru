@@ -1,0 +1,25 @@
+meta {
+  name: Auth Logout
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{host}}/api/auth/logout
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+}

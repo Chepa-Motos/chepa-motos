@@ -1,0 +1,29 @@
+meta {
+  name: Change Mechanic Status
+  type: http
+  seq: 14
+}
+
+patch {
+  url: {{host}}/api/mechanics/{{mechanicId}}/status
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{authToken}}
+}
+
+body:json {
+  {
+    "is_active": false
+  }
+}
+
+assert {
+  res.status: eq 200
+}

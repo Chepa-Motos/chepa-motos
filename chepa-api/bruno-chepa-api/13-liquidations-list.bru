@@ -1,0 +1,15 @@
+meta {
+  name: List Liquidations
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{host}}/api/liquidations?date={{liquidationDate}}&mechanic_id={{mechanicId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

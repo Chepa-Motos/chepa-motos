@@ -35,3 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Bruno collection local files ###
+bruno-chepa-api/.env
+bruno-chepa-api/.env.*
+bruno-chepa-api/environments/*.local.bru
+bruno-chepa-api/environments/*.secret.bru
+bruno-chepa-api/environments/*.private.bru
