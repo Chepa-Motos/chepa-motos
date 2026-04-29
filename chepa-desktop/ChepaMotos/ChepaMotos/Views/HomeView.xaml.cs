@@ -1,9 +1,10 @@
+using ChepaMotos.Helpers;
 using ChepaMotos.Models;
 using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
 
-public partial class HomeView : ContentView
+public partial class HomeView : ContentView, IRefreshable
 {
     private static readonly string[] MonthAbbreviations = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -63,6 +64,8 @@ public partial class HomeView : ContentView
 
     /// <summary>Recarga los datos. Lo invoca <c>MainLayout</c> después de crear/cancelar facturas.</summary>
     public void RefreshData() => _ = _viewModel.ReloadAsync();
+
+    public Task RefreshAsync() => _viewModel.ReloadAsync();
 
     private void OnInvoiceRowTapped(object? sender, TappedEventArgs e)
     {

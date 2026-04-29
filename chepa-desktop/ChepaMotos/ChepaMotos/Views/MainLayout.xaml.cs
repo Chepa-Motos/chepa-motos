@@ -1,5 +1,6 @@
 namespace ChepaMotos.Views;
 
+using ChepaMotos.Helpers;
 using ChepaMotos.Services;
 using ChepaMotos.Services.Auth;
 using Microsoft.Extensions.DependencyInjection;
@@ -155,23 +156,29 @@ public partial class MainLayout : ContentPage
         Application.Current?.OpenWindow(window);
     }
 
-    /// <summary>Refresh the currently visible view after data changes.</summary>
+    /// <summary>
+    /// Recarga datos de la View actual sin perder estado local (filtros,
+    /// fecha seleccionada, scroll). Si la View implementa <see cref="IRefreshable"/>,
+    /// solo se le pide refrescar; no se reconstruye.
+    /// </summary>
     private void RefreshCurrentView()
     {
-        if (ContentArea.Content is HomeView homeView)
-            homeView.RefreshData();
-        else
+        if (ContentArea.Content is IRefreshable refreshable)
         {
-            // Rebuild the current view to pick up changes
-            ContentArea.Content = _currentNav switch
-            {
-                "Facturas" => _services.GetRequiredService<InvoicesView>(),
-                "Liquidaciones" => _services.GetRequiredService<LiquidationsView>(),
-                "Mecanicos" => _services.GetRequiredService<MechanicsView>(),
-                "Inicio" => _services.GetRequiredService<HomeView>(),
-                _ => ContentArea.Content,
-            };
+            _ = refreshable.RefreshAsync();
+            return;
         }
+
+        // Fallback: si la View actual aún no migró a IRefreshable (solo
+        // DashboardsView en este punto), reconstruimos.
+        ContentArea.Content = _currentNav switch
+        {
+            "Facturas" => _services.GetRequiredService<InvoicesView>(),
+            "Liquidaciones" => _services.GetRequiredService<LiquidationsView>(),
+            "Mecanicos" => _services.GetRequiredService<MechanicsView>(),
+            "Inicio" => _services.GetRequiredService<HomeView>(),
+            _ => ContentArea.Content,
+        };
     }
 
     /// <summary>

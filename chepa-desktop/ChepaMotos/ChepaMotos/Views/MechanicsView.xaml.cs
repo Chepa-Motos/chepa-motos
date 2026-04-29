@@ -4,7 +4,7 @@ using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
 
-public partial class MechanicsView : ContentView
+public partial class MechanicsView : ContentView, IRefreshable
 {
     private readonly MechanicsViewModel _viewModel;
     private bool _hasMounted;
@@ -33,6 +33,8 @@ public partial class MechanicsView : ContentView
             _viewModel.CancelOngoingOperation();
         }
     }
+
+    public Task RefreshAsync() => _viewModel.ReloadAsync();
 
     private async void OnAddMechanicClicked(object? sender, EventArgs e)
     {

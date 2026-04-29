@@ -8,16 +8,32 @@
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <!-- Page heading + date/time -->
-            <Grid ColumnDefinitions="*,Auto">
+            <!-- Page heading + date/time + reload -->
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                 <Label Text="Inicio"
-                       Style="{StaticResource PageHeading}" />
+                       Style="{StaticResource PageHeading}"
+                       VerticalOptions="Center" />
                 <Label x:Name="DateTimeLabel"
                        Grid.Column="1"
                        FontFamily="IBMPlexMono"
                        FontSize="13"
                        TextColor="{StaticResource TextMuted}"
                        VerticalTextAlignment="Center" />
+                <Button Grid.Column="2"
+                        Text="↻"
+                        Command="{Binding ReloadCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        FontSize="16"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0"
+                        BackgroundColor="{StaticResource Surface}"
+                        TextColor="{StaticResource TextSecondary}"
+                        BorderColor="{StaticResource Border}"
+                        BorderWidth="1"
+                        CornerRadius="6"
+                        ToolTipProperties.Text="Recargar"
+                        VerticalOptions="Center" />
             </Grid>
 
             <!-- Error banner -->

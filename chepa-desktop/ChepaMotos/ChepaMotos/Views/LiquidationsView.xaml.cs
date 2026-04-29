@@ -4,7 +4,7 @@ using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
 
-public partial class LiquidationsView : ContentView
+public partial class LiquidationsView : ContentView, IRefreshable
 {
     private readonly LiquidationsViewModel _viewModel;
     private bool _hasMounted;
@@ -33,6 +33,8 @@ public partial class LiquidationsView : ContentView
             _viewModel.CancelOngoingOperation();
         }
     }
+
+    public Task RefreshAsync() => _viewModel.ReloadAsync();
 
     private void OnDateSelected(object? sender, DateChangedEventArgs e)
     {

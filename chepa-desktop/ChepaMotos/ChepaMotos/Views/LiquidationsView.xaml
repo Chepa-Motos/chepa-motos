@@ -8,8 +8,8 @@
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <!-- Header row with title + date picker + liquidate button (GERENTE only) -->
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+            <!-- Header row with title + date picker + reload + liquidate button (GERENTE only) -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
                 <Label Text="Liquidaciones"
                        Style="{StaticResource PageHeading}"
                        VerticalOptions="Center" />
@@ -33,6 +33,21 @@
                                 DateSelected="OnDateSelected" />
                 </Border>
                 <Button Grid.Column="2"
+                        Text="↻"
+                        Command="{Binding ReloadCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        FontSize="16"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0"
+                        BackgroundColor="{StaticResource Surface}"
+                        TextColor="{StaticResource TextSecondary}"
+                        BorderColor="{StaticResource Border}"
+                        BorderWidth="1"
+                        CornerRadius="6"
+                        ToolTipProperties.Text="Recargar"
+                        VerticalOptions="Center" />
+                <Button Grid.Column="3"
                         Text="{Binding LiquidateButtonText}"
                         Command="{Binding LiquidateDayCommand}"
                         IsVisible="{Binding IsManager}"

@@ -8,11 +8,26 @@
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                 <Label Text="Mecánicos"
                        Style="{StaticResource PageHeading}"
                        VerticalOptions="Center" />
                 <Button Grid.Column="1"
+                        Text="↻"
+                        Command="{Binding ReloadCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        FontSize="16"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0"
+                        BackgroundColor="{StaticResource Surface}"
+                        TextColor="{StaticResource TextSecondary}"
+                        BorderColor="{StaticResource Border}"
+                        BorderWidth="1"
+                        CornerRadius="6"
+                        ToolTipProperties.Text="Recargar"
+                        VerticalOptions="Center" />
+                <Button Grid.Column="2"
                         Text="+ Nuevo mecánico"
                         Style="{StaticResource CtaAccentButton}"
                         IsVisible="{Binding IsManager}"

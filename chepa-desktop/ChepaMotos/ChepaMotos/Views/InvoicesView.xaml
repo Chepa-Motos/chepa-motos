@@ -8,10 +8,11 @@
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <!-- Page heading + date picker -->
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+            <!-- Page heading + date picker + reload -->
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                 <Label Text="Facturas"
-                       Style="{StaticResource PageHeading}" />
+                       Style="{StaticResource PageHeading}"
+                       VerticalOptions="Center" />
                 <Border Grid.Column="1"
                         StrokeShape="RoundRectangle 6"
                         Stroke="{StaticResource Border}"
@@ -31,6 +32,21 @@
                                 MaximumDate="2030-12-31"
                                 DateSelected="OnDateSelected" />
                 </Border>
+                <Button Grid.Column="2"
+                        Text="↻"
+                        Command="{Binding ReloadCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        FontSize="16"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0"
+                        BackgroundColor="{StaticResource Surface}"
+                        TextColor="{StaticResource TextSecondary}"
+                        BorderColor="{StaticResource Border}"
+                        BorderWidth="1"
+                        CornerRadius="6"
+                        ToolTipProperties.Text="Recargar"
+                        VerticalOptions="Center" />
             </Grid>
 
             <!-- Error banner -->

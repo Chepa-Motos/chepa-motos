@@ -1,9 +1,10 @@
+using ChepaMotos.Helpers;
 using ChepaMotos.Models;
 using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
 
-public partial class InvoicesView : ContentView
+public partial class InvoicesView : ContentView, IRefreshable
 {
     private readonly InvoicesViewModel _viewModel;
     private readonly Func<Invoice, InvoiceViewerPage> _viewerFactory;
@@ -33,6 +34,8 @@ public partial class InvoicesView : ContentView
             _viewModel.CancelOngoingOperation();
         }
     }
+
+    public Task RefreshAsync() => _viewModel.ReloadAsync();
 
     private void OnDateSelected(object? sender, DateChangedEventArgs e)
     {
