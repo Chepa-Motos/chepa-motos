@@ -8,12 +8,30 @@
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <!-- Header row with title + date picker + reload + liquidate button (GERENTE only) -->
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+            <!-- Header: title + mechanic picker + date picker + reload + liquidate (GERENTE) -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="10">
                 <Label Text="Liquidaciones"
                        Style="{StaticResource PageHeading}"
                        VerticalOptions="Center" />
                 <Border Grid.Column="1"
+                        StrokeShape="RoundRectangle 6"
+                        Stroke="{StaticResource Border}"
+                        StrokeThickness="1"
+                        BackgroundColor="{StaticResource Surface}"
+                        HeightRequest="36"
+                        Padding="10,0"
+                        VerticalOptions="Center">
+                    <Picker ItemsSource="{Binding MechanicOptions}"
+                            ItemDisplayBinding="{Binding Name}"
+                            SelectedItem="{Binding SelectedMechanicOption, Mode=TwoWay}"
+                            FontFamily="IBMPlexSans"
+                            FontSize="13"
+                            TextColor="{StaticResource TextPrimary}"
+                            TitleColor="{StaticResource TextMuted}"
+                            BackgroundColor="Transparent"
+                            WidthRequest="200" />
+                </Border>
+                <Border Grid.Column="2"
                         StrokeShape="RoundRectangle 6"
                         Stroke="{StaticResource Border}"
                         StrokeThickness="1"
@@ -32,7 +50,7 @@
                                 MaximumDate="2030-12-31"
                                 DateSelected="OnDateSelected" />
                 </Border>
-                <Button Grid.Column="2"
+                <Button Grid.Column="3"
                         Text="↻"
                         Command="{Binding ReloadCommand}"
                         IsEnabled="{Binding IsNotBusy}"
@@ -47,7 +65,7 @@
                         CornerRadius="6"
                         ToolTipProperties.Text="Recargar"
                         VerticalOptions="Center" />
-                <Button Grid.Column="3"
+                <Button Grid.Column="4"
                         Text="{Binding LiquidateButtonText}"
                         Command="{Binding LiquidateDayCommand}"
                         IsVisible="{Binding IsManager}"

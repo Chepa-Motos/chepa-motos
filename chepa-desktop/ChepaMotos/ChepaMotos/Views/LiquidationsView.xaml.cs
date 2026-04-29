@@ -26,6 +26,7 @@ public partial class LiquidationsView : ContentView, IRefreshable
         if (Handler is not null && !_hasMounted)
         {
             _hasMounted = true;
+            _ = _viewModel.LoadMechanicOptionsIfNeededAsync();
             _ = _viewModel.ReloadAsync();
         }
         else if (Handler is null)

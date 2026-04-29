@@ -81,11 +81,23 @@
                        VerticalTextAlignment="Center" />
             </HorizontalStackLayout>
 
-            <!-- Summary -->
-            <Label x:Name="SummaryLabel"
-                     Text="{Binding SummaryText}"
-                   FontFamily="IBMPlexMono" FontSize="12"
-                   TextColor="{StaticResource TextMuted}" />
+            <!-- Summary + toggle inactivos -->
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Label Grid.Column="0"
+                       x:Name="SummaryLabel"
+                       Text="{Binding SummaryText}"
+                       FontFamily="IBMPlexMono" FontSize="12"
+                       TextColor="{StaticResource TextMuted}"
+                       VerticalTextAlignment="Center" />
+                <HorizontalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                    <Label Text="Mostrar inactivos"
+                           FontFamily="IBMPlexSansMedium" FontSize="12"
+                           TextColor="{StaticResource TextSecondary}"
+                           VerticalTextAlignment="Center" />
+                    <Switch IsToggled="{Binding ShowInactive, Mode=TwoWay}"
+                            VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Grid>
 
             <!-- Mechanics list -->
             <Border Stroke="{StaticResource Border}"

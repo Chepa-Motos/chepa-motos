@@ -13,8 +13,17 @@ public partial class MechanicsViewModel : BaseViewModel
     private readonly IMechanicService _mechanicService;
     private readonly IInvoiceService _invoiceService;
 
+    private List<Mechanic> _allMechanics = [];
+    private List<Invoice> _todayServiceInvoices = [];
+
     [ObservableProperty]
     private string _summaryText = "0 activos · 0 inactivos";
+
+    /// <summary>Si está apagado (default), se ocultan los mecánicos inactivos.</summary>
+    [ObservableProperty]
+    private bool _showInactive;
+
+    partial void OnShowInactiveChanged(bool value) => RebuildRows();
 
     /// <summary>True solo si el rol es GERENTE; controla la visibilidad del botón de
     /// crear y la habilitación de los switches por fila.</summary>
@@ -170,21 +179,32 @@ public partial class MechanicsViewModel : BaseViewModel
 
     private void UpdateRows(IReadOnlyList<Mechanic> allMechanics, IReadOnlyList<Invoice> todayServiceInvoices)
     {
-        var sorted = allMechanics
+        _allMechanics = allMechanics.ToList();
+        _todayServiceInvoices = todayServiceInvoices.ToList();
+        RebuildRows();
+    }
+
+    private void RebuildRows()
+    {
+        // El summary refleja el total real (no el filtrado), para que el usuario
+        // siempre vea cuántos inactivos tiene aunque estén ocultos.
+        var totalActive = _allMechanics.Count(m => m.IsActive);
+        var totalInactive = _allMechanics.Count - totalActive;
+        SummaryText = $"{totalActive} activos · {totalInactive} inactivos";
+
+        var visible = _allMechanics
+            .Where(m => ShowInactive || m.IsActive)
             .OrderByDescending(m => m.IsActive)
             .ThenBy(m => m.Name)
             .ToList();
 
-        var activeCount = sorted.Count(m => m.IsActive);
-        SummaryText = $"{activeCount} activos · {sorted.Count - activeCount} inactivos";
-
-        var counts = todayServiceInvoices
+        var counts = _todayServiceInvoices
             .Where(i => !i.IsCancelled && i.Mechanic is not null)
             .GroupBy(i => i.Mechanic!.Id)
             .ToDictionary(g => g.Key, g => (Count: g.Count(), Total: g.Sum(i => i.TotalAmount)));
 
         Mechanics.Clear();
-        foreach (var mech in sorted)
+        foreach (var mech in visible)
         {
             string subtitle;
             if (mech.IsActive && counts.TryGetValue(mech.Id, out var data))

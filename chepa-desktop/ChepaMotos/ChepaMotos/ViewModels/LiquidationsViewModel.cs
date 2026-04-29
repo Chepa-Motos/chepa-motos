@@ -11,9 +11,22 @@ namespace ChepaMotos.ViewModels;
 public partial class LiquidationsViewModel : BaseViewModel
 {
     private readonly ILiquidationService _liquidationService;
+    private readonly IMechanicService _mechanicService;
 
     [ObservableProperty]
     private DateTime _selectedDate = DateTime.Today.AddDays(-1);
+
+    /// <summary>
+    /// Mecánico filtrado en el picker. Se popula una sola vez al montar la vista
+    /// con "Todos los mecánicos" + la lista del backend. Cuando el usuario
+    /// selecciona uno, se dispara <see cref="ReloadAsync"/> con su id.
+    /// </summary>
+    public ObservableCollection<MechanicOption> MechanicOptions { get; } = [];
+
+    [ObservableProperty]
+    private MechanicOption? _selectedMechanicOption;
+
+    partial void OnSelectedMechanicOptionChanged(MechanicOption? value) => _ = ReloadAsync();
 
     [ObservableProperty]
     private string _summaryTotalText = "$0";
@@ -47,10 +60,40 @@ public partial class LiquidationsViewModel : BaseViewModel
     /// </summary>
     public event EventHandler<LiquidationFailedEventArgs>? LiquidationFailed;
 
-    public LiquidationsViewModel(ILiquidationService liquidationService, IAuthState authState)
+    public LiquidationsViewModel(
+        ILiquidationService liquidationService,
+        IMechanicService mechanicService,
+        IAuthState authState)
     {
         _liquidationService = liquidationService;
+        _mechanicService = mechanicService;
         IsManager = authState.IsManager;
+
+        // Sembrar la opción "Todos" para que el picker no quede vacío antes
+        // de que LoadMechanicOptionsAsync agregue el resto.
+        MechanicOptions.Add(MechanicOption.All);
+        SelectedMechanicOption = MechanicOption.All;
+    }
+
+    /// <summary>
+    /// Carga la lista de mecánicos para el picker. Idempotente — solo trae
+    /// datos la primera vez. Si falla por red u otro error, el picker se queda
+    /// con "Todos los mecánicos" y la pantalla sigue funcionando sin filtro.
+    /// </summary>
+    public async Task LoadMechanicOptionsIfNeededAsync(CancellationToken ct = default)
+    {
+        if (MechanicOptions.Count > 1) return;
+
+        try
+        {
+            var all = await _mechanicService.ListAllAsync(ct);
+            foreach (var m in all.OrderByDescending(m => m.IsActive).ThenBy(m => m.Name))
+                MechanicOptions.Add(new MechanicOption(m.Id, m.Name));
+        }
+        catch
+        {
+            // Sin picker no se rompe nada — el filtro queda fijo en "Todos".
+        }
     }
 
     public void SetDate(DateTime date)
@@ -62,7 +105,10 @@ public partial class LiquidationsViewModel : BaseViewModel
     [RelayCommand]
     public Task ReloadAsync(CancellationToken ct = default) => ExecuteLoadAsync(async token =>
     {
-        var liquidations = await _liquidationService.ListAsync(date: SelectedDate, ct: token);
+        var liquidations = await _liquidationService.ListAsync(
+            date: SelectedDate,
+            mechanicId: SelectedMechanicOption?.Id,
+            ct: token);
         UpdateRows(liquidations);
     }, ct);
 
@@ -167,3 +213,9 @@ public class LiquidationRowViewModel
 
 public sealed record LiquidationCompletedEventArgs(int Count, DateTime Date);
 public sealed record LiquidationFailedEventArgs(string Title, string Message);
+
+/// <summary>Opción del picker de mecánico — <c>Id == null</c> significa "Todos".</summary>
+public sealed record MechanicOption(long? Id, string Name)
+{
+    public static readonly MechanicOption All = new(null, "Todos los mecánicos");
+}

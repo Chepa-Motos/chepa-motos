@@ -10,6 +10,7 @@ namespace ChepaMotos.ViewModels;
 public partial class InvoicesViewModel : BaseViewModel
 {
     private readonly IInvoiceService _invoiceService;
+    private List<Invoice> _allInvoices = [];
 
     [ObservableProperty]
     private DateTime _selectedDate = DateTime.Today;
@@ -19,6 +20,14 @@ public partial class InvoicesViewModel : BaseViewModel
 
     [ObservableProperty]
     private string _resultCountText = "0 resultados";
+
+    /// <summary>
+    /// Búsqueda client-side sobre la lista ya cargada del backend.
+    /// Coincide en placa, comprador o descripción de cualquier ítem.
+    /// Se resetea al cambiar fecha o filtro.
+    /// </summary>
+    [ObservableProperty]
+    private string _searchQuery = string.Empty;
 
     public ObservableCollection<InvoiceRowViewModel> Invoices { get; } = [];
 
@@ -30,14 +39,18 @@ public partial class InvoicesViewModel : BaseViewModel
     public void SetDate(DateTime date)
     {
         SelectedDate = date;
+        SearchQuery = string.Empty;
         _ = ReloadAsync();
     }
 
     public void SetFilter(string filter)
     {
         ActiveFilter = filter;
+        SearchQuery = string.Empty;
         _ = ReloadAsync();
     }
+
+    partial void OnSearchQueryChanged(string value) => ApplyFilter();
 
     [RelayCommand]
     public Task ReloadAsync(CancellationToken ct = default) => ExecuteLoadAsync(async token =>
@@ -69,13 +82,22 @@ public partial class InvoicesViewModel : BaseViewModel
 
     private void UpdateRows(IReadOnlyList<Invoice> invoices)
     {
-        var ordered = invoices.OrderByDescending(i => i.CreatedAt).ToList();
+        _allInvoices = invoices.OrderByDescending(i => i.CreatedAt).ToList();
+        ApplyFilter();
+    }
 
-        ResultCountText = $"{ordered.Count} resultado{(ordered.Count != 1 ? "s" : "")}";
-        IsCollectionEmpty = ordered.Count == 0;
+    private void ApplyFilter()
+    {
+        var query = SearchQuery?.Trim() ?? string.Empty;
+        var filtered = string.IsNullOrEmpty(query)
+            ? _allInvoices
+            : _allInvoices.Where(i => MatchesQuery(i, query)).ToList();
+
+        ResultCountText = $"{filtered.Count} resultado{(filtered.Count != 1 ? "s" : "")}";
+        IsCollectionEmpty = filtered.Count == 0;
 
         Invoices.Clear();
-        foreach (var invoice in ordered)
+        foreach (var invoice in filtered)
         {
             var isService = invoice.InvoiceType == "SERVICE";
             var isCancelled = invoice.IsCancelled;
@@ -105,6 +127,15 @@ public partial class InvoicesViewModel : BaseViewModel
         }
     }
 
+    private static bool MatchesQuery(Invoice i, string query)
+    {
+        var cmp = StringComparison.OrdinalIgnoreCase;
+        if (i.Vehicle?.Plate?.Contains(query, cmp) == true) return true;
+        if (i.Vehicle?.Model?.Contains(query, cmp) == true) return true;
+        if (i.BuyerName?.Contains(query, cmp) == true) return true;
+        if (i.Mechanic?.Name?.Contains(query, cmp) == true) return true;
+        return i.Items.Any(it => it.Description.Contains(query, cmp));
+    }
 }
 
 public class InvoiceRowViewModel
