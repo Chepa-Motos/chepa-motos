@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using ChepaMotos.Helpers;
 using ChepaMotos.Models;
 using ChepaMotos.Services.Domain;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -22,22 +23,6 @@ public partial class InvoicesViewModel : BaseViewModel
     [ObservableProperty]
     private bool _emptyVisible;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsNotBusy))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
-    private bool _isBusy;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasLoadError))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
-    private string? _loadError;
-
-    private bool _hasLoadedOnce;
-
-    public bool IsNotBusy => !IsBusy;
-    public bool HasLoadError => !string.IsNullOrEmpty(LoadError);
-    public bool ShowSkeleton => IsBusy && !_hasLoadedOnce && !HasLoadError;
-
     public ObservableCollection<InvoiceRowViewModel> Invoices { get; } = [];
 
     public InvoicesViewModel(IInvoiceService invoiceService)
@@ -58,62 +43,32 @@ public partial class InvoicesViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    public async Task ReloadAsync(CancellationToken ct = default)
+    public Task ReloadAsync(CancellationToken ct = default) => ExecuteLoadAsync(async token =>
     {
-        if (IsBusy) return;
-        var token = EnsureCancellationToken(ct);
-        IsBusy = true;
-        LoadError = null;
+        // Mapeo filtro UI → params del backend
+        string? type;
+        bool cancelled;
+        switch (ActiveFilter)
+        {
+            case "Servicio":
+                type = "SERVICE"; cancelled = false; break;
+            case "Venta":
+                type = "DELIVERY"; cancelled = false; break;
+            case "Anuladas":
+                type = null; cancelled = true; break;
+            default: // "Todas"
+                type = null; cancelled = false; break;
+        }
 
-        try
-        {
-            // Mapeo filtro UI → params del backend
-            string? type;
-            bool cancelled;
-            switch (ActiveFilter)
-            {
-                case "Servicio":
-                    type = "SERVICE"; cancelled = false; break;
-                case "Venta":
-                    type = "DELIVERY"; cancelled = false; break;
-                case "Anuladas":
-                    type = null; cancelled = true; break;
-                default: // "Todas"
-                    type = null; cancelled = false; break;
-            }
+        var invoices = await _invoiceService.ListAsync(
+            date: SelectedDate,
+            type: type,
+            mechanicId: null,
+            cancelled: cancelled,
+            ct: token);
 
-            var invoices = await _invoiceService.ListAsync(
-                date: SelectedDate,
-                type: type,
-                mechanicId: null,
-                cancelled: cancelled,
-                ct: token);
-
-            UpdateRows(invoices);
-            _hasLoadedOnce = true;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            return;
-        }
-        catch (ApiException ex)
-        {
-            LoadError = ex.Message;
-        }
-        catch (HttpRequestException)
-        {
-            LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
-        }
-        catch (TaskCanceledException)
-        {
-            LoadError = "El servidor tardó demasiado en responder";
-        }
-        finally
-        {
-            IsBusy = false;
-            OnPropertyChanged(nameof(ShowSkeleton));
-        }
-    }
+        UpdateRows(invoices);
+    }, ct);
 
     private void UpdateRows(IReadOnlyList<Invoice> invoices)
     {
@@ -143,7 +98,7 @@ public partial class InvoicesViewModel : BaseViewModel
                 BuyerTextColor = invoice.BuyerName is not null ? Color.FromArgb("#18170F") : Color.FromArgb("#9A9790"),
                 MechanicText = invoice.Mechanic?.Name?.Split(' ')[0] ?? "—",
                 MechanicTextColor = invoice.Mechanic is not null ? Color.FromArgb("#18170F") : Color.FromArgb("#9A9790"),
-                TotalText = FormatCurrency(invoice.TotalAmount),
+                TotalText = CurrencyFormatter.Format(invoice.TotalAmount),
                 StatusText = isCancelled ? "Anulada" : "Activa",
                 StatusBackgroundColor = isCancelled ? Color.FromArgb("#FCE8E8") : Color.FromArgb("#DFF0E8"),
                 StatusTextColor = isCancelled ? Color.FromArgb("#C0392B") : Color.FromArgb("#2A6E44"),
@@ -153,8 +108,6 @@ public partial class InvoicesViewModel : BaseViewModel
         }
     }
 
-    private static string FormatCurrency(decimal value)
-        => $"${value:N0}".Replace(",", ".");
 }
 
 public class InvoiceRowViewModel

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using ChepaMotos.Helpers;
 using ChepaMotos.Models;
 using ChepaMotos.Services.Domain;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -21,27 +22,6 @@ public partial class HomeViewModel : BaseViewModel
     [ObservableProperty] private bool _invoicesEmptyVisible = true;
     [ObservableProperty] private bool _mechanicsEmptyVisible = true;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsNotBusy))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
-    private bool _isBusy;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasLoadError))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
-    private string? _loadError;
-
-    private bool _hasLoadedOnce;
-
-    public bool IsNotBusy => !IsBusy;
-    public bool HasLoadError => !string.IsNullOrEmpty(LoadError);
-
-    /// <summary>
-    /// Solo mostramos el skeleton/spinner durante la primera carga; en recargas
-    /// posteriores el contenido ya está pintado y un overlay es ruidoso.
-    /// </summary>
-    public bool ShowSkeleton => IsBusy && !_hasLoadedOnce && !HasLoadError;
-
     public ObservableCollection<HomeInvoiceRowViewModel> InvoiceRows { get; } = [];
     public ObservableCollection<HomeMechanicRowViewModel> MechanicRows { get; } = [];
 
@@ -52,54 +32,22 @@ public partial class HomeViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    public async Task ReloadAsync(CancellationToken ct = default)
+    public Task ReloadAsync(CancellationToken ct = default) => ExecuteLoadAsync(async token =>
     {
-        if (IsBusy) return;
-        var token = EnsureCancellationToken(ct);
-        IsBusy = true;
-        LoadError = null;
+        var today = DateTime.Today;
+        var invoicesTask = _invoiceService.ListAsync(date: today, cancelled: false, ct: token);
+        var activeMechanicsTask = _mechanicService.ListAsync(active: true, ct: token);
+        var inactiveMechanicsTask = _mechanicService.ListAsync(active: false, ct: token);
+        await Task.WhenAll(invoicesTask, activeMechanicsTask, inactiveMechanicsTask);
 
-        try
-        {
-            var today = DateTime.Today;
-            var invoicesTask = _invoiceService.ListAsync(date: today, cancelled: false, ct: token);
-            var activeMechanicsTask = _mechanicService.ListAsync(active: true, ct: token);
-            var inactiveMechanicsTask = _mechanicService.ListAsync(active: false, ct: token);
-            await Task.WhenAll(invoicesTask, activeMechanicsTask, inactiveMechanicsTask);
+        var invoices = invoicesTask.Result;
+        var activeMechanics = activeMechanicsTask.Result;
+        var totalMechanicsCount = activeMechanics.Count + inactiveMechanicsTask.Result.Count;
 
-            var invoices = invoicesTask.Result;
-            var activeMechanics = activeMechanicsTask.Result;
-            var totalMechanicsCount = activeMechanics.Count + inactiveMechanicsTask.Result.Count;
-
-            UpdateKpis(invoices, activeMechanics.Count, totalMechanicsCount);
-            UpdateInvoicesList(invoices);
-            UpdateMechanicsList(invoices, activeMechanics);
-
-            _hasLoadedOnce = true;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            // Cancelado por desnavegación — no mostramos error.
-            return;
-        }
-        catch (ApiException ex)
-        {
-            LoadError = ex.Message;
-        }
-        catch (HttpRequestException)
-        {
-            LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
-        }
-        catch (TaskCanceledException)
-        {
-            LoadError = "El servidor tardó demasiado en responder";
-        }
-        finally
-        {
-            IsBusy = false;
-            OnPropertyChanged(nameof(ShowSkeleton));
-        }
-    }
+        UpdateKpis(invoices, activeMechanics.Count, totalMechanicsCount);
+        UpdateInvoicesList(invoices);
+        UpdateMechanicsList(invoices, activeMechanics);
+    }, ct);
 
     private void UpdateKpis(IReadOnlyList<Invoice> invoices, int activeMechanics, int totalMechanics)
     {
@@ -111,10 +59,10 @@ public partial class HomeViewModel : BaseViewModel
         var shopCut = serviceTotal * 0.30m;
         var avg = liveInvoices.Count > 0 ? total / liveInvoices.Count : 0m;
 
-        KpiTotalValue = FormatCurrency(total);
+        KpiTotalValue = CurrencyFormatter.Format(total);
         KpiTotalSubtitle = $"{liveInvoices.Count} facturas hoy";
-        KpiShopValue = FormatCurrency(shopCut);
-        KpiAvgValue = FormatCurrency(avg);
+        KpiShopValue = CurrencyFormatter.Format(shopCut);
+        KpiAvgValue = CurrencyFormatter.Format(avg);
         KpiMechanicsValue = activeMechanics.ToString();
         KpiMechanicsSubtitle = $"de {totalMechanics} registrados";
     }
@@ -139,7 +87,7 @@ public partial class HomeViewModel : BaseViewModel
                 BuyerText = invoice.BuyerName ?? "—",
                 MechanicText = invoice.Mechanic?.Name?.Split(' ')[0] ?? "—",
                 MechanicTextColor = invoice.Mechanic is null ? Color.FromArgb("#9A9790") : Color.FromArgb("#18170F"),
-                TotalText = FormatCurrency(invoice.TotalAmount),
+                TotalText = CurrencyFormatter.Format(invoice.TotalAmount),
                 TimeText = invoice.CreatedAt.ToString("HH:mm"),
                 RowOpacity = invoice.IsCancelled ? 0.5 : 1.0,
             });
@@ -168,9 +116,6 @@ public partial class HomeViewModel : BaseViewModel
 
         MechanicsEmptyVisible = MechanicRows.Count == 0;
     }
-
-    private static string FormatCurrency(decimal value)
-        => $"${value:N0}".Replace(",", ".");
 }
 
 public class HomeInvoiceRowViewModel

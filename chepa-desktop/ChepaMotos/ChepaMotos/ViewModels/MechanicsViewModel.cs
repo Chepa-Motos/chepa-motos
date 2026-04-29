@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using ChepaMotos.Helpers;
 using ChepaMotos.Models;
 using ChepaMotos.Services.Auth;
 using ChepaMotos.Services.Domain;
@@ -17,22 +18,6 @@ public partial class MechanicsViewModel : BaseViewModel
 
     [ObservableProperty]
     private bool _emptyVisible;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsNotBusy))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
-    private bool _isBusy;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasLoadError))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
-    private string? _loadError;
-
-    private bool _hasLoadedOnce;
-
-    public bool IsNotBusy => !IsBusy;
-    public bool HasLoadError => !string.IsNullOrEmpty(LoadError);
-    public bool ShowSkeleton => IsBusy && !_hasLoadedOnce && !HasLoadError;
 
     /// <summary>True solo si el rol es GERENTE; controla la visibilidad del botón de
     /// crear y la habilitación de los switches por fila.</summary>
@@ -60,50 +45,20 @@ public partial class MechanicsViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    public async Task ReloadAsync(CancellationToken ct = default)
+    public Task ReloadAsync(CancellationToken ct = default) => ExecuteLoadAsync(async token =>
     {
-        if (IsBusy) return;
-        var token = EnsureCancellationToken(ct);
-        IsBusy = true;
-        LoadError = null;
+        // Mecánicos (activos + inactivos) y facturas SERVICE de hoy en paralelo
+        // para calcular el subtítulo "X facturas hoy" por mecánico.
+        var mechanicsTask = _mechanicService.ListAllAsync(token);
+        var todayServiceTask = _invoiceService.ListAsync(
+            date: DateTime.Today,
+            type: "SERVICE",
+            cancelled: false,
+            ct: token);
+        await Task.WhenAll(mechanicsTask, todayServiceTask);
 
-        try
-        {
-            // Mecánicos (activos + inactivos) y facturas SERVICE de hoy en paralelo
-            // para calcular el subtítulo "X facturas hoy" por mecánico.
-            var mechanicsTask = _mechanicService.ListAllAsync(token);
-            var todayServiceTask = _invoiceService.ListAsync(
-                date: DateTime.Today,
-                type: "SERVICE",
-                cancelled: false,
-                ct: token);
-            await Task.WhenAll(mechanicsTask, todayServiceTask);
-
-            UpdateRows(mechanicsTask.Result, todayServiceTask.Result);
-            _hasLoadedOnce = true;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            return;
-        }
-        catch (ApiException ex)
-        {
-            LoadError = ex.Message;
-        }
-        catch (HttpRequestException)
-        {
-            LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
-        }
-        catch (TaskCanceledException)
-        {
-            LoadError = "El servidor tardó demasiado en responder";
-        }
-        finally
-        {
-            IsBusy = false;
-            OnPropertyChanged(nameof(ShowSkeleton));
-        }
-    }
+        UpdateRows(mechanicsTask.Result, todayServiceTask.Result);
+    }, ct);
 
     public async Task AddMechanicAsync(string name, CancellationToken ct = default)
     {
@@ -238,8 +193,8 @@ public partial class MechanicsViewModel : BaseViewModel
             if (mech.IsActive && counts.TryGetValue(mech.Id, out var data))
             {
                 subtitle = data.Count == 1
-                    ? $"1 factura hoy · {FormatCurrency(data.Total)}"
-                    : $"{data.Count} facturas hoy · {FormatCurrency(data.Total)}";
+                    ? $"1 factura hoy · {CurrencyFormatter.Format(data.Total)}"
+                    : $"{data.Count} facturas hoy · {CurrencyFormatter.Format(data.Total)}";
             }
             else if (mech.IsActive)
             {
@@ -267,9 +222,6 @@ public partial class MechanicsViewModel : BaseViewModel
 
         EmptyVisible = Mechanics.Count == 0;
     }
-
-    private static string FormatCurrency(decimal value)
-        => $"${value:N0}".Replace(",", ".");
 }
 
 public class MechanicRowViewModel

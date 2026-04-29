@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using ChepaMotos.Helpers;
 using ChepaMotos.Models;
 using ChepaMotos.Services.Auth;
 using ChepaMotos.Services.Domain;
@@ -27,24 +28,8 @@ public partial class LiquidationsViewModel : BaseViewModel
     private bool _emptyVisible;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsNotBusy))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
-    private bool _isBusy;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasLoadError))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
-    private string? _loadError;
-
-    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LiquidateButtonText))]
     private bool _isLiquidating;
-
-    private bool _hasLoadedOnce;
-
-    public bool IsNotBusy => !IsBusy;
-    public bool HasLoadError => !string.IsNullOrEmpty(LoadError);
-    public bool ShowSkeleton => IsBusy && !_hasLoadedOnce && !HasLoadError;
 
     /// <summary>True solo si el usuario tiene rol GERENTE; controla la visibilidad del botón "Liquidar día".</summary>
     public bool IsManager { get; }
@@ -78,41 +63,11 @@ public partial class LiquidationsViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    public async Task ReloadAsync(CancellationToken ct = default)
+    public Task ReloadAsync(CancellationToken ct = default) => ExecuteLoadAsync(async token =>
     {
-        if (IsBusy) return;
-        var token = EnsureCancellationToken(ct);
-        IsBusy = true;
-        LoadError = null;
-
-        try
-        {
-            var liquidations = await _liquidationService.ListAsync(date: SelectedDate, ct: token);
-            UpdateRows(liquidations);
-            _hasLoadedOnce = true;
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-            return;
-        }
-        catch (ApiException ex)
-        {
-            LoadError = ex.Message;
-        }
-        catch (HttpRequestException)
-        {
-            LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
-        }
-        catch (TaskCanceledException)
-        {
-            LoadError = "El servidor tardó demasiado en responder";
-        }
-        finally
-        {
-            IsBusy = false;
-            OnPropertyChanged(nameof(ShowSkeleton));
-        }
-    }
+        var liquidations = await _liquidationService.ListAsync(date: SelectedDate, ct: token);
+        UpdateRows(liquidations);
+    }, ct);
 
     [RelayCommand]
     public async Task LiquidateDayAsync(CancellationToken ct = default)
@@ -178,9 +133,9 @@ public partial class LiquidationsViewModel : BaseViewModel
     {
         var ordered = liquidations.OrderBy(l => l.Mechanic?.Name).ToList();
 
-        SummaryTotalText = FormatCurrency(ordered.Sum(l => l.TotalRevenue));
-        SummaryMechanicText = FormatCurrency(ordered.Sum(l => l.MechanicShare));
-        SummaryShopText = FormatCurrency(ordered.Sum(l => l.ShopShare));
+        SummaryTotalText = CurrencyFormatter.Format(ordered.Sum(l => l.TotalRevenue));
+        SummaryMechanicText = CurrencyFormatter.Format(ordered.Sum(l => l.MechanicShare));
+        SummaryShopText = CurrencyFormatter.Format(ordered.Sum(l => l.ShopShare));
 
         LiquidationRows.Clear();
         foreach (var liq in ordered)
@@ -191,17 +146,15 @@ public partial class LiquidationsViewModel : BaseViewModel
                 DateText = liq.Date,
                 MechanicName = liq.Mechanic?.Name?.Split(' ')[0] ?? "—",
                 InvoiceCountText = liq.InvoiceCount.ToString(),
-                TotalRevenueText = FormatCurrency(liq.TotalRevenue),
-                MechanicShareText = FormatCurrency(liq.MechanicShare),
-                ShopShareText = FormatCurrency(liq.ShopShare),
+                TotalRevenueText = CurrencyFormatter.Format(liq.TotalRevenue),
+                MechanicShareText = CurrencyFormatter.Format(liq.MechanicShare),
+                ShopShareText = CurrencyFormatter.Format(liq.ShopShare),
             });
         }
 
         EmptyVisible = LiquidationRows.Count == 0;
     }
 
-    private static string FormatCurrency(decimal value)
-        => $"${value:N0}".Replace(",", ".");
 }
 
 public class LiquidationRowViewModel
