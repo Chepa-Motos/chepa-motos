@@ -15,7 +15,6 @@ public sealed class ApiClient : IApiClient
     private readonly ITokenStore _tokenStore;
     private readonly IAuthService _authService;
     private readonly IAuthState _authState;
-    private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     public ApiClient(
         IHttpClientFactory httpClientFactory,
@@ -110,7 +109,10 @@ public sealed class ApiClient : IApiClient
         if (bodyJson is not null)
             request.Content = new StringContent(bodyJson, Encoding.UTF8, "application/json");
 
-        var accessToken = await _tokenStore.GetAccessTokenAsync();
+        // GetValidAccessTokenAsync lee de cache en memoria y dispara refresh
+        // proactivo si quedan menos de 60s. Evita el round-trip a SecureStorage
+        // por cada request.
+        var accessToken = await _authService.GetValidAccessTokenAsync(ct);
         if (!string.IsNullOrEmpty(accessToken))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
@@ -137,51 +139,38 @@ public sealed class ApiClient : IApiClient
     }
 
     /// <summary>
-    /// Refresh con candado para evitar dos refreshes concurrentes cuando varias
-    /// requests reciben 401 al mismo tiempo. Si el refresh falla con error de la
-    /// API, propaga <see cref="IAuthState.RaiseSessionExpired"/>; si falla por red
-    /// devuelve <c>false</c> sin tocar el estado (la request original fallará con
-    /// su propio error).
+    /// Refresh reactivo tras 401. La coordinación entre múltiples requests
+    /// concurrentes que disparan refresh la maneja <see cref="IAuthService.RefreshAsync"/>
+    /// internamente con su propio lock — aquí solo lo invocamos. Si el refresh
+    /// falla con error de la API, propagamos <see cref="IAuthState.RaiseSessionExpired"/>;
+    /// si falla por red devolvemos <c>false</c> y la request original lanza su error.
     /// </summary>
     private async Task<bool> TryRefreshAsync(CancellationToken ct)
     {
-        var refreshTokenBeforeWait = await _tokenStore.GetRefreshTokenAsync();
-        if (string.IsNullOrEmpty(refreshTokenBeforeWait))
+        var refreshToken = await _tokenStore.GetRefreshTokenAsync();
+        if (string.IsNullOrEmpty(refreshToken))
         {
             _authState.RaiseSessionExpired();
             return false;
         }
 
-        await _refreshLock.WaitAsync(ct);
         try
         {
-            // Otra request pudo haber refrescado mientras esperábamos el lock.
-            var currentRefresh = await _tokenStore.GetRefreshTokenAsync();
-            if (!string.IsNullOrEmpty(currentRefresh) && currentRefresh != refreshTokenBeforeWait)
-                return true;
-
-            try
-            {
-                await _authService.RefreshAsync(currentRefresh ?? refreshTokenBeforeWait, ct);
-                return true;
-            }
-            catch (ApiException)
-            {
-                _authState.RaiseSessionExpired();
-                return false;
-            }
-            catch (HttpRequestException)
-            {
-                return false;
-            }
-            catch (TaskCanceledException)
-            {
-                return false;
-            }
+            await _authService.RefreshAsync(refreshToken, ct);
+            return true;
         }
-        finally
+        catch (ApiException)
         {
-            _refreshLock.Release();
+            _authState.RaiseSessionExpired();
+            return false;
+        }
+        catch (HttpRequestException)
+        {
+            return false;
+        }
+        catch (TaskCanceledException)
+        {
+            return false;
         }
     }
 

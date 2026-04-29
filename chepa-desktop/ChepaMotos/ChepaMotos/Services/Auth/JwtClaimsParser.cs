@@ -13,16 +13,19 @@ namespace ChepaMotos.Services.Auth;
 /// </summary>
 public static class JwtClaimsParser
 {
-    public readonly record struct JwtClaims(string? Username, IReadOnlyList<string> Roles);
+    public readonly record struct JwtClaims(
+        string? Username,
+        IReadOnlyList<string> Roles,
+        DateTimeOffset? ExpiresAt);
 
     public static JwtClaims Parse(string? jwt)
     {
         if (string.IsNullOrWhiteSpace(jwt))
-            return new JwtClaims(null, Array.Empty<string>());
+            return new JwtClaims(null, Array.Empty<string>(), null);
 
         var parts = jwt.Split('.');
         if (parts.Length < 2)
-            return new JwtClaims(null, Array.Empty<string>());
+            return new JwtClaims(null, Array.Empty<string>(), null);
 
         try
         {
@@ -37,11 +40,19 @@ public static class JwtClaimsParser
             AppendRoles(root, "roles", roles);
             AppendRoles(root, "authorities", roles);
 
-            return new JwtClaims(username, roles);
+            DateTimeOffset? expiresAt = null;
+            if (root.TryGetProperty("exp", out var exp)
+                && exp.ValueKind == JsonValueKind.Number
+                && exp.TryGetInt64(out var expSeconds))
+            {
+                expiresAt = DateTimeOffset.FromUnixTimeSeconds(expSeconds);
+            }
+
+            return new JwtClaims(username, roles, expiresAt);
         }
         catch
         {
-            return new JwtClaims(null, Array.Empty<string>());
+            return new JwtClaims(null, Array.Empty<string>(), null);
         }
     }
 

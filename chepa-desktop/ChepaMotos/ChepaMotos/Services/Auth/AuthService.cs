@@ -9,14 +9,36 @@ namespace ChepaMotos.Services.Auth;
 /// directamente (no <see cref="Api.IApiClient"/>) para evitar el ciclo de DI:
 /// <c>ApiClient → AuthService.RefreshAsync</c> ya implica una dependencia, y si
 /// además <c>AuthService → ApiClient</c>, el contenedor falla al resolver.
+///
+/// Mantiene el access token en memoria con su <c>exp</c> parseado del JWT,
+/// para que cada request del <see cref="Api.ApiClient"/> no tenga que ir a
+/// <c>SecureStorage</c> y para refrescar proactivamente cuando le quedan
+/// menos de 60 segundos.
 /// </summary>
 public sealed class AuthService : IAuthService
 {
     private static readonly JsonSerializerOptions JsonOptions = new();
 
+    /// <summary>
+    /// Margen de seguridad: si el token expira en menos de este intervalo,
+    /// disparamos refresh proactivo antes de devolverlo. 60s es suficiente
+    /// para que la request en curso termine antes de la expiración real.
+    /// </summary>
+    private static readonly TimeSpan ProactiveRefreshThreshold = TimeSpan.FromSeconds(60);
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ITokenStore _tokenStore;
     private readonly IAuthState _authState;
+
+    /// <summary>Lock para evitar dos refreshes concurrentes (proactivo + reactivo).</summary>
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
+
+    /// <summary>Cache en memoria del access token actual.</summary>
+    private string? _cachedAccessToken;
+    private DateTimeOffset? _accessExpiresAt;
+
+    /// <summary>True después del primer intento de leer SecureStorage (con o sin éxito).</summary>
+    private bool _restoredFromStorage;
 
     public AuthService(IHttpClientFactory httpClientFactory, ITokenStore tokenStore, IAuthState authState)
     {
@@ -32,23 +54,43 @@ public sealed class AuthService : IAuthService
             new LoginRequest { Username = username, Password = password },
             ct);
 
-        await _tokenStore.SaveTokensAsync(tokens.AccessToken, tokens.RefreshToken);
-        PublishSessionFromAccessToken(tokens.AccessToken, fallbackUsername: username);
-
+        await PersistAndCacheAsync(tokens, fallbackUsername: username);
         return tokens;
     }
 
     public async Task<AuthTokens> RefreshAsync(string refreshToken, CancellationToken ct = default)
     {
-        var tokens = await PostAsync<AuthTokens>(
-            "auth/refresh",
-            new RefreshTokenRequest { RefreshToken = refreshToken },
-            ct);
+        await _refreshLock.WaitAsync(ct);
+        try
+        {
+            // Otro caller pudo haber refrescado mientras esperábamos el lock.
+            // Si el refresh token actual ya no es el que recibimos, devolvemos
+            // el access token actual sin volver a llamar al backend (el viejo
+            // refresh token ya está rotado y rechazado).
+            var current = await _tokenStore.GetRefreshTokenAsync();
+            if (!string.IsNullOrEmpty(current) && current != refreshToken && _cachedAccessToken is not null)
+            {
+                return new AuthTokens
+                {
+                    AccessToken = _cachedAccessToken,
+                    RefreshToken = current,
+                    TokenType = "Bearer",
+                    ExpiresIn = (long)((_accessExpiresAt ?? DateTimeOffset.UtcNow) - DateTimeOffset.UtcNow).TotalSeconds,
+                };
+            }
 
-        await _tokenStore.SaveTokensAsync(tokens.AccessToken, tokens.RefreshToken);
-        PublishSessionFromAccessToken(tokens.AccessToken, fallbackUsername: _authState.Username ?? string.Empty);
+            var tokens = await PostAsync<AuthTokens>(
+                "auth/refresh",
+                new RefreshTokenRequest { RefreshToken = refreshToken },
+                ct);
 
-        return tokens;
+            await PersistAndCacheAsync(tokens, fallbackUsername: _authState.Username ?? string.Empty);
+            return tokens;
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
     }
 
     public async Task LogoutAsync(CancellationToken ct = default)
@@ -69,26 +111,91 @@ public sealed class AuthService : IAuthService
         }
 
         await _tokenStore.ClearAsync();
+        ClearCache();
         _authState.RaiseLoggedOut();
     }
 
     public async Task TryRestoreSessionAsync(CancellationToken ct = default)
     {
         var accessToken = await _tokenStore.GetAccessTokenAsync();
+        _restoredFromStorage = true;
         if (string.IsNullOrEmpty(accessToken))
             return;
 
-        PublishSessionFromAccessToken(accessToken, fallbackUsername: string.Empty);
+        var claims = JwtClaimsParser.Parse(accessToken);
+        _cachedAccessToken = accessToken;
+        _accessExpiresAt = claims.ExpiresAt;
+        PublishSession(claims, fallbackUsername: string.Empty);
     }
 
-    private void PublishSessionFromAccessToken(string accessToken, string fallbackUsername)
+    public async Task<string?> GetValidAccessTokenAsync(CancellationToken ct = default)
     {
-        var claims = JwtClaimsParser.Parse(accessToken);
+        // Lazy load del SecureStorage la primera vez (la app pudo arrancar sin
+        // pasar por TryRestoreSessionAsync — ej. continuar sin sesión y luego
+        // hacer login).
+        if (!_restoredFromStorage)
+            await TryRestoreSessionAsync(ct);
+
+        if (string.IsNullOrEmpty(_cachedAccessToken))
+            return null;
+
+        // Si no tenemos info de expiración o aún tenemos margen, devolvemos directo.
+        if (_accessExpiresAt is null
+            || _accessExpiresAt.Value - DateTimeOffset.UtcNow > ProactiveRefreshThreshold)
+        {
+            return _cachedAccessToken;
+        }
+
+        // Refresh proactivo. Si falla, devolvemos el token caché tal cual —
+        // el ApiClient lo intentará igualmente y caerá al refresh reactivo
+        // del 401 si hace falta.
+        var refreshToken = await _tokenStore.GetRefreshTokenAsync();
+        if (string.IsNullOrEmpty(refreshToken))
+            return _cachedAccessToken;
+
+        try
+        {
+            var tokens = await RefreshAsync(refreshToken, ct);
+            return tokens.AccessToken;
+        }
+        catch (ApiException)
+        {
+            return _cachedAccessToken;
+        }
+        catch (HttpRequestException)
+        {
+            return _cachedAccessToken;
+        }
+        catch (TaskCanceledException)
+        {
+            return _cachedAccessToken;
+        }
+    }
+
+    private async Task PersistAndCacheAsync(AuthTokens tokens, string fallbackUsername)
+    {
+        await _tokenStore.SaveTokensAsync(tokens.AccessToken, tokens.RefreshToken);
+        var claims = JwtClaimsParser.Parse(tokens.AccessToken);
+        _cachedAccessToken = tokens.AccessToken;
+        _accessExpiresAt = claims.ExpiresAt;
+        _restoredFromStorage = true;
+        PublishSession(claims, fallbackUsername);
+    }
+
+    private void PublishSession(JwtClaimsParser.JwtClaims claims, string fallbackUsername)
+    {
         var username = !string.IsNullOrWhiteSpace(claims.Username) ? claims.Username! : fallbackUsername;
         if (string.IsNullOrWhiteSpace(username))
             return;
-
         _authState.SetSession(username, claims.Roles);
+    }
+
+    private void ClearCache()
+    {
+        _cachedAccessToken = null;
+        _accessExpiresAt = null;
+        // _restoredFromStorage se queda en true: SecureStorage está vacío,
+        // no necesitamos releer.
     }
 
     private async Task<T> PostAsync<T>(string path, object body, CancellationToken ct)

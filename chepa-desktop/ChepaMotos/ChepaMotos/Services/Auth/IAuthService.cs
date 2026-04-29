@@ -30,4 +30,12 @@ public interface IAuthService
     /// publica en <see cref="IAuthState"/>). Llamar al arrancar la app.
     /// </summary>
     Task TryRestoreSessionAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Devuelve un access token vigente. Si la cache en memoria está vacía,
+    /// la rellena desde <c>SecureStorage</c>. Si al token le quedan menos de
+    /// 60 segundos, dispara un refresh transparente antes de devolver. Si no
+    /// hay sesión, retorna <c>null</c> (no lanza excepción).
+    /// </summary>
+    Task<string?> GetValidAccessTokenAsync(CancellationToken ct = default);
 }
