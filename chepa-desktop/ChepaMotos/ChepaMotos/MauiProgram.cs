@@ -34,10 +34,16 @@ namespace ChepaMotos
                     fonts.AddFont("IBMPlexMono-SemiBold.ttf", "IBMPlexMonoSemiBold");
                 });
 
+            // Configuración leída desde Resources/Raw/appsettings.json con override
+            // opcional desde %LOCALAPPDATA%/ChepaMotos/appsettings.json. Resolvemos
+            // antes del AddHttpClient para que la BaseUrl/Timeout vengan del JSON.
+            var appConfig = Config.AppConfig.Load();
+            builder.Services.AddSingleton<IAppConfig>(appConfig);
+
             builder.Services.AddHttpClient(ApiHttpClientName, client =>
             {
-                client.BaseAddress = new Uri(AppConfig.BaseUrl.TrimEnd('/') + "/");
-                client.Timeout = TimeSpan.FromSeconds(15);
+                client.BaseAddress = new Uri(appConfig.BaseUrl.TrimEnd('/') + "/");
+                client.Timeout = TimeSpan.FromSeconds(appConfig.TimeoutSeconds);
             });
 
             // Auth + ApiClient (singletons: estado de sesión y candado de refresh deben ser compartidos)
