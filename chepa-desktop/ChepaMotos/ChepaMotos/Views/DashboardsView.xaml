@@ -8,28 +8,55 @@
         <Label Text="Dashboards"
                Style="{StaticResource PageHeading}" />
 
-        <!-- Placeholder for Metabase WebView -->
         <Border Stroke="{StaticResource Border}"
                 StrokeShape="RoundRectangle 8"
                 StrokeThickness="1"
                 BackgroundColor="{StaticResource Surface}"
                 HeightRequest="500"
                 Padding="0">
-            <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="8">
-                <Label Text="📊"
-                       FontSize="48"
-                       HorizontalTextAlignment="Center" />
-                <Label Text="Metabase Dashboard"
-                       FontFamily="IBMPlexSansSemiBold"
-                       FontSize="16"
-                       TextColor="{StaticResource TextSecondary}"
-                       HorizontalTextAlignment="Center" />
-                <Label Text="WebView se cargará aquí con los dashboards de Metabase"
-                       FontFamily="IBMPlexSans"
-                       FontSize="13"
-                       TextColor="{StaticResource TextMuted}"
-                       HorizontalTextAlignment="Center" />
-            </VerticalStackLayout>
+            <Grid>
+                <WebView x:Name="MetabaseWebView"
+                         Navigating="OnMetabaseNavigating"
+                         Navigated="OnMetabaseNavigated" />
+
+                <VerticalStackLayout x:Name="LoadingState"
+                                     IsVisible="True"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="8">
+                    <ActivityIndicator IsRunning="True"
+                                       Color="{StaticResource Accent}"
+                                       WidthRequest="24"
+                                       HeightRequest="24" />
+                    <Label Text="Cargando dashboard de Metabase..."
+                           FontFamily="IBMPlexSans"
+                           FontSize="13"
+                           TextColor="{StaticResource TextMuted}"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="ErrorState"
+                                     IsVisible="False"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Spacing="8"
+                                     Padding="20">
+                    <Label Text="No se pudo cargar Metabase"
+                           FontFamily="IBMPlexSansSemiBold"
+                           FontSize="16"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalTextAlignment="Center" />
+                    <Label x:Name="ErrorText"
+                           Text=""
+                           FontFamily="IBMPlexSans"
+                           FontSize="13"
+                           TextColor="{StaticResource TextMuted}"
+                           HorizontalTextAlignment="Center" />
+                    <Button Text="Reintentar"
+                            Clicked="OnRetryClicked"
+                            Style="{StaticResource CtaAccentButton}" />
+                </VerticalStackLayout>
+            </Grid>
         </Border>
 
     </VerticalStackLayout>

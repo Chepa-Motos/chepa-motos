@@ -55,8 +55,8 @@ public partial class HomeViewModel : BaseViewModel
         // local por si en el futuro la consulta cambia.
         var liveInvoices = invoices.Where(i => !i.IsCancelled).ToList();
         var total = liveInvoices.Sum(i => i.TotalAmount);
-        var serviceTotal = liveInvoices.Where(i => i.InvoiceType == "SERVICE").Sum(i => i.TotalAmount);
-        var shopCut = serviceTotal * 0.30m;
+        var totalRevenue = liveInvoices.Sum(i => i.LaborAmount);
+        var shopCut = totalRevenue * 0.30m;
         var avg = liveInvoices.Count > 0 ? total / liveInvoices.Count : 0m;
 
         KpiTotalValue = CurrencyFormatter.Format(total);

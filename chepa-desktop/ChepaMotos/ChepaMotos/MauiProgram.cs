@@ -71,6 +71,7 @@ namespace ChepaMotos
             builder.Services.AddTransient<HomeView>();
             builder.Services.AddTransient<InvoicesView>();
             builder.Services.AddTransient<LiquidationsView>();
+            builder.Services.AddTransient<DashboardsView>();
             builder.Services.AddTransient<MechanicsView>();
             builder.Services.AddTransient<ServiceInvoicePage>();
             builder.Services.AddTransient<DeliveryInvoicePage>();

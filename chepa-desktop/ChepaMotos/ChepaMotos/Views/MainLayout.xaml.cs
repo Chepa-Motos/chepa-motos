@@ -108,7 +108,7 @@ public partial class MainLayout : ContentPage
             "Inicio" => _services.GetRequiredService<HomeView>(),
             "Facturas" => _services.GetRequiredService<InvoicesView>(),
             "Liquidaciones" => _services.GetRequiredService<LiquidationsView>(),
-            "Dashboards" => new DashboardsView(),
+            "Dashboards" => _services.GetRequiredService<DashboardsView>(),
             "Mecanicos" => _services.GetRequiredService<MechanicsView>(),
             _ => _services.GetRequiredService<HomeView>(),
         };
@@ -175,6 +175,7 @@ public partial class MainLayout : ContentPage
         {
             "Facturas" => _services.GetRequiredService<InvoicesView>(),
             "Liquidaciones" => _services.GetRequiredService<LiquidationsView>(),
+            "Dashboards" => _services.GetRequiredService<DashboardsView>(),
             "Mecanicos" => _services.GetRequiredService<MechanicsView>(),
             "Inicio" => _services.GetRequiredService<HomeView>(),
             _ => ContentArea.Content,
