@@ -7,7 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace ChepaMotos.ViewModels;
 
-public partial class LiquidationsViewModel : ObservableObject
+public partial class LiquidationsViewModel : BaseViewModel
 {
     private readonly ILiquidationService _liquidationService;
 
@@ -81,14 +81,19 @@ public partial class LiquidationsViewModel : ObservableObject
     public async Task ReloadAsync(CancellationToken ct = default)
     {
         if (IsBusy) return;
+        var token = EnsureCancellationToken(ct);
         IsBusy = true;
         LoadError = null;
 
         try
         {
-            var liquidations = await _liquidationService.ListAsync(date: SelectedDate, ct: ct);
+            var liquidations = await _liquidationService.ListAsync(date: SelectedDate, ct: token);
             UpdateRows(liquidations);
             _hasLoadedOnce = true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return;
         }
         catch (ApiException ex)
         {
@@ -98,7 +103,7 @@ public partial class LiquidationsViewModel : ObservableObject
         {
             LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
         }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        catch (TaskCanceledException)
         {
             LoadError = "El servidor tardó demasiado en responder";
         }
@@ -114,24 +119,29 @@ public partial class LiquidationsViewModel : ObservableObject
     {
         if (IsLiquidating || !IsManager) return;
 
+        var token = EnsureCancellationToken(ct);
         IsLiquidating = true;
         try
         {
             var liquidated = await _liquidationService.CreateAsync(
                 date: SelectedDate,
                 mechanicId: null,
-                ct: ct);
+                ct: token);
 
             // Refrescamos la lista para que aparezcan las nuevas liquidaciones.
-            await ReloadAsync(ct);
+            await ReloadAsync(token);
 
             LiquidationCompleted?.Invoke(this, new LiquidationCompletedEventArgs(liquidated.Count, SelectedDate));
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return;
         }
         catch (ApiException ex) when (ex.Code == ApiErrorCodes.LiquidationAlreadyExists)
         {
             // Algunos mecánicos ya estaban liquidados para esta fecha. Refrescamos
             // para mostrar el estado real y avisamos al usuario.
-            await ReloadAsync(ct);
+            await ReloadAsync(token);
             LiquidationFailed?.Invoke(this, new LiquidationFailedEventArgs(
                 "Ya existe una liquidación",
                 "Algún mecánico ya fue liquidado para esta fecha. Revisa la tabla."));
@@ -152,7 +162,7 @@ public partial class LiquidationsViewModel : ObservableObject
                 "Sin conexión",
                 "No se pudo conectar al servidor. Inténtalo de nuevo."));
         }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        catch (TaskCanceledException)
         {
             LiquidationFailed?.Invoke(this, new LiquidationFailedEventArgs(
                 "Tiempo agotado",

@@ -6,7 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace ChepaMotos.ViewModels;
 
-public partial class InvoicesViewModel : ObservableObject
+public partial class InvoicesViewModel : BaseViewModel
 {
     private readonly IInvoiceService _invoiceService;
 
@@ -61,6 +61,7 @@ public partial class InvoicesViewModel : ObservableObject
     public async Task ReloadAsync(CancellationToken ct = default)
     {
         if (IsBusy) return;
+        var token = EnsureCancellationToken(ct);
         IsBusy = true;
         LoadError = null;
 
@@ -86,10 +87,14 @@ public partial class InvoicesViewModel : ObservableObject
                 type: type,
                 mechanicId: null,
                 cancelled: cancelled,
-                ct: ct);
+                ct: token);
 
             UpdateRows(invoices);
             _hasLoadedOnce = true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return;
         }
         catch (ApiException ex)
         {
@@ -99,7 +104,7 @@ public partial class InvoicesViewModel : ObservableObject
         {
             LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
         }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        catch (TaskCanceledException)
         {
             LoadError = "El servidor tardó demasiado en responder";
         }

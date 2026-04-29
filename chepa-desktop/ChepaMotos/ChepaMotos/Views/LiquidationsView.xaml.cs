@@ -28,6 +28,10 @@ public partial class LiquidationsView : ContentView
             _hasMounted = true;
             _ = _viewModel.ReloadAsync();
         }
+        else if (Handler is null)
+        {
+            _viewModel.CancelOngoingOperation();
+        }
     }
 
     private void OnDateSelected(object? sender, DateChangedEventArgs e)

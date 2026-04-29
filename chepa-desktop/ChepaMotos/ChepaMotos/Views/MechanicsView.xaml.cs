@@ -28,6 +28,10 @@ public partial class MechanicsView : ContentView
             _hasMounted = true;
             _ = _viewModel.ReloadAsync();
         }
+        else if (Handler is null)
+        {
+            _viewModel.CancelOngoingOperation();
+        }
     }
 
     private async void OnAddMechanicClicked(object? sender, EventArgs e)

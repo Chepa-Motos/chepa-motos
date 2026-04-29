@@ -6,7 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace ChepaMotos.ViewModels;
 
-public partial class HomeViewModel : ObservableObject
+public partial class HomeViewModel : BaseViewModel
 {
     private readonly IInvoiceService _invoiceService;
     private readonly IMechanicService _mechanicService;
@@ -55,15 +55,16 @@ public partial class HomeViewModel : ObservableObject
     public async Task ReloadAsync(CancellationToken ct = default)
     {
         if (IsBusy) return;
+        var token = EnsureCancellationToken(ct);
         IsBusy = true;
         LoadError = null;
 
         try
         {
             var today = DateTime.Today;
-            var invoicesTask = _invoiceService.ListAsync(date: today, cancelled: false, ct: ct);
-            var activeMechanicsTask = _mechanicService.ListAsync(active: true, ct: ct);
-            var inactiveMechanicsTask = _mechanicService.ListAsync(active: false, ct: ct);
+            var invoicesTask = _invoiceService.ListAsync(date: today, cancelled: false, ct: token);
+            var activeMechanicsTask = _mechanicService.ListAsync(active: true, ct: token);
+            var inactiveMechanicsTask = _mechanicService.ListAsync(active: false, ct: token);
             await Task.WhenAll(invoicesTask, activeMechanicsTask, inactiveMechanicsTask);
 
             var invoices = invoicesTask.Result;
@@ -76,6 +77,11 @@ public partial class HomeViewModel : ObservableObject
 
             _hasLoadedOnce = true;
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Cancelado por desnavegación — no mostramos error.
+            return;
+        }
         catch (ApiException ex)
         {
             LoadError = ex.Message;
@@ -84,7 +90,7 @@ public partial class HomeViewModel : ObservableObject
         {
             LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
         }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        catch (TaskCanceledException)
         {
             LoadError = "El servidor tardó demasiado en responder";
         }

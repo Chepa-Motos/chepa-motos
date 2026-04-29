@@ -7,7 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace ChepaMotos.ViewModels;
 
-public partial class MechanicsViewModel : ObservableObject
+public partial class MechanicsViewModel : BaseViewModel
 {
     private readonly IMechanicService _mechanicService;
     private readonly IInvoiceService _invoiceService;
@@ -63,6 +63,7 @@ public partial class MechanicsViewModel : ObservableObject
     public async Task ReloadAsync(CancellationToken ct = default)
     {
         if (IsBusy) return;
+        var token = EnsureCancellationToken(ct);
         IsBusy = true;
         LoadError = null;
 
@@ -70,16 +71,20 @@ public partial class MechanicsViewModel : ObservableObject
         {
             // Mecánicos (activos + inactivos) y facturas SERVICE de hoy en paralelo
             // para calcular el subtítulo "X facturas hoy" por mecánico.
-            var mechanicsTask = _mechanicService.ListAllAsync(ct);
+            var mechanicsTask = _mechanicService.ListAllAsync(token);
             var todayServiceTask = _invoiceService.ListAsync(
                 date: DateTime.Today,
                 type: "SERVICE",
                 cancelled: false,
-                ct: ct);
+                ct: token);
             await Task.WhenAll(mechanicsTask, todayServiceTask);
 
             UpdateRows(mechanicsTask.Result, todayServiceTask.Result);
             _hasLoadedOnce = true;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return;
         }
         catch (ApiException ex)
         {
@@ -89,7 +94,7 @@ public partial class MechanicsViewModel : ObservableObject
         {
             LoadError = "No se pudo conectar al servidor. Verifica que esté encendido.";
         }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        catch (TaskCanceledException)
         {
             LoadError = "El servidor tardó demasiado en responder";
         }
@@ -114,11 +119,16 @@ public partial class MechanicsViewModel : ObservableObject
         if (string.IsNullOrEmpty(trimmed))
             return;
 
+        var token = EnsureCancellationToken(ct);
         try
         {
-            var created = await _mechanicService.CreateAsync(trimmed, ct);
-            await ReloadAsync(ct);
+            var created = await _mechanicService.CreateAsync(trimmed, token);
+            await ReloadAsync(token);
             MechanicAdded?.Invoke(this, created.Name);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return;
         }
         catch (ApiException ex) when (ex.Code == ApiErrorCodes.Forbidden)
         {
@@ -138,7 +148,7 @@ public partial class MechanicsViewModel : ObservableObject
                 "Sin conexión",
                 "No se pudo conectar al servidor."));
         }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        catch (TaskCanceledException)
         {
             OperationFailed?.Invoke(this, new MechanicOperationFailedEventArgs(
                 "Tiempo agotado",
@@ -158,43 +168,48 @@ public partial class MechanicsViewModel : ObservableObject
             return;
         }
 
+        var token = EnsureCancellationToken(ct);
         try
         {
-            var updated = await _mechanicService.UpdateStatusAsync(mechanicId, isActive, ct);
-            await ReloadAsync(ct);
+            var updated = await _mechanicService.UpdateStatusAsync(mechanicId, isActive, token);
+            await ReloadAsync(token);
             MechanicStatusChanged?.Invoke(this, new MechanicStatusChangedEventArgs(updated.Name, updated.IsActive));
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return;
         }
         catch (ApiException ex) when (ex.Code == ApiErrorCodes.Forbidden)
         {
-            await ReloadAsync(ct);
+            await ReloadAsync(token);
             OperationFailed?.Invoke(this, new MechanicOperationFailedEventArgs(
                 "Sin permisos",
                 "Solo el rol GERENTE puede activar o desactivar mecánicos."));
         }
         catch (ApiException ex) when (ex.Code == ApiErrorCodes.MechanicNotFound)
         {
-            await ReloadAsync(ct);
+            await ReloadAsync(token);
             OperationFailed?.Invoke(this, new MechanicOperationFailedEventArgs(
                 "Mecánico no encontrado",
                 "Este mecánico ya no existe en el servidor."));
         }
         catch (ApiException ex)
         {
-            await ReloadAsync(ct);
+            await ReloadAsync(token);
             OperationFailed?.Invoke(this, new MechanicOperationFailedEventArgs(
                 "No se pudo actualizar el estado",
                 ex.Message));
         }
         catch (HttpRequestException)
         {
-            await ReloadAsync(ct);
+            await ReloadAsync(token);
             OperationFailed?.Invoke(this, new MechanicOperationFailedEventArgs(
                 "Sin conexión",
                 "No se pudo conectar al servidor."));
         }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        catch (TaskCanceledException)
         {
-            await ReloadAsync(ct);
+            await ReloadAsync(token);
             OperationFailed?.Invoke(this, new MechanicOperationFailedEventArgs(
                 "Tiempo agotado",
                 "El servidor tardó demasiado en responder."));

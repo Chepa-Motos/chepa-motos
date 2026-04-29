@@ -27,6 +27,11 @@ public partial class InvoicesView : ContentView
             _hasMounted = true;
             _ = _viewModel.ReloadAsync();
         }
+        else if (Handler is null)
+        {
+            // Desnavegación: cancelamos requests pendientes.
+            _viewModel.CancelOngoingOperation();
+        }
     }
 
     private void OnDateSelected(object? sender, DateChangedEventArgs e)

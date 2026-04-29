@@ -42,10 +42,16 @@ public partial class HomeView : ContentView
                 _ = _viewModel.ReloadAsync();
             }
         }
-        else if (Handler is null && _timer is not null)
+        else
         {
-            _timer.Stop();
-            _timer = null;
+            // Desnavegación: paramos el timer y cancelamos requests en vuelo
+            // para que no actualicen la UI desmontada.
+            if (_timer is not null)
+            {
+                _timer.Stop();
+                _timer = null;
+            }
+            _viewModel.CancelOngoingOperation();
         }
     }
 
