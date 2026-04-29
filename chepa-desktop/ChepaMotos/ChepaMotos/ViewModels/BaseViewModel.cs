@@ -6,8 +6,11 @@ namespace ChepaMotos.ViewModels;
 /// <summary>
 /// Base para todos los VMs principales. Centraliza:
 /// <list type="bullet">
-///   <item><see cref="IsBusy"/> / <see cref="LoadError"/> / <see cref="ShowSkeleton"/>
-///         para los estados de carga.</item>
+///   <item><see cref="IsBusy"/> / <see cref="LoadError"/> / <see cref="IsCollectionEmpty"/>
+///         como inputs.</item>
+///   <item><see cref="State"/> + <see cref="IsLoading"/>/<see cref="IsError"/>/<see cref="IsEmpty"/>/<see cref="IsLoaded"/>
+///         como estados mutuamente excluyentes para el XAML — solo uno es
+///         verdadero a la vez, así nunca se ven dos overlays simultáneos.</item>
 ///   <item>Cancelación cooperativa por desnavegación
 ///         (<see cref="CancelOngoingOperation"/>).</item>
 ///   <item><see cref="ExecuteLoadAsync"/> que envuelve el patrón try/catch
@@ -24,22 +27,57 @@ public abstract partial class BaseViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
+    [NotifyPropertyChangedFor(nameof(State))]
+    [NotifyPropertyChangedFor(nameof(IsLoading))]
+    [NotifyPropertyChangedFor(nameof(IsError))]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsLoaded))]
     private bool _isBusy;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasLoadError))]
-    [NotifyPropertyChangedFor(nameof(ShowSkeleton))]
+    [NotifyPropertyChangedFor(nameof(State))]
+    [NotifyPropertyChangedFor(nameof(IsLoading))]
+    [NotifyPropertyChangedFor(nameof(IsError))]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsLoaded))]
     private string? _loadError;
+
+    /// <summary>Las subclases setean esto al refrescar su colección de datos.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(State))]
+    [NotifyPropertyChangedFor(nameof(IsLoading))]
+    [NotifyPropertyChangedFor(nameof(IsError))]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsLoaded))]
+    private bool _isCollectionEmpty;
 
     public bool IsNotBusy => !IsBusy;
     public bool HasLoadError => !string.IsNullOrEmpty(LoadError);
 
     /// <summary>
-    /// Solo mostramos el skeleton/spinner durante la primera carga; en recargas
-    /// posteriores el contenido ya está pintado y un overlay es ruidoso.
+    /// Estado mutuamente excluyente. <c>Loading</c> y <c>Error</c> solo aplican
+    /// en la primera carga; en recargas siempre quedamos en <c>Loaded</c> o
+    /// <c>Empty</c> aunque haya un error de recarga (los datos viejos siguen
+    /// visibles, el botón "↻" comunica que algo falló).
     /// </summary>
-    public bool ShowSkeleton => IsBusy && !_hasLoadedOnce && !HasLoadError;
+    public ViewState State
+    {
+        get
+        {
+            if (!_hasLoadedOnce)
+            {
+                if (HasLoadError) return ViewState.Error;
+                if (IsBusy) return ViewState.Loading;
+            }
+            return IsCollectionEmpty ? ViewState.Empty : ViewState.Loaded;
+        }
+    }
+
+    public bool IsLoading => State == ViewState.Loading;
+    public bool IsError => State == ViewState.Error;
+    public bool IsEmpty => State == ViewState.Empty;
+    public bool IsLoaded => State == ViewState.Loaded;
 
     /// <summary>
     /// Devuelve un token vivo para la operación. Si el anterior fue cancelado
@@ -76,9 +114,6 @@ public abstract partial class BaseViewModel : ObservableObject, IDisposable
     /// limpia <see cref="LoadError"/>, ejecuta <paramref name="operation"/> con
     /// un token cancelable, traduce excepciones a <see cref="LoadError"/> con
     /// mensajes en español, y al final restaura <see cref="IsBusy"/>.
-    ///
-    /// Si <see cref="IsBusy"/> ya está activo cuando se llama, la operación se
-    /// salta (evita que el botón "↻" dispare cargas concurrentes).
     /// </summary>
     /// <returns><c>true</c> si la operación completó con éxito; <c>false</c> si
     /// hubo error o cancelación.</returns>
@@ -96,6 +131,10 @@ public abstract partial class BaseViewModel : ObservableObject, IDisposable
         {
             await operation(token);
             _hasLoadedOnce = true;
+            // _hasLoadedOnce no es ObservableProperty, así que renotificamos
+            // los estados derivados manualmente — al pasar de "primera carga"
+            // a "ya hay datos", la matriz cambia.
+            NotifyStateRecomputed();
             return true;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -120,8 +159,16 @@ public abstract partial class BaseViewModel : ObservableObject, IDisposable
         finally
         {
             IsBusy = false;
-            OnPropertyChanged(nameof(ShowSkeleton));
         }
+    }
+
+    private void NotifyStateRecomputed()
+    {
+        OnPropertyChanged(nameof(State));
+        OnPropertyChanged(nameof(IsLoading));
+        OnPropertyChanged(nameof(IsError));
+        OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(IsLoaded));
     }
 
     public void Dispose()

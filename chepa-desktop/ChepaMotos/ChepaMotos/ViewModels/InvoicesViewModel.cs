@@ -20,9 +20,6 @@ public partial class InvoicesViewModel : BaseViewModel
     [ObservableProperty]
     private string _resultCountText = "0 resultados";
 
-    [ObservableProperty]
-    private bool _emptyVisible;
-
     public ObservableCollection<InvoiceRowViewModel> Invoices { get; } = [];
 
     public InvoicesViewModel(IInvoiceService invoiceService)
@@ -75,7 +72,7 @@ public partial class InvoicesViewModel : BaseViewModel
         var ordered = invoices.OrderByDescending(i => i.CreatedAt).ToList();
 
         ResultCountText = $"{ordered.Count} resultado{(ordered.Count != 1 ? "s" : "")}";
-        EmptyVisible = ordered.Count == 0;
+        IsCollectionEmpty = ordered.Count == 0;
 
         Invoices.Clear();
         foreach (var invoice in ordered)

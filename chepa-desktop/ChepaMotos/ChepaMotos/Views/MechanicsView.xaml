@@ -34,8 +34,8 @@
                         Clicked="OnAddMechanicClicked" />
             </Grid>
 
-            <!-- Error banner -->
-            <Border IsVisible="{Binding HasLoadError}"
+            <!-- Error banner — solo en primera carga -->
+            <Border IsVisible="{Binding IsError}"
                     BackgroundColor="{StaticResource AnuladaBg}"
                     Stroke="{StaticResource AnuladaText}"
                     StrokeThickness="1"
@@ -66,11 +66,11 @@
             </Border>
 
             <!-- Loading indicator (primera carga) -->
-            <HorizontalStackLayout IsVisible="{Binding ShowSkeleton}"
+            <HorizontalStackLayout IsVisible="{Binding IsLoading}"
                                    Spacing="10"
                                    HorizontalOptions="Center"
                                    Padding="0,8">
-                <ActivityIndicator IsRunning="{Binding ShowSkeleton}"
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
                                    Color="{StaticResource Accent}"
                                    WidthRequest="18"
                                    HeightRequest="18" />
@@ -142,7 +142,7 @@
 
                     <!-- Empty state -->
                     <Label x:Name="EmptyLabel"
-                           IsVisible="{Binding EmptyVisible}"
+                           IsVisible="{Binding IsEmpty}"
                            Text="No hay mecánicos registrados"
                            FontFamily="IBMPlexSans" FontSize="14"
                            TextColor="{StaticResource TextMuted}"

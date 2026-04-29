@@ -16,9 +16,6 @@ public partial class MechanicsViewModel : BaseViewModel
     [ObservableProperty]
     private string _summaryText = "0 activos · 0 inactivos";
 
-    [ObservableProperty]
-    private bool _emptyVisible;
-
     /// <summary>True solo si el rol es GERENTE; controla la visibilidad del botón de
     /// crear y la habilitación de los switches por fila.</summary>
     public bool IsManager { get; }
@@ -220,7 +217,7 @@ public partial class MechanicsViewModel : BaseViewModel
             });
         }
 
-        EmptyVisible = Mechanics.Count == 0;
+        IsCollectionEmpty = Mechanics.Count == 0;
     }
 }
 

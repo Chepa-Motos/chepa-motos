@@ -25,9 +25,6 @@ public partial class LiquidationsViewModel : BaseViewModel
     private string _summaryShopText = "$0";
 
     [ObservableProperty]
-    private bool _emptyVisible;
-
-    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LiquidateButtonText))]
     private bool _isLiquidating;
 
@@ -152,7 +149,7 @@ public partial class LiquidationsViewModel : BaseViewModel
             });
         }
 
-        EmptyVisible = LiquidationRows.Count == 0;
+        IsCollectionEmpty = LiquidationRows.Count == 0;
     }
 
 }
