@@ -12,6 +12,7 @@ public partial class MainLayout : ContentPage
     private readonly IAuthState _authState;
     private readonly IAuthService _authService;
     private string _currentNav = "Inicio";
+    private bool _shortcutsAttached;
 
     public MainLayout(IServiceProvider services, IAuthState authState, IAuthService authService)
     {
@@ -34,6 +35,70 @@ public partial class MainLayout : ContentPage
 
         UpdateSessionFooter();
     }
+
+    protected override void OnHandlerChanged()
+    {
+        base.OnHandlerChanged();
+
+        if (Handler is not null && !_shortcutsAttached)
+        {
+            TryAttachKeyboardShortcuts();
+        }
+    }
+
+    /// <summary>
+    /// Conecta atajos de teclado a nivel de Window (Windows-only):
+    /// <list type="bullet">
+    ///   <item><c>Ctrl+R</c> recarga la vista actual.</item>
+    ///   <item><c>Ctrl+N</c> abre Factura de Servicio.</item>
+    ///   <item><c>Ctrl+Shift+N</c> abre Factura de Venta.</item>
+    /// </list>
+    /// </summary>
+    private void TryAttachKeyboardShortcuts()
+    {
+#if WINDOWS
+        if (RootGrid?.Handler?.PlatformView is not Microsoft.UI.Xaml.FrameworkElement nativeRoot)
+            return;
+
+        AddAccelerator(nativeRoot,
+            Windows.System.VirtualKey.R,
+            Windows.System.VirtualKeyModifiers.Control,
+            (_, _) => RefreshCurrentView());
+
+        AddAccelerator(nativeRoot,
+            Windows.System.VirtualKey.N,
+            Windows.System.VirtualKeyModifiers.Control,
+            (_, _) => OnServiceInvoiceClicked(this, EventArgs.Empty));
+
+        AddAccelerator(nativeRoot,
+            Windows.System.VirtualKey.N,
+            Windows.System.VirtualKeyModifiers.Control | Windows.System.VirtualKeyModifiers.Shift,
+            (_, _) => OnDeliveryInvoiceClicked(this, EventArgs.Empty));
+
+        _shortcutsAttached = true;
+#endif
+    }
+
+#if WINDOWS
+    private static void AddAccelerator(
+        Microsoft.UI.Xaml.FrameworkElement root,
+        Windows.System.VirtualKey key,
+        Windows.System.VirtualKeyModifiers modifiers,
+        Action<object, EventArgs> handler)
+    {
+        var accel = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
+        {
+            Key = key,
+            Modifiers = modifiers,
+        };
+        accel.Invoked += (_, args) =>
+        {
+            args.Handled = true;
+            MainThread.BeginInvokeOnMainThread(() => handler(accel, EventArgs.Empty));
+        };
+        root.KeyboardAccelerators.Add(accel);
+    }
+#endif
 
     private void UpdateSessionFooter()
     {

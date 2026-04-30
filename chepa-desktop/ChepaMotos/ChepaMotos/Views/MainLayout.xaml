@@ -5,7 +5,7 @@
              x:Class="ChepaMotos.Views.MainLayout"
              NavigationPage.HasNavigationBar="False">
 
-    <Grid ColumnDefinitions="224,*">
+    <Grid x:Name="RootGrid" ColumnDefinitions="224,*">
 
         <!-- ═══════════════════════════════════════════ -->
         <!-- SIDEBAR (224px, dark)                       -->

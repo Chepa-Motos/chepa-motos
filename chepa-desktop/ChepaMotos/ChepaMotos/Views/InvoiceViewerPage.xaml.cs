@@ -9,18 +9,21 @@ public partial class InvoiceViewerPage : ContentPage
 {
     private readonly Invoice _invoice;
     private readonly IInvoiceService _invoiceService;
+    private readonly IInvoicePdfService _pdfService;
     private bool _isCancelling;
+    private bool _isGeneratingPdf;
 
     /// <summary>
     /// Fired after an invoice is successfully cancelled, so parent views can refresh.
     /// </summary>
     public event Action? InvoiceCancelled;
 
-    public InvoiceViewerPage(Invoice invoice, IInvoiceService invoiceService)
+    public InvoiceViewerPage(Invoice invoice, IInvoiceService invoiceService, IInvoicePdfService pdfService)
     {
         InitializeComponent();
         _invoice = invoice;
         _invoiceService = invoiceService;
+        _pdfService = pdfService;
         LoadInvoice(invoice);
     }
 
@@ -252,11 +255,13 @@ public partial class InvoiceViewerPage : ContentPage
 
     private async void OnPrintClicked(object? sender, EventArgs e)
     {
+        if (_isGeneratingPdf) return;
+        _isGeneratingPdf = true;
         try
         {
-            // Generate PDF to a temp file
+            // PDF a archivo temporal — generación async para no bloquear el dispatcher.
             var tempPath = Path.Combine(Path.GetTempPath(), $"ChepaMotos_Factura_{_invoice.Id:D3}.pdf");
-            InvoicePdfService.SaveReceiptPdf(_invoice, tempPath);
+            await _pdfService.SaveReceiptAsync(_invoice, tempPath);
 
             // Try the "print" verb first (requires a PDF reader that supports it)
             try
@@ -283,14 +288,21 @@ public partial class InvoiceViewerPage : ContentPage
                     "Entendido");
             }
         }
+        catch (OperationCanceledException) { /* ventana cerrada durante la generación */ }
         catch (Exception ex)
         {
             await DisplayAlertAsync("Error", $"No se pudo imprimir: {ex.Message}", "Aceptar");
+        }
+        finally
+        {
+            _isGeneratingPdf = false;
         }
     }
 
     private async void OnExportPdfClicked(object? sender, EventArgs e)
     {
+        if (_isGeneratingPdf) return;
+        _isGeneratingPdf = true;
         try
         {
             var typeLabel = _invoice.InvoiceType == "SERVICE" ? "Servicio" : "Venta";
@@ -302,7 +314,7 @@ public partial class InvoiceViewerPage : ContentPage
             Directory.CreateDirectory(chepaFolder);
             var filePath = Path.Combine(chepaFolder, defaultName);
 
-            InvoicePdfService.SaveReceiptPdf(_invoice, filePath);
+            await _pdfService.SaveReceiptAsync(_invoice, filePath);
 
             ToastService.ShowSuccess(this, "PDF exportado correctamente");
 
@@ -313,9 +325,14 @@ public partial class InvoiceViewerPage : ContentPage
                 UseShellExecute = true
             });
         }
+        catch (OperationCanceledException) { /* ventana cerrada durante la generación */ }
         catch (Exception ex)
         {
             await DisplayAlertAsync("Error", $"No se pudo exportar: {ex.Message}", "Aceptar");
+        }
+        finally
+        {
+            _isGeneratingPdf = false;
         }
     }
 

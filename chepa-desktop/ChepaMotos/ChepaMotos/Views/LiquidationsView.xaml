@@ -41,7 +41,7 @@
                         VerticalOptions="Center">
                     <DatePicker x:Name="LiqDatePicker"
                                 Date="{Binding SelectedDate, Mode=OneWay}"
-                                Format="dd/MM/yyyy"
+                                Format="ddd dd/MM/yyyy"
                                 FontFamily="IBMPlexMono"
                                 FontSize="13"
                                 TextColor="{StaticResource TextPrimary}"

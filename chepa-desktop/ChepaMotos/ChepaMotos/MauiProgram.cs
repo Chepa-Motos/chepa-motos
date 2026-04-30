@@ -1,5 +1,6 @@
 using ChepaMotos.Config;
 using ChepaMotos.Models;
+using ChepaMotos.Services;
 using ChepaMotos.Services.Api;
 using ChepaMotos.Services.Auth;
 using ChepaMotos.Services.Domain;
@@ -63,6 +64,9 @@ namespace ChepaMotos
             builder.Services.AddTransient<IInvoiceItemService, InvoiceItemService>();
             builder.Services.AddTransient<IInvoiceService, InvoiceService>();
             builder.Services.AddTransient<ILiquidationService, LiquidationService>();
+
+            // PDF service (singleton: la inicialización del licence de QuestPDF es one-shot).
+            builder.Services.AddSingleton<IInvoicePdfService, InvoicePdfService>();
 
             // ViewModels y Pages (transient: una instancia nueva por cada navegación)
             builder.Services.AddTransient<LoginViewModel>();
