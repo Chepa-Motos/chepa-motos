@@ -3,6 +3,7 @@ using ChepaMotos.Models;
 using ChepaMotos.Services.Api;
 using ChepaMotos.Services.Auth;
 using ChepaMotos.Services.Domain;
+using ChepaMotos.Services.Logging;
 using ChepaMotos.ViewModels;
 using ChepaMotos.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,6 +81,14 @@ namespace ChepaMotos
             // Registramos un delegado factory para que cualquier view pueda crearlo.
             builder.Services.AddTransient<Func<Invoice, InvoiceViewerPage>>(sp =>
                 invoice => ActivatorUtilities.CreateInstance<InvoiceViewerPage>(sp, invoice));
+
+            // Logging a archivo plano: %LOCALAPPDATA%\ChepaMotos\logs\chepa-{yyyyMMdd}.log
+            // — diagnóstico en producción sin abrir Visual Studio.
+            var logsPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ChepaMotos", "logs");
+            builder.Logging.AddProvider(new FileLoggerProvider(logsPath));
+            builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 #if DEBUG
     		builder.Logging.AddDebug();

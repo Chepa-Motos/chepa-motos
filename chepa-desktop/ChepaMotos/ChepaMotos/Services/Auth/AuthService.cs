@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using ChepaMotos.Models;
+using Microsoft.Extensions.Logging;
 
 namespace ChepaMotos.Services.Auth;
 
@@ -29,6 +30,7 @@ public sealed class AuthService : IAuthService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ITokenStore _tokenStore;
     private readonly IAuthState _authState;
+    private readonly ILogger<AuthService> _logger;
 
     /// <summary>Lock para evitar dos refreshes concurrentes (proactivo + reactivo).</summary>
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
@@ -40,22 +42,37 @@ public sealed class AuthService : IAuthService
     /// <summary>True después del primer intento de leer SecureStorage (con o sin éxito).</summary>
     private bool _restoredFromStorage;
 
-    public AuthService(IHttpClientFactory httpClientFactory, ITokenStore tokenStore, IAuthState authState)
+    public AuthService(
+        IHttpClientFactory httpClientFactory,
+        ITokenStore tokenStore,
+        IAuthState authState,
+        ILogger<AuthService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _tokenStore = tokenStore;
         _authState = authState;
+        _logger = logger;
     }
 
     public async Task<AuthTokens> LoginAsync(string username, string password, CancellationToken ct = default)
     {
-        var tokens = await PostAsync<AuthTokens>(
-            "auth/login",
-            new LoginRequest { Username = username, Password = password },
-            ct);
+        try
+        {
+            var tokens = await PostAsync<AuthTokens>(
+                "auth/login",
+                new LoginRequest { Username = username, Password = password },
+                ct);
 
-        await PersistAndCacheAsync(tokens, fallbackUsername: username);
-        return tokens;
+            await PersistAndCacheAsync(tokens, fallbackUsername: username);
+            _logger.LogInformation("Login exitoso para {Username}", username);
+            return tokens;
+        }
+        catch (ApiException ex)
+        {
+            _logger.LogWarning("Login falló para {Username}: {Code} {Message}",
+                username, ex.Code, ex.Message);
+            throw;
+        }
     }
 
     public async Task<AuthTokens> RefreshAsync(string refreshToken, CancellationToken ct = default)
@@ -70,6 +87,7 @@ public sealed class AuthService : IAuthService
             var current = await _tokenStore.GetRefreshTokenAsync();
             if (!string.IsNullOrEmpty(current) && current != refreshToken && _cachedAccessToken is not null)
             {
+                _logger.LogDebug("Refresh deduplicado (otro caller ya rotó)");
                 return new AuthTokens
                 {
                     AccessToken = _cachedAccessToken,
@@ -79,13 +97,22 @@ public sealed class AuthService : IAuthService
                 };
             }
 
-            var tokens = await PostAsync<AuthTokens>(
-                "auth/refresh",
-                new RefreshTokenRequest { RefreshToken = refreshToken },
-                ct);
+            try
+            {
+                var tokens = await PostAsync<AuthTokens>(
+                    "auth/refresh",
+                    new RefreshTokenRequest { RefreshToken = refreshToken },
+                    ct);
 
-            await PersistAndCacheAsync(tokens, fallbackUsername: _authState.Username ?? string.Empty);
-            return tokens;
+                await PersistAndCacheAsync(tokens, fallbackUsername: _authState.Username ?? string.Empty);
+                _logger.LogInformation("Refresh OK para {Username}", _authState.Username ?? "?");
+                return tokens;
+            }
+            catch (ApiException ex)
+            {
+                _logger.LogWarning("Refresh falló: {Code} {Message}", ex.Code, ex.Message);
+                throw;
+            }
         }
         finally
         {
@@ -95,6 +122,7 @@ public sealed class AuthService : IAuthService
 
     public async Task LogoutAsync(CancellationToken ct = default)
     {
+        var username = _authState.Username ?? "?";
         var refreshToken = await _tokenStore.GetRefreshTokenAsync();
         if (!string.IsNullOrEmpty(refreshToken))
         {
@@ -105,14 +133,24 @@ public sealed class AuthService : IAuthService
                     new RefreshTokenRequest { RefreshToken = refreshToken },
                     ct);
             }
-            catch (ApiException) { /* best-effort: limpiamos local aunque el servidor falle */ }
-            catch (HttpRequestException) { /* sin red: limpiamos local */ }
-            catch (TaskCanceledException) { /* timeout: limpiamos local */ }
+            catch (ApiException ex)
+            {
+                _logger.LogDebug("Logout server-side falló (limpiando local igualmente): {Code}", ex.Code);
+            }
+            catch (HttpRequestException)
+            {
+                _logger.LogDebug("Logout server-side falló por red (limpiando local igualmente)");
+            }
+            catch (TaskCanceledException)
+            {
+                _logger.LogDebug("Logout server-side timeout (limpiando local igualmente)");
+            }
         }
 
         await _tokenStore.ClearAsync();
         ClearCache();
         _authState.RaiseLoggedOut();
+        _logger.LogInformation("Logout para {Username}", username);
     }
 
     public async Task TryRestoreSessionAsync(CancellationToken ct = default)

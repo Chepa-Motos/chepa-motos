@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using ChepaMotos.Models;
 using ChepaMotos.Services.Auth;
+using Microsoft.Extensions.Logging;
 
 namespace ChepaMotos.Services.Api;
 
@@ -15,17 +17,20 @@ public sealed class ApiClient : IApiClient
     private readonly ITokenStore _tokenStore;
     private readonly IAuthService _authService;
     private readonly IAuthState _authState;
+    private readonly ILogger<ApiClient> _logger;
 
     public ApiClient(
         IHttpClientFactory httpClientFactory,
         ITokenStore tokenStore,
         IAuthService authService,
-        IAuthState authState)
+        IAuthState authState,
+        ILogger<ApiClient> logger)
     {
         _httpClientFactory = httpClientFactory;
         _tokenStore = tokenStore;
         _authService = authService;
         _authState = authState;
+        _logger = logger;
     }
 
     public Task<T> GetAsync<T>(string path, IDictionary<string, string?>? query = null, CancellationToken ct = default)
@@ -81,20 +86,53 @@ public sealed class ApiClient : IApiClient
         string? bodyJson,
         CancellationToken ct)
     {
+        var sw = Stopwatch.StartNew();
         try
         {
-            return await ExecuteAsync(client, method, url, bodyJson, ct);
+            var attempt = await ExecuteAsync(client, method, url, bodyJson, ct);
+            sw.Stop();
+            LogRequest(method, url, attempt, sw.ElapsedMilliseconds, retried: false);
+            return attempt;
         }
-        catch (HttpRequestException) when (!ct.IsCancellationRequested)
+        catch (HttpRequestException ex) when (!ct.IsCancellationRequested)
         {
+            _logger.LogWarning("{Method} {Url} red caída ({Duration}ms) — reintentando: {Error}",
+                method, url, sw.ElapsedMilliseconds, ex.Message);
             await Task.Delay(500, ct);
-            return await ExecuteAsync(client, method, url, bodyJson, ct);
+            sw.Restart();
+            var attempt = await ExecuteAsync(client, method, url, bodyJson, ct);
+            sw.Stop();
+            LogRequest(method, url, attempt, sw.ElapsedMilliseconds, retried: true);
+            return attempt;
         }
         catch (TaskCanceledException) when (!ct.IsCancellationRequested)
         {
             // Timeout del HttpClient (no cancelación del usuario).
+            _logger.LogWarning("{Method} {Url} timeout ({Duration}ms) — reintentando",
+                method, url, sw.ElapsedMilliseconds);
             await Task.Delay(500, ct);
-            return await ExecuteAsync(client, method, url, bodyJson, ct);
+            sw.Restart();
+            var attempt = await ExecuteAsync(client, method, url, bodyJson, ct);
+            sw.Stop();
+            LogRequest(method, url, attempt, sw.ElapsedMilliseconds, retried: true);
+            return attempt;
+        }
+    }
+
+    private void LogRequest(HttpMethod method, string url, HttpAttempt attempt, long durationMs, bool retried)
+    {
+        // Sin cuerpos: solo metadata. Para no leakear PII en los logs.
+        var statusCode = (int)attempt.StatusCode;
+        var retryTag = retried ? " [reintento]" : string.Empty;
+        if (attempt.IsSuccess)
+        {
+            _logger.LogInformation("{Method} {Url} → {Status} ({Duration}ms){Retry}",
+                method, url, statusCode, durationMs, retryTag);
+        }
+        else
+        {
+            _logger.LogWarning("{Method} {Url} → {Status} {Code} ({Duration}ms){Retry}",
+                method, url, statusCode, attempt.ErrorCode ?? "-", durationMs, retryTag);
         }
     }
 
