@@ -13,7 +13,11 @@ namespace ChepaMotos
 {
     public static class MauiProgram
     {
-        public const string ApiHttpClientName = "chepa-api";
+        /// <summary>
+        /// Compat alias — la constante real vive en
+        /// <see cref="Services.Api.ApiClientNames.ChepaApi"/>.
+        /// </summary>
+        public const string ApiHttpClientName = Services.Api.ApiClientNames.ChepaApi;
 
         public static MauiApp CreateMauiApp()
         {

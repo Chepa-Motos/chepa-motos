@@ -238,7 +238,7 @@ public sealed class AuthService : IAuthService
 
     private async Task<T> PostAsync<T>(string path, object body, CancellationToken ct)
     {
-        var client = _httpClientFactory.CreateClient(MauiProgram.ApiHttpClientName);
+        var client = _httpClientFactory.CreateClient(Api.ApiClientNames.ChepaApi);
         using var content = JsonContent.Create(body, options: JsonOptions);
         using var response = await client.PostAsync(path, content, ct);
 

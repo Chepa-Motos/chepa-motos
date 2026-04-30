@@ -50,7 +50,7 @@ public sealed class ApiClient : IApiClient
 
     private async Task<T> SendAsync<T>(HttpMethod method, string url, string? bodyJson, CancellationToken ct)
     {
-        var client = _httpClientFactory.CreateClient(MauiProgram.ApiHttpClientName);
+        var client = _httpClientFactory.CreateClient(ApiClientNames.ChepaApi);
 
         var attempt = await ExecuteWithTransientRetryAsync(client, method, url, bodyJson, ct);
 
