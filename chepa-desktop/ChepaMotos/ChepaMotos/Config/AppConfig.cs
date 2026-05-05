@@ -31,7 +31,7 @@ public sealed class AppConfig : IAppConfig
         // Defaults — sirven como fallback si todo falla.
         var baseUrl = "http://localhost:8080/api";
         var timeoutSeconds = 15;
-        var metabaseUrl = "http://localhost:3000/embed/dashboard/";
+        var metabaseUrl = "http://localhost:3000/";
 
         var sources = new[]
         {

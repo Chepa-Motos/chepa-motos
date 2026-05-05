@@ -1,0 +1,1 @@
+DELETE FROM setting WHERE key = 'setup-token';
