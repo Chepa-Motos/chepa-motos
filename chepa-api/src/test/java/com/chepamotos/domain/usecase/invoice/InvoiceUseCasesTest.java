@@ -22,6 +22,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -129,7 +130,8 @@ class InvoiceUseCasesTest {
                 new InvoiceItemInput("Tornillo", new BigDecimal("1"), new BigDecimal("3900"))
         );
 
-        CreateDeliveryInvoiceUseCase useCase = new CreateDeliveryInvoiceUseCase(invoiceRepository);
+        Clock fixedClock = Clock.fixed(Instant.parse("2026-01-28T14:00:00Z"), ZoneId.of("America/Bogota"));
+        CreateDeliveryInvoiceUseCase useCase = new CreateDeliveryInvoiceUseCase(invoiceRepository, fixedClock);
         Invoice result = useCase.execute("  Talleres La 80  ", itemInputs);
 
         assertEquals(InvoiceType.DELIVERY, result.type());
@@ -155,10 +157,12 @@ class InvoiceUseCasesTest {
                 new InvoiceItemInput("Aceite", new BigDecimal("1"), new BigDecimal("25000"))
         );
 
+        Clock fixedClock = Clock.fixed(Instant.parse("2026-01-28T14:00:00Z"), ZoneId.of("America/Bogota"));
         CreateServiceInvoiceUseCase useCase = new CreateServiceInvoiceUseCase(
                 invoiceRepository,
                 mechanicRepository,
-                resolveVehicleUseCase
+                resolveVehicleUseCase,
+                fixedClock
         );
 
         Invoice result = useCase.execute(
@@ -188,7 +192,8 @@ class InvoiceUseCasesTest {
         CreateServiceInvoiceUseCase useCase = new CreateServiceInvoiceUseCase(
                 invoiceRepository,
                 mechanicRepository,
-                resolveVehicleUseCase
+                resolveVehicleUseCase,
+                Clock.systemUTC()
         );
 
         List<InvoiceItemInput> itemInputs = List.of(
@@ -213,7 +218,8 @@ class InvoiceUseCasesTest {
         CreateServiceInvoiceUseCase useCase = new CreateServiceInvoiceUseCase(
                 invoiceRepository,
                 mechanicRepository,
-                resolveVehicleUseCase
+                resolveVehicleUseCase,
+                Clock.systemUTC()
         );
 
         List<InvoiceItemInput> itemInputs = List.of(
