@@ -25,6 +25,10 @@ body:json {
   }
 }
 
+vars:pre-request {
+  liquidationDate: 2025/04/28
+}
+
 assert {
   res.status: eq 201
 }
