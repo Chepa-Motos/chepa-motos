@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<!-- TFM plano (no MAUI) — los archivos linkados son C# puro. Esto evita
+		     que MauiResizetizer procese los assets gráficos del proyecto principal
+		     y genere duplicados al construir el test. -->
+		<TargetFramework>net10.0</TargetFramework>
+
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+		<RootNamespace>ChepaMotos.Tests</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+		<PackageReference Include="xunit" Version="2.9.2" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+		<PackageReference Include="Moq" Version="4.20.72" />
+
+		<!-- Dependencias que necesitan los archivos linkados.
+		     Mantener las versiones alineadas con ChepaMotos.csproj. -->
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+	</ItemGroup>
+
+	<!-- Linked source files: testeamos contra los archivos del proyecto principal
+	     directamente sin ProjectReference (eso traería los assets MAUI). Solo se
+	     linkan archivos C# puros que no dependen del runtime de MAUI. -->
+	<ItemGroup>
+		<Compile Include="..\ChepaMotos\Models\AuthTokens.cs" Link="LinkedSource\Models\AuthTokens.cs" />
+		<Compile Include="..\ChepaMotos\Models\ApiException.cs" Link="LinkedSource\Models\ApiException.cs" />
+		<Compile Include="..\ChepaMotos\Models\ApiResponse.cs" Link="LinkedSource\Models\ApiResponse.cs" />
+		<Compile Include="..\ChepaMotos\Models\Mechanic.cs" Link="LinkedSource\Models\Mechanic.cs" />
+		<Compile Include="..\ChepaMotos\Models\Vehicle.cs" Link="LinkedSource\Models\Vehicle.cs" />
+		<Compile Include="..\ChepaMotos\Models\Invoice.cs" Link="LinkedSource\Models\Invoice.cs" />
+		<Compile Include="..\ChepaMotos\Models\InvoiceItem.cs" Link="LinkedSource\Models\InvoiceItem.cs" />
+		<Compile Include="..\ChepaMotos\Models\InvoiceCancelResult.cs" Link="LinkedSource\Models\InvoiceCancelResult.cs" />
+		<Compile Include="..\ChepaMotos\Models\Liquidation.cs" Link="LinkedSource\Models\Liquidation.cs" />
+		<Compile Include="..\ChepaMotos\Models\ItemSuggestion.cs" Link="LinkedSource\Models\ItemSuggestion.cs" />
+		<Compile Include="..\ChepaMotos\Models\Requests\MechanicRequests.cs" Link="LinkedSource\Models\Requests\MechanicRequests.cs" />
+		<Compile Include="..\ChepaMotos\Models\Requests\InvoiceRequests.cs" Link="LinkedSource\Models\Requests\InvoiceRequests.cs" />
+		<Compile Include="..\ChepaMotos\Models\Requests\LiquidationRequests.cs" Link="LinkedSource\Models\Requests\LiquidationRequests.cs" />
+
+		<Compile Include="..\ChepaMotos\Services\Api\ApiClientNames.cs" Link="LinkedSource\Services\Api\ApiClientNames.cs" />
+		<Compile Include="..\ChepaMotos\Services\Api\IApiClient.cs" Link="LinkedSource\Services\Api\IApiClient.cs" />
+		<Compile Include="..\ChepaMotos\Services\Api\ApiClient.cs" Link="LinkedSource\Services\Api\ApiClient.cs" />
+
+		<Compile Include="..\ChepaMotos\Services\Auth\ITokenStore.cs" Link="LinkedSource\Services\Auth\ITokenStore.cs" />
+		<Compile Include="..\ChepaMotos\Services\Auth\IAuthState.cs" Link="LinkedSource\Services\Auth\IAuthState.cs" />
+		<Compile Include="..\ChepaMotos\Services\Auth\IAuthService.cs" Link="LinkedSource\Services\Auth\IAuthService.cs" />
+		<Compile Include="..\ChepaMotos\Services\Auth\JwtClaimsParser.cs" Link="LinkedSource\Services\Auth\JwtClaimsParser.cs" />
+		<Compile Include="..\ChepaMotos\Services\Auth\AuthService.cs" Link="LinkedSource\Services\Auth\AuthService.cs" />
+
+		<Compile Include="..\ChepaMotos\Services\Domain\IMechanicService.cs" Link="LinkedSource\Services\Domain\IMechanicService.cs" />
+		<Compile Include="..\ChepaMotos\Services\Domain\MechanicService.cs" Link="LinkedSource\Services\Domain\MechanicService.cs" />
+		<Compile Include="..\ChepaMotos\Services\Domain\IInvoiceService.cs" Link="LinkedSource\Services\Domain\IInvoiceService.cs" />
+		<Compile Include="..\ChepaMotos\Services\Domain\InvoiceService.cs" Link="LinkedSource\Services\Domain\InvoiceService.cs" />
+	</ItemGroup>
+
+</Project>

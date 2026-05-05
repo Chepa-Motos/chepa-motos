@@ -25,8 +25,8 @@ public class CreateServiceInvoiceRequest
     [JsonPropertyName("mechanic_id")]
     public long MechanicId { get; set; }
 
-    [JsonPropertyName("plate")]
-    public string Plate { get; set; } = string.Empty;
+    [JsonPropertyName("vehicle_plate")]
+    public string VehiclePlate { get; set; } = string.Empty;
 
     [JsonPropertyName("model")]
     public string Model { get; set; } = string.Empty;

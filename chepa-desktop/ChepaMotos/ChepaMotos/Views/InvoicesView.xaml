@@ -2,15 +2,17 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
-             x:Class="ChepaMotos.Views.InvoicesView">
+             x:Class="ChepaMotos.Views.InvoicesView"
+             x:DataType="vm:InvoicesViewModel">
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <!-- Page heading + date picker -->
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+            <!-- Page heading + date picker + reload -->
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                 <Label Text="Facturas"
-                       Style="{StaticResource PageHeading}" />
+                       Style="{StaticResource PageHeading}"
+                       VerticalOptions="Center" />
                 <Border Grid.Column="1"
                         StrokeShape="RoundRectangle 6"
                         Stroke="{StaticResource Border}"
@@ -21,7 +23,7 @@
                         VerticalOptions="Center">
                     <DatePicker x:Name="FilterDatePicker"
                                 Date="{Binding SelectedDate, Mode=OneWay}"
-                                Format="dd/MM/yyyy"
+                                Format="ddd dd/MM/yyyy"
                                 FontFamily="IBMPlexMono"
                                 FontSize="13"
                                 TextColor="{StaticResource TextPrimary}"
@@ -30,7 +32,69 @@
                                 MaximumDate="2030-12-31"
                                 DateSelected="OnDateSelected" />
                 </Border>
+                <Button Grid.Column="2"
+                        Text="↻"
+                        Command="{Binding ReloadCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        FontSize="16"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0"
+                        BackgroundColor="{StaticResource Surface}"
+                        TextColor="{StaticResource TextSecondary}"
+                        BorderColor="{StaticResource Border}"
+                        BorderWidth="1"
+                        CornerRadius="6"
+                        ToolTipProperties.Text="Recargar"
+                        VerticalOptions="Center" />
             </Grid>
+
+            <!-- Error banner — solo en primera carga -->
+            <Border IsVisible="{Binding IsError}"
+                    BackgroundColor="{StaticResource AnuladaBg}"
+                    Stroke="{StaticResource AnuladaText}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="14,12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Text="No se pudo cargar las facturas"
+                               FontFamily="IBMPlexSansSemiBold"
+                               FontSize="13"
+                               TextColor="{StaticResource AnuladaText}" />
+                        <Label Text="{Binding LoadError}"
+                               FontFamily="IBMPlexSans"
+                               FontSize="12"
+                               TextColor="{StaticResource AnuladaText}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Reintentar"
+                            Command="{Binding ReloadCommand}"
+                            BackgroundColor="{StaticResource AnuladaText}"
+                            TextColor="{StaticResource White}"
+                            FontFamily="IBMPlexSansSemiBold"
+                            FontSize="12"
+                            CornerRadius="6"
+                            Padding="12,6"
+                            VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Loading indicator (primera carga) -->
+            <HorizontalStackLayout IsVisible="{Binding IsLoading}"
+                                   Spacing="10"
+                                   HorizontalOptions="Center"
+                                   Padding="0,8">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   Color="{StaticResource Accent}"
+                                   WidthRequest="18"
+                                   HeightRequest="18" />
+                <Label Text="Cargando facturas…"
+                       FontFamily="IBMPlexSansMedium"
+                       FontSize="13"
+                       TextColor="{StaticResource TextSecondary}"
+                       VerticalTextAlignment="Center" />
+            </HorizontalStackLayout>
 
             <!-- Filter buttons row -->
             <HorizontalStackLayout Spacing="8">
@@ -87,6 +151,28 @@
                        VerticalTextAlignment="Center"
                        Margin="8,0,0,0" />
             </HorizontalStackLayout>
+
+            <!-- Search box -->
+            <Border StrokeShape="RoundRectangle 6"
+                    Stroke="{StaticResource Border}"
+                    StrokeThickness="1"
+                    BackgroundColor="{StaticResource Surface}"
+                    Padding="10,0">
+                <Grid ColumnDefinitions="Auto,*">
+                    <Label Grid.Column="0"
+                           Text="🔍"
+                           FontSize="13"
+                           TextColor="{StaticResource TextMuted}"
+                           VerticalTextAlignment="Center"
+                           Margin="0,0,8,0" />
+                    <Entry Grid.Column="1"
+                           Text="{Binding SearchQuery, Mode=TwoWay}"
+                           Placeholder="Buscar por placa, comprador, mecánico, descripción de ítem…"
+                           FontFamily="IBMPlexSans"
+                           FontSize="13"
+                           BackgroundColor="Transparent" />
+                </Grid>
+            </Border>
 
             <!-- Invoices table -->
             <Border Stroke="{StaticResource Border}"
@@ -228,7 +314,7 @@
 
                     <!-- Empty state -->
                     <Label x:Name="EmptyLabel"
-                              IsVisible="{Binding EmptyVisible}"
+                              IsVisible="{Binding IsEmpty}"
                            Text="No hay facturas para esta fecha"
                            FontFamily="IBMPlexSans" FontSize="14"
                            TextColor="{StaticResource TextMuted}"

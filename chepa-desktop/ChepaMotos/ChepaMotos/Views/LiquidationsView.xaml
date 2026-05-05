@@ -2,16 +2,36 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
-             x:Class="ChepaMotos.Views.LiquidationsView">
+             x:Class="ChepaMotos.Views.LiquidationsView"
+             x:DataType="vm:LiquidationsViewModel">
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <!-- Header row with title + date picker -->
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+            <!-- Header: title + mechanic picker + date picker + reload + liquidate (GERENTE) -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="10">
                 <Label Text="Liquidaciones"
-                       Style="{StaticResource PageHeading}" />
+                       Style="{StaticResource PageHeading}"
+                       VerticalOptions="Center" />
                 <Border Grid.Column="1"
+                        StrokeShape="RoundRectangle 6"
+                        Stroke="{StaticResource Border}"
+                        StrokeThickness="1"
+                        BackgroundColor="{StaticResource Surface}"
+                        HeightRequest="36"
+                        Padding="10,0"
+                        VerticalOptions="Center">
+                    <Picker ItemsSource="{Binding MechanicOptions}"
+                            ItemDisplayBinding="{Binding Name}"
+                            SelectedItem="{Binding SelectedMechanicOption, Mode=TwoWay}"
+                            FontFamily="IBMPlexSans"
+                            FontSize="13"
+                            TextColor="{StaticResource TextPrimary}"
+                            TitleColor="{StaticResource TextMuted}"
+                            BackgroundColor="Transparent"
+                            WidthRequest="200" />
+                </Border>
+                <Border Grid.Column="2"
                         StrokeShape="RoundRectangle 6"
                         Stroke="{StaticResource Border}"
                         StrokeThickness="1"
@@ -21,7 +41,7 @@
                         VerticalOptions="Center">
                     <DatePicker x:Name="LiqDatePicker"
                                 Date="{Binding SelectedDate, Mode=OneWay}"
-                                Format="dd/MM/yyyy"
+                                Format="ddd dd/MM/yyyy"
                                 FontFamily="IBMPlexMono"
                                 FontSize="13"
                                 TextColor="{StaticResource TextPrimary}"
@@ -30,7 +50,82 @@
                                 MaximumDate="2030-12-31"
                                 DateSelected="OnDateSelected" />
                 </Border>
+                <Button Grid.Column="3"
+                        Text="↻"
+                        Command="{Binding ReloadCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        FontSize="16"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0"
+                        BackgroundColor="{StaticResource Surface}"
+                        TextColor="{StaticResource TextSecondary}"
+                        BorderColor="{StaticResource Border}"
+                        BorderWidth="1"
+                        CornerRadius="6"
+                        ToolTipProperties.Text="Recargar"
+                        VerticalOptions="Center" />
+                <Button Grid.Column="4"
+                        Text="{Binding LiquidateButtonText}"
+                        Command="{Binding LiquidateDayCommand}"
+                        IsVisible="{Binding IsManager}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        BackgroundColor="{StaticResource Amber}"
+                        TextColor="{StaticResource White}"
+                        FontFamily="IBMPlexSansSemiBold"
+                        FontSize="13"
+                        CornerRadius="6"
+                        Padding="14,8"
+                        MinimumHeightRequest="36"
+                        VerticalOptions="Center" />
             </Grid>
+
+            <!-- Error banner — solo en primera carga -->
+            <Border IsVisible="{Binding IsError}"
+                    BackgroundColor="{StaticResource AnuladaBg}"
+                    Stroke="{StaticResource AnuladaText}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="14,12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Text="No se pudo cargar las liquidaciones"
+                               FontFamily="IBMPlexSansSemiBold"
+                               FontSize="13"
+                               TextColor="{StaticResource AnuladaText}" />
+                        <Label Text="{Binding LoadError}"
+                               FontFamily="IBMPlexSans"
+                               FontSize="12"
+                               TextColor="{StaticResource AnuladaText}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Reintentar"
+                            Command="{Binding ReloadCommand}"
+                            BackgroundColor="{StaticResource AnuladaText}"
+                            TextColor="{StaticResource White}"
+                            FontFamily="IBMPlexSansSemiBold"
+                            FontSize="12"
+                            CornerRadius="6"
+                            Padding="12,6"
+                            VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Loading indicator (primera carga) -->
+            <HorizontalStackLayout IsVisible="{Binding IsLoading}"
+                                   Spacing="10"
+                                   HorizontalOptions="Center"
+                                   Padding="0,8">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   Color="{StaticResource Accent}"
+                                   WidthRequest="18"
+                                   HeightRequest="18" />
+                <Label Text="Cargando liquidaciones…"
+                       FontFamily="IBMPlexSansMedium"
+                       FontSize="13"
+                       TextColor="{StaticResource TextSecondary}"
+                       VerticalTextAlignment="Center" />
+            </HorizontalStackLayout>
 
             <!-- Summary cards -->
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="14">
@@ -143,7 +238,7 @@
 
                     <!-- Empty state -->
                     <Label x:Name="EmptyLabel"
-                              IsVisible="{Binding EmptyVisible}"
+                              IsVisible="{Binding IsEmpty}"
                            Text="No hay liquidaciones para esta fecha"
                            FontFamily="IBMPlexSans" FontSize="14"
                            TextColor="{StaticResource TextMuted}"

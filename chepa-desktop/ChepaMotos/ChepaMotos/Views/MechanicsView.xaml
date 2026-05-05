@@ -2,25 +2,102 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ChepaMotos.ViewModels"
-             x:Class="ChepaMotos.Views.MechanicsView">
+             x:Class="ChepaMotos.Views.MechanicsView"
+             x:DataType="vm:MechanicsViewModel">
 
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="20">
 
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                 <Label Text="Mecánicos"
-                       Style="{StaticResource PageHeading}" />
+                       Style="{StaticResource PageHeading}"
+                       VerticalOptions="Center" />
                 <Button Grid.Column="1"
+                        Text="↻"
+                        Command="{Binding ReloadCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        FontSize="16"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="0"
+                        BackgroundColor="{StaticResource Surface}"
+                        TextColor="{StaticResource TextSecondary}"
+                        BorderColor="{StaticResource Border}"
+                        BorderWidth="1"
+                        CornerRadius="6"
+                        ToolTipProperties.Text="Recargar"
+                        VerticalOptions="Center" />
+                <Button Grid.Column="2"
                         Text="+ Nuevo mecánico"
                         Style="{StaticResource CtaAccentButton}"
+                        IsVisible="{Binding IsManager}"
                         Clicked="OnAddMechanicClicked" />
             </Grid>
 
-            <!-- Summary -->
-            <Label x:Name="SummaryLabel"
-                     Text="{Binding SummaryText}"
-                   FontFamily="IBMPlexMono" FontSize="12"
-                   TextColor="{StaticResource TextMuted}" />
+            <!-- Error banner — solo en primera carga -->
+            <Border IsVisible="{Binding IsError}"
+                    BackgroundColor="{StaticResource AnuladaBg}"
+                    Stroke="{StaticResource AnuladaText}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="14,12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Text="No se pudo cargar los mecánicos"
+                               FontFamily="IBMPlexSansSemiBold"
+                               FontSize="13"
+                               TextColor="{StaticResource AnuladaText}" />
+                        <Label Text="{Binding LoadError}"
+                               FontFamily="IBMPlexSans"
+                               FontSize="12"
+                               TextColor="{StaticResource AnuladaText}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="Reintentar"
+                            Command="{Binding ReloadCommand}"
+                            BackgroundColor="{StaticResource AnuladaText}"
+                            TextColor="{StaticResource White}"
+                            FontFamily="IBMPlexSansSemiBold"
+                            FontSize="12"
+                            CornerRadius="6"
+                            Padding="12,6"
+                            VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <!-- Loading indicator (primera carga) -->
+            <HorizontalStackLayout IsVisible="{Binding IsLoading}"
+                                   Spacing="10"
+                                   HorizontalOptions="Center"
+                                   Padding="0,8">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   Color="{StaticResource Accent}"
+                                   WidthRequest="18"
+                                   HeightRequest="18" />
+                <Label Text="Cargando mecánicos…"
+                       FontFamily="IBMPlexSansMedium"
+                       FontSize="13"
+                       TextColor="{StaticResource TextSecondary}"
+                       VerticalTextAlignment="Center" />
+            </HorizontalStackLayout>
+
+            <!-- Summary + toggle inactivos -->
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Label Grid.Column="0"
+                       x:Name="SummaryLabel"
+                       Text="{Binding SummaryText}"
+                       FontFamily="IBMPlexMono" FontSize="12"
+                       TextColor="{StaticResource TextMuted}"
+                       VerticalTextAlignment="Center" />
+                <HorizontalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                    <Label Text="Mostrar inactivos"
+                           FontFamily="IBMPlexSansMedium" FontSize="12"
+                           TextColor="{StaticResource TextSecondary}"
+                           VerticalTextAlignment="Center" />
+                    <Switch IsToggled="{Binding ShowInactive, Mode=TwoWay}"
+                            VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Grid>
 
             <!-- Mechanics list -->
             <Border Stroke="{StaticResource Border}"
@@ -63,6 +140,7 @@
 
                                         <Switch Grid.Column="2"
                                                 IsToggled="{Binding IsActive}"
+                                                IsEnabled="{Binding CanToggle}"
                                                 VerticalOptions="Center"
                                                 Toggled="OnMechanicToggled" />
                                     </Grid>
@@ -76,7 +154,7 @@
 
                     <!-- Empty state -->
                     <Label x:Name="EmptyLabel"
-                           IsVisible="{Binding EmptyVisible}"
+                           IsVisible="{Binding IsEmpty}"
                            Text="No hay mecánicos registrados"
                            FontFamily="IBMPlexSans" FontSize="14"
                            TextColor="{StaticResource TextMuted}"

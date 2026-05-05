@@ -1,14 +1,24 @@
 namespace ChepaMotos.Views;
 
+using ChepaMotos.Helpers;
 using ChepaMotos.Services;
+using ChepaMotos.Services.Auth;
+using Microsoft.Extensions.DependencyInjection;
 
 public partial class MainLayout : ContentPage
 {
     private readonly Dictionary<string, Border> _navItems;
+    private readonly IServiceProvider _services;
+    private readonly IAuthState _authState;
+    private readonly IAuthService _authService;
     private string _currentNav = "Inicio";
+    private bool _shortcutsAttached;
 
-    public MainLayout()
+    public MainLayout(IServiceProvider services, IAuthState authState, IAuthService authService)
     {
+        _services = services;
+        _authState = authState;
+        _authService = authService;
         InitializeComponent();
 
         _navItems = new Dictionary<string, Border>
@@ -19,6 +29,121 @@ public partial class MainLayout : ContentPage
             ["Dashboards"] = NavDashboards,
             ["Mecanicos"] = NavMecanicos,
         };
+
+        // Carga inicial de la vista Inicio.
+        ContentArea.Content = _services.GetRequiredService<HomeView>();
+
+        UpdateSessionFooter();
+    }
+
+    protected override void OnHandlerChanged()
+    {
+        base.OnHandlerChanged();
+
+        if (Handler is not null && !_shortcutsAttached)
+        {
+            TryAttachKeyboardShortcuts();
+        }
+    }
+
+    /// <summary>
+    /// Conecta atajos de teclado a nivel de Window (Windows-only):
+    /// <list type="bullet">
+    ///   <item><c>Ctrl+R</c> recarga la vista actual.</item>
+    ///   <item><c>Ctrl+N</c> abre Factura de Servicio.</item>
+    ///   <item><c>Ctrl+Shift+N</c> abre Factura de Venta.</item>
+    /// </list>
+    /// </summary>
+    private void TryAttachKeyboardShortcuts()
+    {
+#if WINDOWS
+        if (RootGrid?.Handler?.PlatformView is not Microsoft.UI.Xaml.FrameworkElement nativeRoot)
+            return;
+
+        AddAccelerator(nativeRoot,
+            Windows.System.VirtualKey.R,
+            Windows.System.VirtualKeyModifiers.Control,
+            (_, _) => RefreshCurrentView());
+
+        AddAccelerator(nativeRoot,
+            Windows.System.VirtualKey.N,
+            Windows.System.VirtualKeyModifiers.Control,
+            (_, _) => OnServiceInvoiceClicked(this, EventArgs.Empty));
+
+        AddAccelerator(nativeRoot,
+            Windows.System.VirtualKey.N,
+            Windows.System.VirtualKeyModifiers.Control | Windows.System.VirtualKeyModifiers.Shift,
+            (_, _) => OnDeliveryInvoiceClicked(this, EventArgs.Empty));
+
+        _shortcutsAttached = true;
+#endif
+    }
+
+#if WINDOWS
+    private static void AddAccelerator(
+        Microsoft.UI.Xaml.FrameworkElement root,
+        Windows.System.VirtualKey key,
+        Windows.System.VirtualKeyModifiers modifiers,
+        Action<object, EventArgs> handler)
+    {
+        var accel = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
+        {
+            Key = key,
+            Modifiers = modifiers,
+        };
+        accel.Invoked += (_, args) =>
+        {
+            args.Handled = true;
+            MainThread.BeginInvokeOnMainThread(() => handler(accel, EventArgs.Empty));
+        };
+        root.KeyboardAccelerators.Add(accel);
+    }
+#endif
+
+    private void UpdateSessionFooter()
+    {
+        if (_authState.IsAuthenticated)
+        {
+            SessionUserLabel.Text = _authState.Username ?? "—";
+            SessionRoleLabel.Text = _authState.IsManager ? "GERENTE" : string.Join(", ", _authState.Roles);
+            SessionActionButton.Text = "Salir";
+        }
+        else
+        {
+            SessionUserLabel.Text = "Modo invitado";
+            SessionRoleLabel.Text = "Sin sesión";
+            SessionActionButton.Text = "Iniciar sesión";
+        }
+    }
+
+    private async void OnSessionActionClicked(object? sender, EventArgs e)
+    {
+        if (!_authState.IsAuthenticated)
+        {
+            // Modo invitado → llevar al LoginPage. Reusamos el flujo de logout
+            // para que App.xaml.cs haga swap a Login.
+            _authState.RaiseLoggedOut();
+            return;
+        }
+
+        bool confirm = await DisplayAlertAsync(
+            "Cerrar sesión",
+            $"¿Cerrar la sesión de {_authState.Username}?",
+            "Sí, cerrar",
+            "Cancelar");
+
+        if (!confirm) return;
+
+        SessionActionButton.IsEnabled = false;
+        try
+        {
+            await _authService.LogoutAsync();
+            // App.xaml.cs escucha LoggedOut y hace el swap a LoginPage.
+        }
+        finally
+        {
+            SessionActionButton.IsEnabled = true;
+        }
     }
 
     private void OnNavTapped(object? sender, TappedEventArgs e)
@@ -42,15 +167,15 @@ public partial class MainLayout : ContentPage
                 selectedLabel.Style = Application.Current!.Resources["SidebarNavLabelSelected"] as Style;
         }
 
-        // Swap content
+        // Swap content. Inicio/Facturas/Liquidaciones/Mecanicos ya migradas a DI.
         ContentArea.Content = target switch
         {
-            "Inicio" => new HomeView(),
-            "Facturas" => new InvoicesView(),
-            "Liquidaciones" => new LiquidationsView(),
-            "Dashboards" => new DashboardsView(),
-            "Mecanicos" => new MechanicsView(),
-            _ => new HomeView(),
+            "Inicio" => _services.GetRequiredService<HomeView>(),
+            "Facturas" => _services.GetRequiredService<InvoicesView>(),
+            "Liquidaciones" => _services.GetRequiredService<LiquidationsView>(),
+            "Dashboards" => _services.GetRequiredService<DashboardsView>(),
+            "Mecanicos" => _services.GetRequiredService<MechanicsView>(),
+            _ => _services.GetRequiredService<HomeView>(),
         };
 
         _currentNav = target;
@@ -58,7 +183,7 @@ public partial class MainLayout : ContentPage
 
     private void OnServiceInvoiceClicked(object? sender, EventArgs e)
     {
-        var page = new ServiceInvoicePage();
+        var page = _services.GetRequiredService<ServiceInvoicePage>();
         page.InvoiceConfirmed += () => MainThread.BeginInvokeOnMainThread(() =>
         {
             ToastService.ShowSuccess(this, "Factura de servicio registrada");
@@ -78,7 +203,7 @@ public partial class MainLayout : ContentPage
 
     private void OnDeliveryInvoiceClicked(object? sender, EventArgs e)
     {
-        var page = new DeliveryInvoicePage();
+        var page = _services.GetRequiredService<DeliveryInvoicePage>();
         page.InvoiceConfirmed += () => MainThread.BeginInvokeOnMainThread(() =>
         {
             ToastService.ShowSuccess(this, "Factura de venta registrada");
@@ -96,22 +221,30 @@ public partial class MainLayout : ContentPage
         Application.Current?.OpenWindow(window);
     }
 
-    /// <summary>Refresh the currently visible view after data changes.</summary>
+    /// <summary>
+    /// Recarga datos de la View actual sin perder estado local (filtros,
+    /// fecha seleccionada, scroll). Si la View implementa <see cref="IRefreshable"/>,
+    /// solo se le pide refrescar; no se reconstruye.
+    /// </summary>
     private void RefreshCurrentView()
     {
-        if (ContentArea.Content is HomeView homeView)
-            homeView.RefreshData();
-        else
+        if (ContentArea.Content is IRefreshable refreshable)
         {
-            // Rebuild the current view to pick up changes
-            ContentArea.Content = _currentNav switch
-            {
-                "Facturas" => new InvoicesView(),
-                "Liquidaciones" => new LiquidationsView(),
-                "Mecanicos" => new MechanicsView(),
-                _ => ContentArea.Content,
-            };
+            _ = refreshable.RefreshAsync();
+            return;
         }
+
+        // Fallback: si la View actual aún no migró a IRefreshable (solo
+        // DashboardsView en este punto), reconstruimos.
+        ContentArea.Content = _currentNav switch
+        {
+            "Facturas" => _services.GetRequiredService<InvoicesView>(),
+            "Liquidaciones" => _services.GetRequiredService<LiquidationsView>(),
+            "Dashboards" => _services.GetRequiredService<DashboardsView>(),
+            "Mecanicos" => _services.GetRequiredService<MechanicsView>(),
+            "Inicio" => _services.GetRequiredService<HomeView>(),
+            _ => ContentArea.Content,
+        };
     }
 
     /// <summary>

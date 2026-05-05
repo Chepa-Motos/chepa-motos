@@ -1,36 +1,58 @@
+using ChepaMotos.Helpers;
+using ChepaMotos.Models;
 using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
 
-public partial class HomeView : ContentView
+public partial class HomeView : ContentView, IRefreshable
 {
     private static readonly string[] MonthAbbreviations = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-    private IDispatcherTimer? _timer;
-    private readonly HomeViewModel _viewModel = new();
 
-    public HomeView()
+    private readonly HomeViewModel _viewModel;
+    private readonly Func<Invoice, InvoiceViewerPage> _viewerFactory;
+    private IDispatcherTimer? _timer;
+    private bool _hasLoadedOnce;
+
+    public HomeView(HomeViewModel viewModel, Func<Invoice, InvoiceViewerPage> viewerFactory)
     {
         InitializeComponent();
+        _viewModel = viewModel;
+        _viewerFactory = viewerFactory;
         BindingContext = _viewModel;
         UpdateDateTime();
-        LoadData();
     }
 
     protected override void OnHandlerChanged()
     {
         base.OnHandlerChanged();
 
-        if (Handler is not null && _timer is null)
+        if (Handler is not null)
         {
-            _timer = Dispatcher.CreateTimer();
-            _timer.Interval = TimeSpan.FromSeconds(1);
-            _timer.Tick += (_, _) => UpdateDateTime();
-            _timer.Start();
+            if (_timer is null)
+            {
+                _timer = Dispatcher.CreateTimer();
+                _timer.Interval = TimeSpan.FromSeconds(1);
+                _timer.Tick += (_, _) => UpdateDateTime();
+                _timer.Start();
+            }
+
+            // Primera vez que se monta → carga inicial.
+            if (!_hasLoadedOnce)
+            {
+                _hasLoadedOnce = true;
+                _ = _viewModel.ReloadAsync();
+            }
         }
-        else if (Handler is null && _timer is not null)
+        else
         {
-            _timer.Stop();
-            _timer = null;
+            // Desnavegación: paramos el timer y cancelamos requests en vuelo
+            // para que no actualicen la UI desmontada.
+            if (_timer is not null)
+            {
+                _timer.Stop();
+                _timer = null;
+            }
+            _viewModel.CancelOngoingOperation();
         }
     }
 
@@ -40,15 +62,10 @@ public partial class HomeView : ContentView
         DateTimeLabel.Text = $"{now.Day} {MonthAbbreviations[now.Month - 1]} {now.Year}  ·  {now:HH:mm:ss}";
     }
 
-    // ── Load data from MockDataService ───────────────────
+    /// <summary>Recarga los datos. Lo invoca <c>MainLayout</c> después de crear/cancelar facturas.</summary>
+    public void RefreshData() => _ = _viewModel.ReloadAsync();
 
-    /// <summary>Reload all dashboard data. Can be called externally after invoice changes.</summary>
-    public void RefreshData() => LoadData();
-
-    private void LoadData()
-    {
-        _viewModel.LoadData();
-    }
+    public Task RefreshAsync() => _viewModel.ReloadAsync();
 
     private void OnInvoiceRowTapped(object? sender, TappedEventArgs e)
     {
@@ -70,9 +87,9 @@ public partial class HomeView : ContentView
             grid.BackgroundColor = Colors.Transparent;
     }
 
-    private void OpenInvoiceViewer(ChepaMotos.Models.Invoice invoice)
+    private void OpenInvoiceViewer(Invoice invoice)
     {
-        var page = new InvoiceViewerPage(invoice);
+        var page = _viewerFactory(invoice);
         page.InvoiceCancelled += () => MainThread.BeginInvokeOnMainThread(RefreshData);
         var isService = invoice.InvoiceType == "SERVICE";
         var window = new Window(page)

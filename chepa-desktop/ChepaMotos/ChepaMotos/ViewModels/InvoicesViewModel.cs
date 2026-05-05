@@ -1,86 +1,103 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using ChepaMotos.Helpers;
 using ChepaMotos.Models;
-using ChepaMotos.Services;
+using ChepaMotos.Services.Domain;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace ChepaMotos.ViewModels;
 
-public class InvoicesViewModel : INotifyPropertyChanged
+public partial class InvoicesViewModel : BaseViewModel
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
+    private readonly IInvoiceService _invoiceService;
+    private List<Invoice> _allInvoices = [];
 
+    [ObservableProperty]
     private DateTime _selectedDate = DateTime.Today;
-    public DateTime SelectedDate
-    {
-        get => _selectedDate;
-        private set => SetProperty(ref _selectedDate, value);
-    }
 
+    [ObservableProperty]
     private string _activeFilter = "Todas";
-    public string ActiveFilter
-    {
-        get => _activeFilter;
-        private set => SetProperty(ref _activeFilter, value);
-    }
 
+    [ObservableProperty]
     private string _resultCountText = "0 resultados";
-    public string ResultCountText
-    {
-        get => _resultCountText;
-        private set => SetProperty(ref _resultCountText, value);
-    }
 
-    private bool _emptyVisible;
-    public bool EmptyVisible
-    {
-        get => _emptyVisible;
-        private set => SetProperty(ref _emptyVisible, value);
-    }
+    /// <summary>
+    /// Búsqueda client-side sobre la lista ya cargada del backend.
+    /// Coincide en placa, comprador o descripción de cualquier ítem.
+    /// Se resetea al cambiar fecha o filtro.
+    /// </summary>
+    [ObservableProperty]
+    private string _searchQuery = string.Empty;
 
     public ObservableCollection<InvoiceRowViewModel> Invoices { get; } = [];
+
+    public InvoicesViewModel(IInvoiceService invoiceService)
+    {
+        _invoiceService = invoiceService;
+    }
 
     public void SetDate(DateTime date)
     {
         SelectedDate = date;
-        LoadInvoices();
+        SearchQuery = string.Empty;
+        _ = ReloadAsync();
     }
 
     public void SetFilter(string filter)
     {
         ActiveFilter = filter;
-        LoadInvoices();
+        SearchQuery = string.Empty;
+        _ = ReloadAsync();
     }
 
-    public void LoadInvoices()
+    partial void OnSearchQueryChanged(string value) => ApplyFilter();
+
+    [RelayCommand]
+    public Task ReloadAsync(CancellationToken ct = default) => ExecuteLoadAsync(async token =>
     {
-        List<Invoice> invoices;
-        if (ActiveFilter == "Anuladas")
+        // Mapeo filtro UI → params del backend
+        string? type;
+        bool cancelled;
+        switch (ActiveFilter)
         {
-            // TODO: [API] Replace with: var invoices = await InvoiceService.GetInvoices(date, cancelled: true)
-            // Maps to: GET /invoices?date=YYYY-MM-DD&cancelled=true
-            invoices = MockDataService.GetInvoices(date: SelectedDate, cancelled: true);
-        }
-        else
-        {
-            string? type = ActiveFilter switch
-            {
-                "Servicio" => "SERVICE",
-                "Venta" => "DELIVERY",
-                _ => null,
-            };
-            // TODO: [API] Replace with: var invoices = await InvoiceService.GetInvoices(date, type)
-            // Maps to: GET /invoices?date=YYYY-MM-DD&type=SERVICE|DELIVERY
-            invoices = MockDataService.GetInvoices(date: SelectedDate, type: type, cancelled: false);
+            case "Servicio":
+                type = "SERVICE"; cancelled = false; break;
+            case "Venta":
+                type = "DELIVERY"; cancelled = false; break;
+            case "Anuladas":
+                type = null; cancelled = true; break;
+            default: // "Todas"
+                type = null; cancelled = false; break;
         }
 
-        invoices = invoices.OrderByDescending(i => i.CreatedAt).ToList();
+        var invoices = await _invoiceService.ListAsync(
+            date: SelectedDate,
+            type: type,
+            mechanicId: null,
+            cancelled: cancelled,
+            ct: token);
 
-        ResultCountText = $"{invoices.Count} resultado{(invoices.Count != 1 ? "s" : "")}";
-        EmptyVisible = invoices.Count == 0;
+        UpdateRows(invoices);
+    }, ct);
+
+    private void UpdateRows(IReadOnlyList<Invoice> invoices)
+    {
+        _allInvoices = invoices.OrderByDescending(i => i.CreatedAt).ToList();
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        var query = SearchQuery?.Trim() ?? string.Empty;
+        var filtered = string.IsNullOrEmpty(query)
+            ? _allInvoices
+            : _allInvoices.Where(i => MatchesQuery(i, query)).ToList();
+
+        ResultCountText = $"{filtered.Count} resultado{(filtered.Count != 1 ? "s" : "")}";
+        IsCollectionEmpty = filtered.Count == 0;
 
         Invoices.Clear();
-        foreach (var invoice in invoices)
+        foreach (var invoice in filtered)
         {
             var isService = invoice.InvoiceType == "SERVICE";
             var isCancelled = invoice.IsCancelled;
@@ -100,7 +117,7 @@ public class InvoicesViewModel : INotifyPropertyChanged
                 BuyerTextColor = invoice.BuyerName is not null ? Color.FromArgb("#18170F") : Color.FromArgb("#9A9790"),
                 MechanicText = invoice.Mechanic?.Name?.Split(' ')[0] ?? "—",
                 MechanicTextColor = invoice.Mechanic is not null ? Color.FromArgb("#18170F") : Color.FromArgb("#9A9790"),
-                TotalText = MockDataService.FormatCurrency(invoice.TotalAmount),
+                TotalText = CurrencyFormatter.Format(invoice.TotalAmount),
                 StatusText = isCancelled ? "Anulada" : "Activa",
                 StatusBackgroundColor = isCancelled ? Color.FromArgb("#FCE8E8") : Color.FromArgb("#DFF0E8"),
                 StatusTextColor = isCancelled ? Color.FromArgb("#C0392B") : Color.FromArgb("#2A6E44"),
@@ -110,13 +127,14 @@ public class InvoicesViewModel : INotifyPropertyChanged
         }
     }
 
-    private void SetProperty<T>(ref T backingField, T value, [CallerMemberName] string? propertyName = null)
+    private static bool MatchesQuery(Invoice i, string query)
     {
-        if (EqualityComparer<T>.Default.Equals(backingField, value))
-            return;
-
-        backingField = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        var cmp = StringComparison.OrdinalIgnoreCase;
+        if (i.Vehicle?.Plate?.Contains(query, cmp) == true) return true;
+        if (i.Vehicle?.Model?.Contains(query, cmp) == true) return true;
+        if (i.BuyerName?.Contains(query, cmp) == true) return true;
+        if (i.Mechanic?.Name?.Contains(query, cmp) == true) return true;
+        return i.Items.Any(it => it.Description.Contains(query, cmp));
     }
 }
 

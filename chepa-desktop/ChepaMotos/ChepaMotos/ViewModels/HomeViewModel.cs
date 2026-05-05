@@ -1,91 +1,78 @@
-using ChepaMotos.Models;
-using ChepaMotos.Services;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using ChepaMotos.Helpers;
+using ChepaMotos.Models;
+using ChepaMotos.Services.Domain;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace ChepaMotos.ViewModels;
 
-public class HomeViewModel : INotifyPropertyChanged
+public partial class HomeViewModel : BaseViewModel
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
+    private readonly IInvoiceService _invoiceService;
+    private readonly IMechanicService _mechanicService;
 
-    private string _kpiTotalValue = "$0";
-    public string KpiTotalValue
-    {
-        get => _kpiTotalValue;
-        private set => SetProperty(ref _kpiTotalValue, value);
-    }
+    [ObservableProperty] private string _kpiTotalValue = "$0";
+    [ObservableProperty] private string _kpiTotalSubtitle = "0 facturas hoy";
+    [ObservableProperty] private string _kpiShopValue = "$0";
+    [ObservableProperty] private string _kpiAvgValue = "$0";
+    [ObservableProperty] private string _kpiMechanicsValue = "0";
+    [ObservableProperty] private string _kpiMechanicsSubtitle = "de 0 registrados";
 
-    private string _kpiTotalSubtitle = "0 facturas hoy";
-    public string KpiTotalSubtitle
-    {
-        get => _kpiTotalSubtitle;
-        private set => SetProperty(ref _kpiTotalSubtitle, value);
-    }
-
-    private string _kpiShopValue = "$0";
-    public string KpiShopValue
-    {
-        get => _kpiShopValue;
-        private set => SetProperty(ref _kpiShopValue, value);
-    }
-
-    private string _kpiAvgValue = "$0";
-    public string KpiAvgValue
-    {
-        get => _kpiAvgValue;
-        private set => SetProperty(ref _kpiAvgValue, value);
-    }
-
-    private string _kpiMechanicsValue = "0";
-    public string KpiMechanicsValue
-    {
-        get => _kpiMechanicsValue;
-        private set => SetProperty(ref _kpiMechanicsValue, value);
-    }
-
-    private string _kpiMechanicsSubtitle = "de 0 registrados";
-    public string KpiMechanicsSubtitle
-    {
-        get => _kpiMechanicsSubtitle;
-        private set => SetProperty(ref _kpiMechanicsSubtitle, value);
-    }
-
-    private bool _invoicesEmptyVisible = true;
-    public bool InvoicesEmptyVisible
-    {
-        get => _invoicesEmptyVisible;
-        private set => SetProperty(ref _invoicesEmptyVisible, value);
-    }
-
-    private bool _mechanicsEmptyVisible = true;
-    public bool MechanicsEmptyVisible
-    {
-        get => _mechanicsEmptyVisible;
-        private set => SetProperty(ref _mechanicsEmptyVisible, value);
-    }
+    [ObservableProperty] private bool _invoicesEmptyVisible = true;
+    [ObservableProperty] private bool _mechanicsEmptyVisible = true;
 
     public ObservableCollection<HomeInvoiceRowViewModel> InvoiceRows { get; } = [];
     public ObservableCollection<HomeMechanicRowViewModel> MechanicRows { get; } = [];
 
-    public void LoadData()
+    public HomeViewModel(IInvoiceService invoiceService, IMechanicService mechanicService)
     {
-        LoadKpis();
+        _invoiceService = invoiceService;
+        _mechanicService = mechanicService;
+    }
 
-        // TODO: [API] Replace with: var invoices = await InvoiceService.GetInvoices(date: DateTime.Today)
-        // Maps to: GET /invoices?date=YYYY-MM-DD
-        var todayInvoices = MockDataService.GetInvoices(date: DateTime.Today);
+    [RelayCommand]
+    public Task ReloadAsync(CancellationToken ct = default) => ExecuteLoadAsync(async token =>
+    {
+        var today = DateTime.Today;
+        var invoicesTask = _invoiceService.ListAsync(date: today, cancelled: false, ct: token);
+        var activeMechanicsTask = _mechanicService.ListAsync(active: true, ct: token);
+        var inactiveMechanicsTask = _mechanicService.ListAsync(active: false, ct: token);
+        await Task.WhenAll(invoicesTask, activeMechanicsTask, inactiveMechanicsTask);
 
-        // TODO: [API] Replace with: var activeMechanics = await MechanicService.GetMechanics(active: true)
-        // Maps to: GET /mechanics?active=true
-        var activeMechanics = MockDataService.GetMechanics(activeOnly: true);
+        var invoices = invoicesTask.Result;
+        var activeMechanics = activeMechanicsTask.Result;
+        var totalMechanicsCount = activeMechanics.Count + inactiveMechanicsTask.Result.Count;
 
-        // TODO: [API] This is computed client-side from GET /invoices?date=today&type=SERVICE
-        var invoiceCounts = MockDataService.GetTodayInvoiceCountByMechanic();
+        UpdateKpis(invoices, activeMechanics.Count, totalMechanicsCount);
+        UpdateInvoicesList(invoices);
+        UpdateMechanicsList(invoices, activeMechanics);
+    }, ct);
+
+    private void UpdateKpis(IReadOnlyList<Invoice> invoices, int activeMechanics, int totalMechanics)
+    {
+        // El backend ya filtra cancelled=false al pedir, pero aplicamos el filtro
+        // local por si en el futuro la consulta cambia.
+        var liveInvoices = invoices.Where(i => !i.IsCancelled).ToList();
+        var total = liveInvoices.Sum(i => i.TotalAmount);
+        var totalRevenue = liveInvoices.Sum(i => i.LaborAmount);
+        var shopCut = totalRevenue * 0.30m;
+        var avg = liveInvoices.Count > 0 ? total / liveInvoices.Count : 0m;
+
+        KpiTotalValue = CurrencyFormatter.Format(total);
+        KpiTotalSubtitle = $"{liveInvoices.Count} facturas hoy";
+        KpiShopValue = CurrencyFormatter.Format(shopCut);
+        KpiAvgValue = CurrencyFormatter.Format(avg);
+        KpiMechanicsValue = activeMechanics.ToString();
+        KpiMechanicsSubtitle = $"de {totalMechanics} registrados";
+    }
+
+    private void UpdateInvoicesList(IReadOnlyList<Invoice> invoices)
+    {
+        var ordered = invoices.OrderByDescending(i => i.CreatedAt).ToList();
 
         InvoiceRows.Clear();
-        foreach (var invoice in todayInvoices)
+        foreach (var invoice in ordered)
         {
             var isService = invoice.InvoiceType == "SERVICE";
             InvoiceRows.Add(new HomeInvoiceRowViewModel
@@ -100,51 +87,34 @@ public class HomeViewModel : INotifyPropertyChanged
                 BuyerText = invoice.BuyerName ?? "—",
                 MechanicText = invoice.Mechanic?.Name?.Split(' ')[0] ?? "—",
                 MechanicTextColor = invoice.Mechanic is null ? Color.FromArgb("#9A9790") : Color.FromArgb("#18170F"),
-                TotalText = MockDataService.FormatCurrency(invoice.TotalAmount),
+                TotalText = CurrencyFormatter.Format(invoice.TotalAmount),
                 TimeText = invoice.CreatedAt.ToString("HH:mm"),
                 RowOpacity = invoice.IsCancelled ? 0.5 : 1.0,
             });
         }
 
+        InvoicesEmptyVisible = InvoiceRows.Count == 0;
+    }
+
+    private void UpdateMechanicsList(IReadOnlyList<Invoice> invoices, IReadOnlyList<Mechanic> activeMechanics)
+    {
+        var counts = invoices
+            .Where(i => i.InvoiceType == "SERVICE" && !i.IsCancelled && i.Mechanic is not null)
+            .GroupBy(i => i.Mechanic!.Id)
+            .ToDictionary(g => g.Key, g => (Count: g.Count(), Total: g.Sum(i => i.TotalAmount)));
+
         MechanicRows.Clear();
         foreach (var mechanic in activeMechanics)
         {
-            var data = invoiceCounts.GetValueOrDefault(mechanic.Id, (0, 0m));
+            var count = counts.TryGetValue(mechanic.Id, out var data) ? data.Count : 0;
             MechanicRows.Add(new HomeMechanicRowViewModel
             {
                 NameText = mechanic.Name.Split(' ')[0],
-                CountText = $"{data.Item1} fact.",
+                CountText = $"{count} fact.",
             });
         }
 
-        InvoicesEmptyVisible = InvoiceRows.Count == 0;
         MechanicsEmptyVisible = MechanicRows.Count == 0;
-    }
-
-    private void LoadKpis()
-    {
-        // TODO: [API] Replace with aggregated calls or a dedicated dashboard endpoint
-        // KPI data is computed client-side from GET /invoices + GET /mechanics
-        var (total, shopCut, avg, count, active, registered) = MockDataService.GetTodayKpis();
-
-        KpiTotalValue = MockDataService.FormatCurrency(total);
-        KpiTotalSubtitle = $"{count} facturas hoy";
-        KpiShopValue = MockDataService.FormatCurrency(shopCut);
-        KpiAvgValue = MockDataService.FormatCurrency(avg);
-        KpiMechanicsValue = $"{active}";
-        KpiMechanicsSubtitle = $"de {registered} registrados";
-    }
-
-    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-    private void SetProperty<T>(ref T backingField, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(backingField, value))
-            return;
-
-        backingField = value;
-        OnPropertyChanged(propertyName);
     }
 }
 

@@ -27,6 +27,11 @@
 		       <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
 		<MauiXamlInflator>SourceGen</MauiXamlInflator>
 
+		<!-- MVVMTK0045: AOT-incompatible code from [ObservableProperty] on private fields.
+		     Solo aplica a WinUI/UWP en modo AOT (no usamos). El field-based approach es
+		     más legible y compatible con la versión actual del Source Generator. -->
+		<NoWarn>$(NoWarn);MVVMTK0045</NoWarn>
+
 		<!-- Display name -->
 		<ApplicationTitle>ChepaMotos</ApplicationTitle>
 
@@ -68,6 +73,8 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
 		<PackageReference Include="QuestPDF" Version="2026.2.3" />
 	</ItemGroup>
 

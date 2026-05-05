@@ -1,19 +1,41 @@
+using ChepaMotos.Helpers;
+using ChepaMotos.Models;
 using ChepaMotos.ViewModels;
 
 namespace ChepaMotos.Views;
 
-public partial class InvoicesView : ContentView
+public partial class InvoicesView : ContentView, IRefreshable
 {
-    private readonly InvoicesViewModel _viewModel = new();
+    private readonly InvoicesViewModel _viewModel;
+    private readonly Func<Invoice, InvoiceViewerPage> _viewerFactory;
+    private bool _hasMounted;
 
-    public InvoicesView()
+    public InvoicesView(InvoicesViewModel viewModel, Func<Invoice, InvoiceViewerPage> viewerFactory)
     {
         InitializeComponent();
+        _viewModel = viewModel;
+        _viewerFactory = viewerFactory;
         BindingContext = _viewModel;
-        FilterDatePicker.Date = DateTime.Today;
-        _viewModel.LoadInvoices();
+        FilterDatePicker.Date = _viewModel.SelectedDate;
         UpdateFilterVisuals();
     }
+
+    protected override void OnHandlerChanged()
+    {
+        base.OnHandlerChanged();
+        if (Handler is not null && !_hasMounted)
+        {
+            _hasMounted = true;
+            _ = _viewModel.ReloadAsync();
+        }
+        else if (Handler is null)
+        {
+            // Desnavegación: cancelamos requests pendientes.
+            _viewModel.CancelOngoingOperation();
+        }
+    }
+
+    public Task RefreshAsync() => _viewModel.ReloadAsync();
 
     private void OnDateSelected(object? sender, DateChangedEventArgs e)
     {
@@ -61,10 +83,10 @@ public partial class InvoicesView : ContentView
         OpenInvoiceViewer(row.SourceInvoice);
     }
 
-    private void OpenInvoiceViewer(ChepaMotos.Models.Invoice invoice)
+    private void OpenInvoiceViewer(Invoice invoice)
     {
-        var viewer = new InvoiceViewerPage(invoice);
-        viewer.InvoiceCancelled += () => MainThread.BeginInvokeOnMainThread(_viewModel.LoadInvoices);
+        var viewer = _viewerFactory(invoice);
+        viewer.InvoiceCancelled += () => MainThread.BeginInvokeOnMainThread(() => _ = _viewModel.ReloadAsync());
         var window = new Window(viewer)
         {
             Title = $"Factura #{invoice.Id:D3}",

@@ -7,10 +7,10 @@ using QColors = QuestPDF.Helpers.Colors;
 namespace ChepaMotos.Services;
 
 /// <summary>
-/// Generates a receipt-style PDF for an invoice, sized for 80mm thermal printers.
-/// Uses QuestPDF fluent API. The same PDF is used for both printing and exporting.
+/// Genera PDFs tipo recibo para facturas (80mm térmica). Usa QuestPDF.
+/// Implementa <see cref="IInvoicePdfService"/> para inyección por DI.
 /// </summary>
-public static class InvoicePdfService
+public sealed class InvoicePdfService : IInvoicePdfService
 {
     // 80mm thermal: ~72mm printable = ~204pt
     private const float PageWidthPt = 204f;
@@ -19,6 +19,25 @@ public static class InvoicePdfService
     static InvoicePdfService()
     {
         QuestPDF.Settings.License = LicenseType.Community;
+    }
+
+    /// <summary>
+    /// Async wrapper sobre <see cref="GenerateReceiptPdf"/>. Corre la
+    /// generación (CPU-bound) en un worker thread para no bloquear el
+    /// dispatcher cuando hay muchos ítems.
+    /// </summary>
+    public Task<byte[]> GenerateReceiptAsync(Invoice invoice, CancellationToken ct = default)
+        => Task.Run(() =>
+        {
+            ct.ThrowIfCancellationRequested();
+            return GenerateReceiptPdf(invoice);
+        }, ct);
+
+    public async Task SaveReceiptAsync(Invoice invoice, string filePath, CancellationToken ct = default)
+    {
+        var bytes = await GenerateReceiptAsync(invoice, ct);
+        ct.ThrowIfCancellationRequested();
+        await File.WriteAllBytesAsync(filePath, bytes, ct);
     }
 
     /// <summary>
