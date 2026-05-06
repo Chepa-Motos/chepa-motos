@@ -140,6 +140,7 @@ class InvoiceUseCasesTest {
         assertEquals(new BigDecimal("93900.00"), result.totalAmount());
         assertEquals(2, result.items().size());
         assertEquals("Freno delantero", result.items().get(0).description());
+        assertEquals(LocalDateTime.of(2026, 1, 28, 9, 0, 0), result.createdAt());
         verify(invoiceRepository).save(any(Invoice.class));
     }
 
@@ -180,6 +181,7 @@ class InvoiceUseCasesTest {
         assertEquals(new BigDecimal("93900.00"), result.totalAmount());
         assertEquals(2, result.items().size());
         assertEquals(new BigDecimal("3900.00"), result.items().get(0).subtotal());
+        assertEquals(LocalDateTime.of(2026, 1, 28, 9, 0, 0), result.createdAt());
         verify(mechanicRepository).findById(1L);
         verify(resolveVehicleUseCase).execute("  bxr74f ", " Boxer 150 2021 ");
         verify(invoiceRepository).save(any(Invoice.class));
