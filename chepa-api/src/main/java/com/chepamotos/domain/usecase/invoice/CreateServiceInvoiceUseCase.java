@@ -11,6 +11,8 @@ import com.chepamotos.domain.port.MechanicRepository;
 import com.chepamotos.domain.usecase.vehicle.ResolveVehicleForServiceInvoiceUseCase;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class CreateServiceInvoiceUseCase {
@@ -18,14 +20,17 @@ public class CreateServiceInvoiceUseCase {
     private final InvoiceRepository invoiceRepository;
     private final MechanicRepository mechanicRepository;
     private final ResolveVehicleForServiceInvoiceUseCase resolveVehicleUseCase;
+    private final Clock clock;
 
     public CreateServiceInvoiceUseCase(
             InvoiceRepository invoiceRepository,
             MechanicRepository mechanicRepository,
-            ResolveVehicleForServiceInvoiceUseCase resolveVehicleUseCase) {
+            ResolveVehicleForServiceInvoiceUseCase resolveVehicleUseCase,
+            Clock clock) {
         this.invoiceRepository = invoiceRepository;
         this.mechanicRepository = mechanicRepository;
         this.resolveVehicleUseCase = resolveVehicleUseCase;
+        this.clock = clock;
     }
 
     public Invoice execute(
@@ -47,6 +52,6 @@ public class CreateServiceInvoiceUseCase {
                 .map(i -> InvoiceItem.createNew(i.description(), i.quantity(), i.unitPrice()))
                 .toList();
 
-        return invoiceRepository.save(Invoice.createService(mechanic, vehicle, laborAmount, items));
+        return invoiceRepository.save(Invoice.createService(mechanic, vehicle, laborAmount, items, LocalDateTime.now(clock)));
     }
 }

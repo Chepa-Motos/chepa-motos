@@ -39,19 +39,21 @@ public class InvoiceUseCaseConfig {
     }
 
     @Bean
-    public CreateDeliveryInvoiceUseCase createDeliveryInvoiceUseCase(InvoiceRepository invoiceRepository) {
-        return new CreateDeliveryInvoiceUseCase(invoiceRepository);
+    public CreateDeliveryInvoiceUseCase createDeliveryInvoiceUseCase(InvoiceRepository invoiceRepository, Clock systemClock) {
+        return new CreateDeliveryInvoiceUseCase(invoiceRepository, systemClock);
     }
 
     @Bean
     public CreateServiceInvoiceUseCase createServiceInvoiceUseCase(
             InvoiceRepository invoiceRepository,
             MechanicRepository mechanicRepository,
-            ResolveVehicleForServiceInvoiceUseCase resolveVehicleForServiceInvoiceUseCase) {
+            ResolveVehicleForServiceInvoiceUseCase resolveVehicleForServiceInvoiceUseCase,
+            Clock systemClock) {
         return new CreateServiceInvoiceUseCase(
                 invoiceRepository,
                 mechanicRepository,
-                resolveVehicleForServiceInvoiceUseCase);
+                resolveVehicleForServiceInvoiceUseCase,
+                systemClock);
     }
 
     @Bean

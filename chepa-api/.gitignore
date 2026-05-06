@@ -42,3 +42,8 @@ bruno-chepa-api/.env.*
 bruno-chepa-api/environments/*.local.bru
 bruno-chepa-api/environments/*.secret.bru
 bruno-chepa-api/environments/*.private.bru
+
+.agents/
+.claude/
+CLAUDE.md
+skills-lock.json

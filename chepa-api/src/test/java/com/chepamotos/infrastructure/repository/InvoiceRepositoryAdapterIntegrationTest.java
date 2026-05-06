@@ -41,7 +41,7 @@ class InvoiceRepositoryAdapterIntegrationTest {
         Vehicle vehicle = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTINV1A", "Test Model Save"));
 
         List<InvoiceItem> items = List.of(InvoiceItem.createNew("Freno delantero", BigDecimal.ONE, new BigDecimal("36900.00")));
-        Invoice toSave = Invoice.createService(mechanic, vehicle, new BigDecimal("45000.00"), items);
+        Invoice toSave = Invoice.createService(mechanic, vehicle, new BigDecimal("45000.00"), items, LocalDateTime.of(2026, 1, 28, 9, 0));
 
         Invoice saved = invoiceRepositoryAdapter.save(toSave);
 
@@ -57,7 +57,7 @@ class InvoiceRepositoryAdapterIntegrationTest {
     @Test
     void save_deliveryInvoice_persistsWithBuyerName() {
         List<InvoiceItem> items = List.of(InvoiceItem.createNew("Boxer 150 Palanca de freno", new BigDecimal("2"), new BigDecimal("18500.00")));
-        Invoice toSave = Invoice.createDelivery("Talleres La 80", items);
+        Invoice toSave = Invoice.createDelivery("Talleres La 80", items, LocalDateTime.of(2026, 1, 28, 10, 0));
 
         Invoice saved = invoiceRepositoryAdapter.save(toSave);
 
@@ -73,7 +73,7 @@ class InvoiceRepositoryAdapterIntegrationTest {
         Vehicle vehicle = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTINV2B", "Test Model Find"));
 
         List<InvoiceItem> items = List.of(InvoiceItem.createNew("Bujía", BigDecimal.ONE, new BigDecimal("26000.00")));
-        Invoice saved = invoiceRepositoryAdapter.save(Invoice.createService(mechanic, vehicle, new BigDecimal("30000.00"), items));
+        Invoice saved = invoiceRepositoryAdapter.save(Invoice.createService(mechanic, vehicle, new BigDecimal("30000.00"), items, LocalDateTime.of(2026, 1, 28, 9, 0)));
 
         var result = invoiceRepositoryAdapter.findById(saved.id());
 
@@ -97,7 +97,7 @@ class InvoiceRepositoryAdapterIntegrationTest {
         Mechanic mechanic = mechanicRepositoryAdapter.save(Mechanic.createNew("Tester_inv_all"));
         Vehicle vehicle = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTINV3C", "Test Model All"));
         List<InvoiceItem> items = List.of(InvoiceItem.createNew("Test item", BigDecimal.ONE, new BigDecimal("10000.00")));
-        invoiceRepositoryAdapter.save(Invoice.createService(mechanic, vehicle, new BigDecimal("10000.00"), items));
+        invoiceRepositoryAdapter.save(Invoice.createService(mechanic, vehicle, new BigDecimal("10000.00"), items, LocalDateTime.of(2026, 1, 28, 9, 0)));
 
         List<Invoice> all = invoiceRepositoryAdapter.findAll();
         assertEquals(baseline + 1, all.size());
@@ -109,7 +109,7 @@ class InvoiceRepositoryAdapterIntegrationTest {
         Vehicle vehicle = vehicleRepositoryAdapter.save(Vehicle.createNew("TSTINV4D", "Test Model Cancel"));
         List<InvoiceItem> items = List.of(InvoiceItem.createNew("Cancel item", BigDecimal.ONE, new BigDecimal("12000.00")));
 
-        Invoice saved = invoiceRepositoryAdapter.save(Invoice.createService(mechanic, vehicle, new BigDecimal("10000.00"), items));
+        Invoice saved = invoiceRepositoryAdapter.save(Invoice.createService(mechanic, vehicle, new BigDecimal("10000.00"), items, LocalDateTime.of(2026, 1, 28, 9, 0)));
         Invoice cancelled = saved.cancel();
 
         Invoice persisted = invoiceRepositoryAdapter.save(cancelled);

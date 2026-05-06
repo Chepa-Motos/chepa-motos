@@ -35,7 +35,7 @@ public final class Invoice {
     ) {
         this.id = id;
         this.type = Objects.requireNonNull(type, "Invoice type is required");
-        this.createdAt = Objects.requireNonNullElse(createdAt, LocalDateTime.now());
+        this.createdAt = Objects.requireNonNull(createdAt, "createdAt is required");
         this.cancelled = cancelled;
         this.items = normalizeItems(items);
 
@@ -54,12 +54,12 @@ public final class Invoice {
         this.totalAmount = computeItemsSubtotal(this.items).add(this.laborAmount).setScale(2, RoundingMode.HALF_UP);
     }
 
-    public static Invoice createService(Mechanic mechanic, Vehicle vehicle, BigDecimal laborAmount, List<InvoiceItem> items) {
-        return new Invoice(null, InvoiceType.SERVICE, mechanic, vehicle, null, null, laborAmount, false, items);
+    public static Invoice createService(Mechanic mechanic, Vehicle vehicle, BigDecimal laborAmount, List<InvoiceItem> items, LocalDateTime createdAt) {
+        return new Invoice(null, InvoiceType.SERVICE, mechanic, vehicle, null, Objects.requireNonNull(createdAt, "createdAt is required"), laborAmount, false, items);
     }
 
-    public static Invoice createDelivery(String buyerName, List<InvoiceItem> items) {
-        return new Invoice(null, InvoiceType.DELIVERY, null, null, buyerName, null, ZERO, false, items);
+    public static Invoice createDelivery(String buyerName, List<InvoiceItem> items, LocalDateTime createdAt) {
+        return new Invoice(null, InvoiceType.DELIVERY, null, null, buyerName, Objects.requireNonNull(createdAt, "createdAt is required"), ZERO, false, items);
     }
 
     public static Invoice restore(
