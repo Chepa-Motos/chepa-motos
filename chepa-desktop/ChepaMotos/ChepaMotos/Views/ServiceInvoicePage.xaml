@@ -50,7 +50,7 @@
                                 HeightRequest="38"
                                 Padding="0">
                             <DatePicker x:Name="ServiceDatePicker"
-                                        Format="ddd dd/MM/yyyy"
+                                        Format="dd/MM/yy"
                                         FontFamily="IBMPlexMono"
                                         FontSize="13"
                                         TextColor="{StaticResource TextPrimary}"
