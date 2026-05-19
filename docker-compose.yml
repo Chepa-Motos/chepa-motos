@@ -6,6 +6,8 @@ services:
       POSTGRES_DB: chepa_motos
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: America/Bogota
+    command: ["postgres", "-c", "timezone=America/Bogota"]
     ports:
       - "5432:5432"
     volumes:
@@ -33,6 +35,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      TZ: America/Bogota
+      JAVA_TOOL_OPTIONS: -Duser.timezone=America/Bogota
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,6 +60,7 @@ services:
       MB_DB_USER: ${DB_USER}
       MB_DB_PASS: ${DB_PASSWORD}
       MB_DB_HOST: postgres
+      TZ: America/Bogota
     depends_on:
       - postgres
     volumes:
