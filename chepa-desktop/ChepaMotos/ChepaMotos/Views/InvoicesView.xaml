@@ -193,7 +193,7 @@
                         <Label Grid.Column="4" Text="COMPRADOR" Style="{StaticResource TableHeader}" />
                         <Label Grid.Column="5" Text="MECÁNICO" Style="{StaticResource TableHeader}" />
                         <Label Grid.Column="6" Text="TOTAL" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
-                        <Label Grid.Column="7" Text="ESTADO" Style="{StaticResource TableHeader}" />
+                        <Label Grid.Column="7" Text="ESTADO" Style="{StaticResource TableHeader}" Margin="10,0,0,0" />
                         <Label Grid.Column="8" Text="HORA" Style="{StaticResource TableHeader}" HorizontalTextAlignment="End" />
                     </Grid>
 
@@ -280,11 +280,12 @@
                                          VerticalTextAlignment="Center"
                                          HorizontalTextAlignment="End" />
 
-                                     <Border Grid.Column="7"
+                                      <Border Grid.Column="7"
                                           StrokeShape="RoundRectangle 4"
                                           StrokeThickness="0"
                                           BackgroundColor="{Binding StatusBackgroundColor}"
                                           Padding="8,2"
+                                          Margin="10,0,0,0"
                                           VerticalOptions="Center"
                                           HorizontalOptions="Start">
                                       <Label Text="{Binding StatusText}"

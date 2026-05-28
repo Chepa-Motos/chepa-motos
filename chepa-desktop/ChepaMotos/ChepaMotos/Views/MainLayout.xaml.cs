@@ -60,6 +60,9 @@ public partial class MainLayout : ContentPage
         if (RootGrid?.Handler?.PlatformView is not Microsoft.UI.Xaml.FrameworkElement nativeRoot)
             return;
 
+        // Avoid showing accelerator hints (e.g., Ctrl+R) as floating popups.
+        nativeRoot.KeyboardAcceleratorPlacementMode = Microsoft.UI.Xaml.Input.KeyboardAcceleratorPlacementMode.Hidden;
+
         AddAccelerator(nativeRoot,
             Windows.System.VirtualKey.R,
             Windows.System.VirtualKeyModifiers.Control,
